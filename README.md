@@ -1,22 +1,24 @@
+Introduction
+-------------------------
+
 LZ5 is a modification of [LZ4] which gives a better ratio at cost of slower compression and decompression speed. 
 This is caused mainly because of 22-bit dictionary instead of 16-bit in LZ4.
-LZ5 uses different output codewords and is not compatible with LZ4.
 
-LZ4 output codewords are 3 byte long (24-bit) and look as follows:
+LZ5 uses different output codewords and is not compatible with LZ4. LZ4 output codewords are 3 byte long (24-bit) and look as follows:
 - LLLL_MMMM OOOOOOOO OOOOOOOO - 16-bit offset, 4-bit match length, 4-bit literal length 
 
 LZ5 uses 3 types of codewords from 2 to 4 bytes long:
-- 1_OO_LL_MMM OOOOOOOO          - 10-bit offset, 3-bit match length, 2-bit literal length
-- 00__LLL_MMM OOOOOOOO OOOOOOOO - 16-bit offset, 3-bit match length, 3-bit literal length
-- 01__LLL_MMM OOOOOOOO OOOOOOOO OOOOOOOO - 24-bit offset, 3-bit match length, 3-bit literal length 
+- 1_OO_LL_MMM OOOOOOOO - 10-bit offset, 3-bit match length, 2-bit literal length
+- 00_LLL_MMM OOOOOOOO OOOOOOOO - 16-bit offset, 3-bit match length, 3-bit literal length
+- 01_LLL_MMM OOOOOOOO OOOOOOOO OOOOOOOO - 24-bit offset, 3-bit match length, 3-bit literal length 
 
 [LZ4]: https://github.com/Cyan4973/lz4
 
 Benchmarks
 -------------------------
 
-The following results are obtained with [lzbench] using 1 core of Intel Core i5-4300U, Windows 10 64-bit (MinGW-w64 compilation under gcc 4.8.3) and 3 iterations. 
-The ["win81"] input file (100 MB) is a concatanation of carefully selected files from installed version of Windows 8.1 64-bit. 
+In our experiments decompression speed of LZ5 is from 650-950 MB/s. It's slower than LZ4 but much faster than zstd and brotli.
+With the compresion ratio is oposite: LZ5 is better than LZ4 but worse than zstd and brotli.
 
 | Compressor name             | Compression| Decompress.| Compr. size | Ratio |
 | ---------------             | -----------| -----------| ----------- | ----- |
@@ -41,13 +43,9 @@ The ["win81"] input file (100 MB) is a concatanation of carefully selected files
 | zstd_HC v0.3 -1             |   257 MB/s |   553 MB/s |    51231016 | 48.86 |
 | zstd_HC v0.3 -3             |    76 MB/s |   417 MB/s |    46774383 | 44.61 |
 | zstd_HC v0.3 -5             |    40 MB/s |   476 MB/s |    45628362 | 43.51 |
-| zstd_HC v0.3 -7             |    20 MB/s |   483 MB/s |    45066563 | 42.98 |
 | zstd_HC v0.3 -9             |    14 MB/s |   485 MB/s |    44840562 | 42.76 |
-| zstd_HC v0.3 -11            |    12 MB/s |   469 MB/s |    43184136 | 41.18 |
 | zstd_HC v0.3 -13            |  9.34 MB/s |   469 MB/s |    43114895 | 41.12 |
-| zstd_HC v0.3 -15            |  8.40 MB/s |   471 MB/s |    43050867 | 41.06 |
 | zstd_HC v0.3 -17            |  6.02 MB/s |   463 MB/s |    42989971 | 41.00 |
-| zstd_HC v0.3 -19            |  4.25 MB/s |   467 MB/s |    42952920 | 40.96 |
 | zstd_HC v0.3 -21            |  3.35 MB/s |   461 MB/s |    42956964 | 40.97 |
 | zstd_HC v0.3 -23            |  2.33 MB/s |   463 MB/s |    42934217 | 40.95 |
 | brotli 2015-10-29 -1        |    86 MB/s |   208 MB/s |    47882059 | 45.66 |
@@ -56,5 +54,8 @@ The ["win81"] input file (100 MB) is a concatanation of carefully selected files
 | brotli 2015-10-29 -7        |  4.80 MB/s |   227 MB/s |    41222719 | 39.31 |
 | brotli 2015-10-29 -9        |  2.23 MB/s |   222 MB/s |    40839209 | 38.95 |
 
+The above results are obtained with [lzbench] using 1 core of Intel Core i5-4300U, Windows 10 64-bit (MinGW-w64 compilation under gcc 4.8.3) with 3 iterations. 
+The ["win81"] input file (100 MB) is a concatanation of carefully selected files from installed version of Windows 8.1 64-bit. 
+
 [lzbench]: https://github.com/inikep/lzbench
-["win81"]: http://pskibinski.pl
+["win81"]: https://docs.google.com/uc?id=0BwX7dtyRLxThRzBwT0xkUy1TMFE&export=download
