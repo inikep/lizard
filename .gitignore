@@ -1,3 +1,12 @@
+# Directories
+_codelite/
+cmake_unofficial/
+contrib/
+debian/
+examples/
+versionsTest/
+visual/
+
 # Object files
 *.o
 *.ko

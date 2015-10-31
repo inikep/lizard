@@ -1,103 +1,60 @@
-LZ5 is a modification of LZ4 which gives a better ratio at cost of slower compression and decompression speed. This is caused mainly because of 22-bit dictionary instead of 16-bit in LZ4.
+LZ5 is a modification of [LZ4] which gives a better ratio at cost of slower compression and decompression speed. 
+This is caused mainly because of 22-bit dictionary instead of 16-bit in LZ4.
 LZ5 uses different output codewords and is not compatible with LZ4.
 
 LZ4 output codewords are 3 byte long (24-bit) and look as follows:
- LLLL_MMMM OOOOOOOO OOOOOOOO - 16-bit offset, 4-bit match length, 4-bit literal length 
+- LLLL_MMMM OOOOOOOO OOOOOOOO - 16-bit offset, 4-bit match length, 4-bit literal length 
 
 LZ5 uses 3 types of codewords from 2 to 4 bytes long:
- 1_OO_LL_MMM OOOOOOOO          - 10-bit offset, 3-bit match length, 2-bit literal length
- 00__LLL_MMM OOOOOOOO OOOOOOOO - 16-bit offset, 3-bit match length, 3-bit literal length
- 01__LLL_MMM OOOOOOOO OOOOOOOO OOOOOOOO - 24-bit offset, 3-bit match length, 3-bit literal length 
+- 1_OO_LL_MMM OOOOOOOO          - 10-bit offset, 3-bit match length, 2-bit literal length
+- 00__LLL_MMM OOOOOOOO OOOOOOOO - 16-bit offset, 3-bit match length, 3-bit literal length
+- 01__LLL_MMM OOOOOOOO OOOOOOOO OOOOOOOO - 24-bit offset, 3-bit match length, 3-bit literal length 
 
-
-
-LZ5 - Extremely fast compression
-================================
-
-LZ5 is lossless compression algorithm, 
-providing compression speed at 400 MB/s per core, 
-scalable with multi-cores CPU. 
-It features an extremely fast decoder, 
-with speed in multiple GB/s per core, 
-typically reaching RAM speed limits on multi-core systems.
-
-Speed can be tuned dynamically, selecting an "acceleration" factor
-which trades compression ratio for more speed up.
-On the other end, a high compression derivative, LZ5_HC, is also provided,
-trading CPU time for improved compression ratio.
-All versions feature the same decompression speed.
-
-LZ5 library is provided as open-source software using BSD license.s
-
-
-|Branch      |Status   |
-|------------|---------|
-|master      | [![Build Status][travisMasterBadge]][travisLink] [![Build status][AppveyorMasterBadge]][AppveyorLink] [![coverity][coverBadge]][coverlink] |
-|dev         | [![Build Status][travisDevBadge]][travisLink]    [![Build status][AppveyorDevBadge]][AppveyorLink]                                         |
-
-[travisMasterBadge]: https://travis-ci.org/inikep/lz5.svg?branch=master "Continuous Integration test suite"
-[travisDevBadge]: https://travis-ci.org/inikep/lz5.svg?branch=dev "Continuous Integration test suite"
-[travisLink]: https://ci.appveyor.com/project/YannCollet/lz5
-[AppveyorMasterBadge]: https://ci.appveyor.com/api/projects/status/v6kxv9si529477cq/branch/master?svg=true "Visual test suite"
-[AppveyorDevBadge]: https://ci.appveyor.com/api/projects/status/v6kxv9si529477cq/branch/dev?svg=true "Visual test suite"
-[AppveyorLink]: https://ci.appveyor.com/project/YannCollet/lz5
-[coverBadge]: https://scan.coverity.com/projects/4735/badge.svg "Static code analysis of Master branch"
-[coverlink]: https://scan.coverity.com/projects/4735
-
-> **Branch Policy:**
-
-> - The "master" branch is considered stable, at all times.
-> - The "dev" branch is the one where all contributions must be merged
-    before being promoted to master.
->   + If you plan to propose a patch, please commit into the "dev" branch,
-      or its own feature branch.
-      Direct commit to "master" are not permitted.
+[LZ4]: https://github.com/Cyan4973/lz4
 
 Benchmarks
 -------------------------
 
-The benchmark uses the [Open-Source Benchmark program by m^2 (v0.14.3)]
-compiled with GCC v4.8.2 on Linux Mint 64-bits v17.
-The reference system uses a Core i5-4300U @1.9GHz.
-Benchmark evaluates the compression of reference [Silesia Corpus]
-in single-thread mode.
+The following results are obtained with [lzbench] using 1 core of Intel Core i5-4300U, Windows 10 64-bit (MinGW-w64 compilation under gcc 4.8.3) and 3 iterations. 
+The ["win81"] input file (100 MB) is a concatanation of carefully selected files from installed version of Windows 8.1 64-bit. 
 
-|  Compressor          | Ratio   | Compression | Decompression |
-|  ----------          | -----   | ----------- | ------------- |
-|  memcpy              |  1.000  | 4200 MB/s   |   4200 MB/s   |
-|**LZ5 fast 17 (r129)**|  1.607  |**690 MB/s** | **2220 MB/s** |
-|**LZ5 default (r129)**|**2.101**|**385 MB/s** | **1850 MB/s** |
-|  LZO 2.06            |  2.108  |  350 MB/s   |    510 MB/s   |
-|  QuickLZ 1.5.1.b6    |  2.238  |  320 MB/s   |    380 MB/s   |
-|  Snappy 1.1.0        |  2.091  |  250 MB/s   |    960 MB/s   |
-|  LZF v3.6            |  2.073  |  175 MB/s   |    500 MB/s   |
-|  zlib 1.2.8 -1       |  2.730  |   59 MB/s   |    250 MB/s   |
-|**LZ5 HC (r129)**     |**2.720**|   22 MB/s   | **1830 MB/s** |
-|  zlib 1.2.8 -6       |  3.099  |   18 MB/s   |    270 MB/s   |
+| Compressor name             | Compression| Decompress.| Compr. size | Ratio |
+| ---------------             | -----------| -----------| ----------- | ----- |
+| memcpy                      |  8533 MB/s |  8533 MB/s |   104857600 |100.00 |
+| lz4 r131                    |   480 MB/s |  2275 MB/s |    64872315 | 61.87 |
+| lz4hc r131 -1               |    82 MB/s |  1896 MB/s |    59448496 | 56.69 |
+| lz4hc r131 -3               |    54 MB/s |  1932 MB/s |    56343753 | 53.73 |
+| lz4hc r131 -5               |    41 MB/s |  1969 MB/s |    55271312 | 52.71 |
+| lz4hc r131 -7               |    31 MB/s |  1969 MB/s |    54889301 | 52.35 |
+| lz4hc r131 -9               |    24 MB/s |  1969 MB/s |    54773517 | 52.24 |
+| lz4hc r131 -11              |    20 MB/s |  1969 MB/s |    54751363 | 52.21 |
+| lz4hc r131 -13              |    17 MB/s |  1969 MB/s |    54744790 | 52.21 |
+| lz4hc r131 -15              |    14 MB/s |  2007 MB/s |    54741827 | 52.21 |
+| lz5 r131                    |   195 MB/s |   939 MB/s |    55884927 | 53.30 |
+| lz5hc r131 -1               |    32 MB/s |   742 MB/s |    52927122 | 50.48 |
+| lz5hc r131 -3               |    20 MB/s |   716 MB/s |    50970192 | 48.61 |
+| lz5hc r131 -5               |    10 MB/s |   701 MB/s |    49970285 | 47.66 |
+| lz5hc r131 -7               |  5.54 MB/s |   682 MB/s |    49541511 | 47.25 |
+| lz5hc r131 -9               |  2.69 MB/s |   673 MB/s |    49346894 | 47.06 |
+| lz5hc r131 -11              |  1.36 MB/s |   664 MB/s |    49266526 | 46.98 |
+| zstd v0.3                   |   257 MB/s |   547 MB/s |    51231016 | 48.86 |
+| zstd_HC v0.3 -1             |   257 MB/s |   553 MB/s |    51231016 | 48.86 |
+| zstd_HC v0.3 -3             |    76 MB/s |   417 MB/s |    46774383 | 44.61 |
+| zstd_HC v0.3 -5             |    40 MB/s |   476 MB/s |    45628362 | 43.51 |
+| zstd_HC v0.3 -7             |    20 MB/s |   483 MB/s |    45066563 | 42.98 |
+| zstd_HC v0.3 -9             |    14 MB/s |   485 MB/s |    44840562 | 42.76 |
+| zstd_HC v0.3 -11            |    12 MB/s |   469 MB/s |    43184136 | 41.18 |
+| zstd_HC v0.3 -13            |  9.34 MB/s |   469 MB/s |    43114895 | 41.12 |
+| zstd_HC v0.3 -15            |  8.40 MB/s |   471 MB/s |    43050867 | 41.06 |
+| zstd_HC v0.3 -17            |  6.02 MB/s |   463 MB/s |    42989971 | 41.00 |
+| zstd_HC v0.3 -19            |  4.25 MB/s |   467 MB/s |    42952920 | 40.96 |
+| zstd_HC v0.3 -21            |  3.35 MB/s |   461 MB/s |    42956964 | 40.97 |
+| zstd_HC v0.3 -23            |  2.33 MB/s |   463 MB/s |    42934217 | 40.95 |
+| brotli 2015-10-29 -1        |    86 MB/s |   208 MB/s |    47882059 | 45.66 |
+| brotli 2015-10-29 -3        |    60 MB/s |   214 MB/s |    47451223 | 45.25 |
+| brotli 2015-10-29 -5        |    17 MB/s |   217 MB/s |    43363897 | 41.36 |
+| brotli 2015-10-29 -7        |  4.80 MB/s |   227 MB/s |    41222719 | 39.31 |
+| brotli 2015-10-29 -9        |  2.23 MB/s |   222 MB/s |    40839209 | 38.95 |
 
-
-Documentation
--------------------------
-
-The raw LZ5 block compression format is detailed within [lz5_Block_format].
-
-To compress an arbitrarily long file or data stream, multiple blocks are required.
-Organizing these blocks and providing a common header format to handle their content
-is the purpose of the Frame format, defined into [lz5_Frame_format].
-Interoperable versions of LZ5 must respect this frame format.
-
-
-Other source versions
--------------------------
-
-Beyond the C reference source, 
-many contributors have created versions of lz5 in multiple languages
-(Java, C#, Python, Perl, Ruby, etc.).
-A list of known source ports is maintained on the [LZ5 Homepage].
-
-
-[Open-Source Benchmark program by m^2 (v0.14.3)]: http://encode.ru/threads/1371-Filesystem-benchmark?p=34029&viewfull=1#post34029
-[Silesia Corpus]: http://sun.aei.polsl.pl/~sdeor/index.php?page=silesia
-[lz5_Block_format]: lz5_Block_format.md
-[lz5_Frame_format]: lz5_Frame_format.md
-[LZ5 Homepage]: http://www.lz5.org
+[lzbench]: https://github.com/inikep/lzbench
+["win81"]: http://pskibinski.pl
