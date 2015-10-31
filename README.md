@@ -18,7 +18,7 @@ Benchmarks
 -------------------------
 
 In our experiments decompression speed of LZ5 is from 650-950 MB/s. It's slower than LZ4 but much faster than zstd and brotli.
-With the compresion ratio is oposite: LZ5 is better than LZ4 but worse than zstd and brotli.
+With the compresion ratio is opposite: LZ5 is better than LZ4 but worse than zstd and brotli.
 
 | Compressor name             | Compression| Decompress.| Compr. size | Ratio |
 | ---------------             | -----------| -----------| ----------- | ----- |
