@@ -86,9 +86,6 @@
 *  Constants
 ******************************/
 #define COMPRESSOR_NAME "LZ5 command line interface"
-#ifndef LZ5_VERSION
-#  define LZ5_VERSION "r128"
-#endif
 #define AUTHOR "Yann Collet"
 #define WELCOME_MESSAGE "*** %s %i-bits %s, by %s (%s) ***\n", COMPRESSOR_NAME, (int)(sizeof(void*)*8), LZ5_VERSION, AUTHOR, __DATE__
 #define LZ5_EXTENSION ".lz5"

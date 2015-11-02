@@ -25,8 +25,6 @@
 # lz5 : Command Line Utility, supporting gzip-like arguments
 # lz5c  : CLU, supporting also legacy lz5demo arguments
 # lz5c32: Same as lz5c, but forced to compile in 32-bits mode
-# fuzzer  : Test tool, to check lz5 integrity on target platform
-# fuzzer32: Same as fuzzer, but forced to compile in 32-bits mode
 # frametest  : Test tool, to check lz5frame integrity on target platform
 # frametest32: Same as frametest, but forced to compile in 32-bits mode
 # fullbench  : Precisely measure speed for each LZ5 function variant
@@ -65,9 +63,9 @@ FUZZER_TIME  := -T9mn
 
 default: lz5
 
-m32: lz5c32 fullbench32 fuzzer32 frametest32
+m32: lz5c32 fullbench32 frametest32
 
-bins: lz5 lz5c fullbench fuzzer frametest datagen
+bins: lz5 fullbench frametest datagen
 
 all: bins m32
 
@@ -80,16 +78,10 @@ lz5c  : $(LZ5DIR)/lz5.o $(LZ5DIR)/lz5hc.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash.
 lz5c32: $(LZ5DIR)/lz5.c $(LZ5DIR)/lz5hc.c $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash.c bench.c lz5io.c lz5cli.c
 	$(CC) -m32 $(FLAGS) -DENABLE_LZ5C_LEGACY_OPTIONS $^ -o $@$(EXT)
 
-fullbench  : $(LZ5DIR)/lz5.o $(LZ5DIR)/lz5hc.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash.o fullbench.c
+fullbench: $(LZ5DIR)/lz5.o $(LZ5DIR)/lz5hc.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash.o fullbench.o
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
 fullbench32: $(LZ5DIR)/lz5.c $(LZ5DIR)/lz5hc.c $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash.c fullbench.c
-	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
-
-fuzzer  : $(LZ5DIR)/lz5.o $(LZ5DIR)/lz5hc.o $(LZ5DIR)/xxhash.o fuzzer.c
-	$(CC) $(FLAGS) $^ -o $@$(EXT)
-
-fuzzer32: $(LZ5DIR)/lz5.c $(LZ5DIR)/lz5hc.c $(LZ5DIR)/xxhash.c fuzzer.c
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
 frametest: $(LZ5DIR)/lz5frame.o $(LZ5DIR)/lz5.o $(LZ5DIR)/lz5hc.o $(LZ5DIR)/xxhash.o frametest.c
@@ -106,7 +98,6 @@ clean:
 	@rm -f core *.o *.test tmp* \
         lz5$(EXT) lz5c$(EXT) lz5c32$(EXT) \
         fullbench$(EXT) fullbench32$(EXT) \
-        fuzzer$(EXT) fuzzer32$(EXT) \
         frametest$(EXT) frametest32$(EXT) \
         datagen$(EXT)
 	@echo Cleaning completed
