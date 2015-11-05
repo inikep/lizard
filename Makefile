@@ -66,8 +66,6 @@ lz5programs:
 clean:
 	@$(MAKE) -C $(PRGDIR) $@ > $(VOID)
 	@$(MAKE) -C $(LZ5DIR) $@ > $(VOID)
-	@$(MAKE) -C examples $@ > $(VOID)
-	@$(MAKE) -C versionsTest $@ > $(VOID)
 	@echo Cleaning completed
 
 
