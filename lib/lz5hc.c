@@ -81,8 +81,9 @@ static const int LZ5HC_compressionLevel_default = 9;
 #define MAXD_MASK (MAXD - 1)
 
 #define HASH_LOG (DICTIONARY_LOGSIZE-1)
+#define HASH_LOG3 13
 #define HASHTABLESIZE (1 << HASH_LOG)
-#define HASH_MASK (HASHTABLESIZE - 1)
+#define HASHTABLESIZE3 (1 << HASH_LOG3)
 
 #define OPTIMAL_ML (int)((ML_MASK-1)+MINMATCH)
 
@@ -95,6 +96,7 @@ static const int g_maxCompressionLevel = 16;
 struct LZ5HC_Data_s
 {
     U32*   hashTable;
+    U32*   hashTable3;
     U32*   chainTable;
     const BYTE* end;        /* next block here to continue on current prefix */
     const BYTE* base;       /* All index relative to this position */
@@ -106,16 +108,17 @@ struct LZ5HC_Data_s
     U32   compressionLevel;
 };
 
-
 /**************************************
 *  Local Macros
 **************************************/
-#define HASH_FUNCTION(i)       (((i) * 2654435761U) >> ((MINMATCH*8)-HASH_LOG))
+#define HASH_FUNCTION(i)       (((i) * 2654435761U) >> ((MINMATCH4*8)-HASH_LOG))
+#define HASH_FUNCTION3(i)       (((i) * 506832829U) >> ((MINMATCH4*8)-HASH_LOG3))
 //#define DELTANEXTU16(p)        chainTable[(p) & MAXD_MASK]   /* flexible, MAXD dependent */
 #define DELTANEXTU16(p)        chainTable[(U16)(p)]   /* faster */
 #define DELTANEXTU32(p)        chainTable[(p) & MAXD_MASK]   /* flexible, MAXD dependent */
 
 static U32 LZ5HC_hashPtr(const void* ptr) { return HASH_FUNCTION(LZ5_read32(ptr)); }
+static U32 LZ5HC_hashPtr3(const void* ptr) { return HASH_FUNCTION3(LZ5_read32(ptr)); }
 
 #define LZ5HC_LIMIT (1<<DICTIONARY_LOGSIZE)
 
@@ -126,6 +129,7 @@ static U32 LZ5HC_hashPtr(const void* ptr) { return HASH_FUNCTION(LZ5_read32(ptr)
 static void LZ5HC_init (LZ5HC_Data_Structure* hc4, const BYTE* start)
 {
     MEM_INIT((void*)hc4->hashTable, 0, sizeof(U32)*HASHTABLESIZE);
+    MEM_INIT((void*)hc4->hashTable3, 0, sizeof(U32)*HASHTABLESIZE3);
     MEM_INIT(hc4->chainTable, 0xFF, sizeof(U32)*MAXD);
     hc4->nextToUpdate = LZ5HC_LIMIT;
     hc4->base = start - LZ5HC_LIMIT;
@@ -187,7 +191,7 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* hc4,   /* I
         {
             match = base + matchIndex;
             if (*(match+ml) == *(ip+ml)
-                && (LZ5_read32(match) == LZ5_read32(ip)))
+                && (LZ5_read24(match) == LZ5_read24(ip)))
             {
                 size_t mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
                 if (mlt > ml) { ml = mlt; *matchpos = match; }
@@ -196,7 +200,7 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* hc4,   /* I
         else
         {
             match = dictBase + matchIndex;
-            if (LZ5_read32(match) == LZ5_read32(ip))
+            if (LZ5_read24(match) == LZ5_read24(ip))
             {
                 size_t mlt;
                 const BYTE* vLimit = ip + (dictLimit - matchIndex);
@@ -211,6 +215,26 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* hc4,   /* I
         matchIndex -= DELTANEXTU32(matchIndex);
     }
 
+    U32* const hashTable3 = hc4->hashTable3;
+    size_t h = LZ5HC_hashPtr3(ip);
+
+    if (!ml)
+    {
+        size_t offset = ip - base - hashTable3[h];
+
+        if (offset > 0 && offset < MAX_DISTANCE)
+        {
+            match = ip - offset;
+            if (match > base && LZ5_read24(ip) == LZ5_read24(match))
+            {
+                ml = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
+                *matchpos = match;
+            }
+        }
+    }
+    
+    hashTable3[h] = ip - base;
+    
     return (int)ml;
 }
 
@@ -248,7 +272,7 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
         {
             const BYTE* matchPtr = base + matchIndex;
             if (*(iLowLimit + longest) == *(matchPtr - delta + longest))
-                if (LZ5_read32(matchPtr) == LZ5_read32(ip))
+                if (LZ5_read24(matchPtr) == LZ5_read24(ip))
                 {
                     int mlt = MINMATCH + LZ5_count(ip+MINMATCH, matchPtr+MINMATCH, iHighLimit);
                     int back = 0;
@@ -271,7 +295,7 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
         else
         {
             const BYTE* matchPtr = dictBase + matchIndex;
-            if (LZ5_read32(matchPtr) == LZ5_read32(ip))
+            if (LZ5_read24(matchPtr) == LZ5_read24(ip))
             {
                 size_t mlt;
                 int back=0;
@@ -288,6 +312,7 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
 //        matchIndex -= DELTANEXTU16(matchIndex);
         matchIndex -= DELTANEXTU32(matchIndex);
     }
+
 
     return longest;
 }
@@ -588,6 +613,10 @@ int LZ5_alloc_mem_HC(LZ5HC_Data_Structure* statePtr)
 {
     statePtr->hashTable = ALLOCATOR(1, sizeof(U32)*HASHTABLESIZE);
     if (!statePtr->hashTable)
+        return 0;
+
+    statePtr->hashTable3 = ALLOCATOR(1, sizeof(U32)*HASHTABLESIZE3);
+    if (!statePtr->hashTable3)
         return 0;
 
     statePtr->chainTable = ALLOCATOR(1, sizeof(U32)*MAXD);
