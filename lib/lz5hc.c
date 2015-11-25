@@ -84,7 +84,8 @@ static const int LZ5HC_compressionLevel_default = 9;
 #define HASH_LOG3 13
 #define HASHTABLESIZE (1 << HASH_LOG)
 #define HASHTABLESIZE3 (1 << HASH_LOG3)
-#define SHORT_OFFSET_DISTANCE (1<<10)
+#define LZ5_SHORT_OFFSET_BITS 10
+#define LZ5_SHORT_OFFSET_DISTANCE (1<<10)
 
 #define OPTIMAL_ML (int)((ML_MASK-1)+MINMATCH)
 
@@ -167,6 +168,22 @@ FORCE_INLINE void LZ5HC_Insert (LZ5HC_Data_Structure* hc4, const BYTE* ip)
 }
 
 
+#define LZ5_NUM_REPS 1
+#define LZ5_NORMAL_MATCH_COST(mlen,offset)	(LZ5_MATCH_COST(mlen,offset))
+#define LZ5_NORMAL_LIT_COST(len)				(len)
+
+#define LZ5_LIT_COST(len,offset)		((len)+((offset<(1 << LZ5_SHORT_OFFSET_BITS)) ? LZ5_SHORT_LITLEN_COST(len) : LZ5_LEN_COST(len)))
+#define LZ5_MATCH_COST(mlen,offset)	(LZ5_LEN_COST(mlen) + ((offset == 1) ? 1 : (offset<(1 << LZ5_SHORT_OFFSET_BITS) ? 2 : (offset<(1 << 16) ? 3 : 4))))
+#define LZ5_CODEWORD_COST(litlen,offset,mlen) (LZ5_MATCH_COST(mlen,offset) + LZ5_LIT_COST(litlen,offset))
+#define LZ5_LIT_ONLY_COST(len)		((len)+(LZ5_LEN_COST(len))+1)
+
+#define LZ5_SHORT_LITERALS			((1<<RUN_BITS2)-1)
+#define LZ5_MATCHES					((1<<ML_BITS)-1)
+
+#define LZ5_SHORT_LITLEN_COST(len)	(len<LZ5_SHORT_LITERALS ? 0 : (len-LZ5_SHORT_LITERALS < 255 ? 1 : (len-LZ5_SHORT_LITERALS-255 < (1<<7) ? 2 : 3)))
+#define LZ5_LEN_COST(len)				(len<LZ5_MATCHES ? 0 : (len-LZ5_MATCHES < 255 ? 1 : (len-LZ5_MATCHES-255 < (1<<7) ? 2 : 3)))
+
+    
 FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* hc4,   /* Index table will be updated */
                                                const BYTE* ip, const BYTE* const iLimit,
                                                const BYTE** matchpos,
@@ -181,7 +198,34 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* hc4,   /* I
     U32 matchIndex;
     const BYTE* match;
     int nbAttempts=maxNbAttempts;
-    size_t ml=0;
+    size_t ml=0, mlt;
+
+    match = ip - hc4->last_off;
+    if (LZ5_read24(match) == LZ5_read24(ip))
+    {
+        ml = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
+        *matchpos = match;
+      //  return (int)ml;
+    }
+
+    U32* const hashTable3 = hc4->hashTable3;
+    size_t h = LZ5HC_hashPtr3(ip);
+    size_t offset = ip - base - hashTable3[h];
+
+    if (offset > 0 && offset < LZ5_SHORT_OFFSET_DISTANCE)
+    {
+        match = ip - offset;
+        if (match > base && LZ5_read24(ip) == LZ5_read24(match))
+        {
+            mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
+            if (mlt > ml)
+            if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == hc4->last_off) ? 1 : (ip - match + LZ5_NUM_REPS)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == hc4->last_off) ? 1 : (ip - *matchpos + LZ5_NUM_REPS)) + (LZ5_NORMAL_LIT_COST(mlt - ml)))
+            { ml = mlt; *matchpos = match; }
+        }
+    }
+
+    hashTable3[h] = ip - base;
+
 
     /* HC4 match finder */
     LZ5HC_Insert(hc4, ip);
@@ -196,8 +240,10 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* hc4,   /* I
             if (*(match+ml) == *(ip+ml)
                 && (LZ5_read24(match) == LZ5_read24(ip)))
             {
-                size_t mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
-                if (mlt > ml) { ml = mlt; *matchpos = match; }
+                mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
+                if (mlt > ml)
+                if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == hc4->last_off) ? 1 : (ip - match + LZ5_NUM_REPS)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == hc4->last_off) ? 1 : (ip - *matchpos + LZ5_NUM_REPS)) + (LZ5_NORMAL_LIT_COST(mlt - ml)))
+                { ml = mlt; *matchpos = match; }
             }
         }
         else
@@ -205,39 +251,19 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* hc4,   /* I
             match = dictBase + matchIndex;
             if (LZ5_read24(match) == LZ5_read24(ip))
             {
-                size_t mlt;
                 const BYTE* vLimit = ip + (dictLimit - matchIndex);
                 if (vLimit > iLimit) vLimit = iLimit;
                 mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, vLimit) + MINMATCH;
                 if ((ip+mlt == vLimit) && (vLimit < iLimit))
                     mlt += LZ5_count(ip+mlt, base+dictLimit, iLimit);
-                if (mlt > ml) { ml = mlt; *matchpos = base + matchIndex; }   /* virtual matchpos */
+                if (mlt > ml) 
+                if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == hc4->last_off) ? 1 : (ip - match + LZ5_NUM_REPS)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == hc4->last_off) ? 1 : (ip - *matchpos + LZ5_NUM_REPS)) + (LZ5_NORMAL_LIT_COST(mlt - ml)))
+                { ml = mlt; *matchpos = base + matchIndex; }   /* virtual matchpos */
             }
         }
-//        matchIndex -= DELTANEXTU16(matchIndex);
         matchIndex -= DELTANEXTU32(matchIndex);
     }
 
-/*    U32* const hashTable3 = hc4->hashTable3;
-    size_t h = LZ5HC_hashPtr3(ip);
-
-    if (!ml)
-    {
-        size_t offset = ip - base - hashTable3[h];
-
-        if (offset > 0 && offset < SHORT_OFFSET_DISTANCE)
-        {
-            match = ip - offset;
-            if (match > base && LZ5_read24(ip) == LZ5_read24(match))
-            {
-                ml = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
-                *matchpos = match;
-            }
-        }
-    }
-    
-    hashTable3[h] = ip - base;
-  */  
     return (int)ml;
 }
 
@@ -268,6 +294,56 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
     LZ5HC_Insert(hc4, ip);
     matchIndex = HashTable[LZ5HC_hashPtr(ip)];
 
+    const BYTE* match = ip - hc4->last_off;
+    if (LZ5_read24(match) == LZ5_read24(ip))
+    {
+        int mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iHighLimit) + MINMATCH;
+        
+        int back = 0;
+        while ((ip+back>iLowLimit) && (match+back > lowPrefixPtr) && (ip[back-1] == match[back-1])) back--;
+        mlt -= back;
+
+        if (mlt > longest)
+        if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == hc4->last_off) ? 1 : (ip - match + LZ5_NUM_REPS)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip - *matchpos == hc4->last_off) ? 1 : (ip - *matchpos + LZ5_NUM_REPS)) + LZ5_NORMAL_LIT_COST(mlt - longest))
+        {
+            *matchpos = match+back;
+            *startpos = ip+back;
+            longest = (int)mlt;
+      //      return (int)mlt;
+        }
+    }
+
+
+
+    U32* const hashTable3 = hc4->hashTable3;
+    size_t h = LZ5HC_hashPtr3(ip);
+
+    size_t offset = ip - base - hashTable3[h];
+
+    if (offset > 0 && offset < LZ5_SHORT_OFFSET_DISTANCE)
+    {
+        match = ip - offset;
+        if (match > base && LZ5_read24(ip) == LZ5_read24(match))
+        {
+            int mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iHighLimit) + MINMATCH;
+
+            int back = 0;
+            while ((ip+back>iLowLimit) && (match+back > lowPrefixPtr) && (ip[back-1] == match[back-1])) back--;
+            mlt -= back;
+
+            if (mlt > longest)
+            if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == hc4->last_off) ? 1 : (ip - match + LZ5_NUM_REPS)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip - *matchpos == hc4->last_off) ? 1 : (ip - *matchpos + LZ5_NUM_REPS)) + LZ5_NORMAL_LIT_COST(mlt - longest))
+            {
+                *matchpos = match+back;
+                *startpos = ip+back;
+                longest = (int)mlt;
+            }
+        }
+    }
+
+    hashTable3[h] = ip - base;
+    
+
     while ((matchIndex>=lowLimit) && (nbAttempts))
     {
         nbAttempts--;
@@ -288,6 +364,7 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
                     mlt -= back;
 
                     if (mlt > longest)
+                    if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - matchPtr == hc4->last_off) ? 1 : (ip - matchPtr + LZ5_NUM_REPS)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip - *matchpos == hc4->last_off) ? 1 : (ip - *matchpos + LZ5_NUM_REPS)) + (LZ5_NORMAL_LIT_COST(mlt - longest)))
                     {
                         longest = (int)mlt;
                         *matchpos = matchPtr+back;
@@ -448,6 +525,12 @@ static int LZ5HC_compress_generic (
     {
         ml = LZ5HC_InsertAndFindBestMatch (ctx, ip, matchlimit, (&ref), maxNbAttempts);
         if (!ml) { ip++; continue; }
+
+        if (ip-ref == ctx->last_off)  /* last offset */
+        {
+            if (LZ5HC_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, limit, oend)) return 0;
+            continue;
+        }
 
         /* saved, in case we would skip too much */
         start0 = ip;
