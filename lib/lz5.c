@@ -546,7 +546,7 @@ FORCE_INLINE int LZ5_compress_generic(
     BYTE* op = (BYTE*) dest;
     BYTE* const olimit = op + maxOutputSize;
 
-    U32 forwardH;
+    U32 forwardH, last_off=1;
     size_t refDelta=0;
 
     /* Init conditions */
@@ -625,12 +625,12 @@ FORCE_INLINE int LZ5_compress_generic(
             if ((outputLimited) && (unlikely(op + litLength + (2 + 1 + LASTLITERALS) + (litLength/255) > olimit)))
                 return 0;   /* Check output limit */
 
-            if (ip-match < (1<<10))
+            if (ip-match >= (1<<10) && ip-match < (1<<16) && ip-match != last_off)
             {
-                if (litLength>=RUN_MASK2)
+                if (litLength>=RUN_MASK)
                 {
-                    int len = (int)litLength-RUN_MASK2;
-                    *token=(RUN_MASK2<<ML_BITS);
+                    int len = (int)litLength-RUN_MASK;
+                    *token=(RUN_MASK<<ML_BITS);
                     for(; len >= 255 ; len-=255) *op++ = 255;
                     *op++ = (BYTE)len;
                 }
@@ -638,10 +638,10 @@ FORCE_INLINE int LZ5_compress_generic(
             }
             else
             {
-                if (litLength>=RUN_MASK)
+                if (litLength>=RUN_MASK2)
                 {
-                    int len = (int)litLength-RUN_MASK;
-                    *token=(RUN_MASK<<ML_BITS);
+                    int len = (int)litLength-RUN_MASK2;
+                    *token=(RUN_MASK2<<ML_BITS);
                     for(; len >= 255 ; len-=255) *op++ = 255;
                     *op++ = (BYTE)len;
                 }
@@ -655,6 +655,12 @@ FORCE_INLINE int LZ5_compress_generic(
 
 _next_match:
         /* Encode Offset */
+        if (ip-match == last_off)
+        {
+            *token+=(3<<ML_RUN_BITS2);
+//            printf("2last_off=%d *token=%d\n", last_off, *token);
+        }
+        else
         if (ip-match < (1<<10))
         {
             *token+=((4+((ip-match)>>8))<<ML_RUN_BITS2);
@@ -667,9 +673,11 @@ _next_match:
         }
         else
         {
-            *token+=(1<<ML_RUN_BITS);
+            *token+=(2<<ML_RUN_BITS2);
             LZ5_writeLE24(op, (U32)(ip-match)); op+=3;
         }
+        last_off = ip-match;
+  //      printf("1last_off=%d\n", last_off);
 
         /* Encode MatchLength */
         {
@@ -855,7 +863,7 @@ static int LZ5_compress_destSize_generic(
     BYTE* const oMaxMatch = op + targetDstSize - (LASTLITERALS + 1 /* token */);
     BYTE* const oMaxSeq = oMaxLit - 1 /* token */;
 
-    U32 forwardH;
+    U32 forwardH, last_off=1;
 
 
     /* Init conditions */
@@ -910,13 +918,13 @@ static int LZ5_compress_destSize_generic(
                 op--;
                 goto _last_literals;
             }
-            
-            if (ip-match < (1<<10))
+
+            if (ip-match >= (1<<10) && ip-match < (1<<16) && ip-match != last_off)
             {
-                if (litLength>=RUN_MASK2)
+                if (litLength>=RUN_MASK)
                 {
-                    int len = (int)litLength-RUN_MASK2;
-                    *token=(RUN_MASK2<<ML_BITS);
+                    int len = (int)litLength-RUN_MASK;
+                    *token=(RUN_MASK<<ML_BITS);
                     for(; len >= 255 ; len-=255) *op++ = 255;
                     *op++ = (BYTE)len;
                 }
@@ -924,10 +932,10 @@ static int LZ5_compress_destSize_generic(
             }
             else
             {
-                if (litLength>=RUN_MASK)
+                if (litLength>=RUN_MASK2)
                 {
-                    int len = (int)litLength-RUN_MASK;
-                    *token=(RUN_MASK<<ML_BITS);
+                    int len = (int)litLength-RUN_MASK2;
+                    *token=(RUN_MASK2<<ML_BITS);
                     for(; len >= 255 ; len-=255) *op++ = 255;
                     *op++ = (BYTE)len;
                 }
@@ -941,6 +949,11 @@ static int LZ5_compress_destSize_generic(
 
 _next_match:
         /* Encode Offset */
+        if (ip-match == last_off)
+        {
+            *token+=(3<<ML_RUN_BITS2);          
+        }
+        else
         if (ip-match < (1<<10))
         {
             *token+=((4+((ip-match)>>8))<<ML_RUN_BITS2);
@@ -953,9 +966,10 @@ _next_match:
         }
         else
         {
-            *token+=(1<<ML_RUN_BITS);
+            *token+=(2<<ML_RUN_BITS2);
             LZ5_writeLE24(op, (U32)(ip-match)); op+=3;
         }
+        last_off = ip-match;
 
         /* Encode MatchLength */
         {
@@ -1281,6 +1295,7 @@ FORCE_INLINE int LZ5_decompress_generic(
     const int safeDecode = (endOnInput==endOnInputSize);
     const int checkOffset = ((safeDecode) && (dictSize < (int)(LZ5_DICT_SIZE)));
 
+    U32 last_off = 1;
 
     /* Special cases */
     if ((partialDecoding) && (oexit> oend-MFLIMIT)) oexit = oend-MFLIMIT;                         /* targetOutputSize too high => decode everything */
@@ -1298,7 +1313,7 @@ FORCE_INLINE int LZ5_decompress_generic(
 
         /* get literal length */
         token = *ip++;
-        if (token>>7)
+        if (token>>6)
         {
             if ((length=(token>>ML_BITS)&RUN_MASK2) == RUN_MASK2)
             {
@@ -1362,10 +1377,19 @@ FORCE_INLINE int LZ5_decompress_generic(
         {
             offset = LZ5_readLE16(ip); ip+=2;
         }
-        else // length == 1
+        else
+        if ((token>>ML_RUN_BITS2) == 2)
         {
             offset = LZ5_readLE24(ip); ip+=3;
         }
+        else // (token>>ML_RUN_BITS2) == 3
+        {
+            offset = last_off;
+//            printf("2last_off=%d\n", offset);
+        }
+
+        last_off = offset;
+  //      printf("1last_off=%d\n", last_off);
         match = op - offset;
         if ((checkOffset) && (unlikely(match < lowLimit))) goto _output_error;   /* Error : offset outside buffers */
 

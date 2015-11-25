@@ -84,6 +84,7 @@ static const int LZ5HC_compressionLevel_default = 9;
 #define HASH_LOG3 13
 #define HASHTABLESIZE (1 << HASH_LOG)
 #define HASHTABLESIZE3 (1 << HASH_LOG3)
+#define SHORT_OFFSET_DISTANCE (1<<10)
 
 #define OPTIMAL_ML (int)((ML_MASK-1)+MINMATCH)
 
@@ -106,6 +107,7 @@ struct LZ5HC_Data_s
     U32   lowLimit;         /* below that point, no more dict */
     U32   nextToUpdate;     /* index from which to continue dictionary update */
     U32   compressionLevel;
+    U32   last_off;
 };
 
 /**************************************
@@ -137,6 +139,7 @@ static void LZ5HC_init (LZ5HC_Data_Structure* hc4, const BYTE* start)
     hc4->dictBase = start - LZ5HC_LIMIT;
     hc4->dictLimit = LZ5HC_LIMIT;
     hc4->lowLimit = LZ5HC_LIMIT;
+    hc4->last_off = 1;
 }
 
 
@@ -215,14 +218,14 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* hc4,   /* I
         matchIndex -= DELTANEXTU32(matchIndex);
     }
 
-    U32* const hashTable3 = hc4->hashTable3;
+/*    U32* const hashTable3 = hc4->hashTable3;
     size_t h = LZ5HC_hashPtr3(ip);
 
     if (!ml)
     {
         size_t offset = ip - base - hashTable3[h];
 
-        if (offset > 0 && offset < MAX_DISTANCE)
+        if (offset > 0 && offset < SHORT_OFFSET_DISTANCE)
         {
             match = ip - offset;
             if (match > base && LZ5_read24(ip) == LZ5_read24(match))
@@ -234,7 +237,7 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* hc4,   /* I
     }
     
     hashTable3[h] = ip - base;
-    
+  */  
     return (int)ml;
 }
 
@@ -326,6 +329,7 @@ static unsigned debug = 0;
 #endif
 
 FORCE_INLINE int LZ5HC_encodeSequence (
+    LZ5HC_Data_Structure* ctx,
     const BYTE** ip,
     BYTE** op,
     const BYTE** anchor,
@@ -346,16 +350,16 @@ FORCE_INLINE int LZ5HC_encodeSequence (
     token = (*op)++;
     if ((limitedOutputBuffer) && ((*op + (length>>8) + length + (2 + 1 + LASTLITERALS)) > oend)) return 1;   /* Check output limit */
 
-    if (*ip-match < (1<<10))
+    if (*ip-match >= (1<<10) && *ip-match < (1<<16) && *ip-match != ctx->last_off)
+    {
+        if (length>=(int)RUN_MASK) { int len; *token=(RUN_MASK<<ML_BITS); len = length-RUN_MASK; for(; len > 254 ; len-=255) *(*op)++ = 255;  *(*op)++ = (BYTE)len; }
+        else *token = (BYTE)(length<<ML_BITS);
+    }
+    else
     {
         if (length>=(int)RUN_MASK2) { int len; *token=(RUN_MASK2<<ML_BITS); len = length-RUN_MASK2; for(; len > 254 ; len-=255) *(*op)++ = 255;  *(*op)++ = (BYTE)len; }
         else *token = (BYTE)(length<<ML_BITS);
         
-    }
-    else
-    {
-        if (length>=(int)RUN_MASK) { int len; *token=(RUN_MASK<<ML_BITS); len = length-RUN_MASK; for(; len > 254 ; len-=255) *(*op)++ = 255;  *(*op)++ = (BYTE)len; }
-        else *token = (BYTE)(length<<ML_BITS);
     }
 
     /* Copy Literals */
@@ -363,6 +367,12 @@ FORCE_INLINE int LZ5HC_encodeSequence (
     *op += length;
 
     /* Encode Offset */
+    if (*ip-match == ctx->last_off)
+    {
+        *token+=(3<<ML_RUN_BITS2);
+//            printf("2last_off=%d *token=%d\n", last_off, *token);
+    }
+    else
 	if (*ip-match < (1<<10))
 	{
 		*token+=((4+((*ip-match)>>8))<<ML_RUN_BITS2);
@@ -375,9 +385,10 @@ FORCE_INLINE int LZ5HC_encodeSequence (
 	}
 	else
 	{
-		*token+=(1<<ML_RUN_BITS);
+		*token+=(2<<ML_RUN_BITS2);
 		LZ5_writeLE24(*op, (U32)(*ip-match)); *op+=3;
 	}
+    ctx->last_off = *ip-match;
 
     /* Encode MatchLength */
     length = (int)(matchLength-MINMATCH);
@@ -450,7 +461,7 @@ _Search2:
 
         if (ml2 == ml)  /* No better match */
         {
-            if (LZ5HC_encodeSequence(&ip, &op, &anchor, ml, ref, limit, oend)) return 0;
+            if (LZ5HC_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, limit, oend)) return 0;
             continue;
         }
 
@@ -504,9 +515,9 @@ _Search3:
             /* ip & ref are known; Now for ml */
             if (start2 < ip+ml)  ml = (int)(start2 - ip);
             /* Now, encode 2 sequences */
-            if (LZ5HC_encodeSequence(&ip, &op, &anchor, ml, ref, limit, oend)) return 0;
+            if (LZ5HC_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, limit, oend)) return 0;
             ip = start2;
-            if (LZ5HC_encodeSequence(&ip, &op, &anchor, ml2, ref2, limit, oend)) return 0;
+            if (LZ5HC_encodeSequence(ctx, &ip, &op, &anchor, ml2, ref2, limit, oend)) return 0;
             continue;
         }
 
@@ -528,7 +539,7 @@ _Search3:
                     }
                 }
 
-                if (LZ5HC_encodeSequence(&ip, &op, &anchor, ml, ref, limit, oend)) return 0;
+                if (LZ5HC_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, limit, oend)) return 0;
                 ip  = start3;
                 ref = ref3;
                 ml  = ml3;
@@ -569,7 +580,7 @@ _Search3:
                 ml = (int)(start2 - ip);
             }
         }
-        if (LZ5HC_encodeSequence(&ip, &op, &anchor, ml, ref, limit, oend)) return 0;
+        if (LZ5HC_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, limit, oend)) return 0;
 
         ip = start2;
         ref = ref2;

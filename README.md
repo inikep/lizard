@@ -10,7 +10,8 @@ LZ5 uses different output codewords and is not compatible with LZ4. LZ4 output c
 LZ5 uses 3 types of codewords from 2 to 4 bytes long:
 - 1_OO_LL_MMM OOOOOOOO - 10-bit offset, 3-bit match length, 2-bit literal length
 - 00_LLL_MMM OOOOOOOO OOOOOOOO - 16-bit offset, 3-bit match length, 3-bit literal length
-- 01_LLL_MMM OOOOOOOO OOOOOOOO OOOOOOOO - 24-bit offset, 3-bit match length, 3-bit literal length 
+- 010_LL_MMM OOOOOOOO OOOOOOOO OOOOOOOO - 24-bit offset, 3-bit match length, 2-bit literal length 
+- 011_LL_MMM - last offset, 3-bit match length, 2-bit literal length
 
 [LZ4]: https://github.com/Cyan4973/lz4
 
