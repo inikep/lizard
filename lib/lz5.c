@@ -208,9 +208,6 @@ static void LZ5_write16(void* memPtr, U16 value)
 
 #endif // LZ5_FORCE_MEMORY_ACCESS
 
-#define LZ5_read24(ptr) (uint32_t)(LZ5_read32(ptr)<<8) 
-//#define LZ5_read24(ptr) LZ5_read32(ptr)
-
 static U16 LZ5_readLE16(const void* memPtr)
 {
     if (LZ5_isLittleEndian())
@@ -295,7 +292,6 @@ static void LZ5_wildCopy(void* dstPtr, const void* srcPtr, void* dstEnd)
 *  Common Constants
 **************************************/
 #define MINMATCH 3
-#define MINMATCH4 4
 
 #define WILDCOPYLENGTH 8
 #define LASTLITERALS 5
@@ -466,9 +462,9 @@ int LZ5_sizeofState() { return LZ5_STREAMSIZE; }
 static U32 LZ5_hashSequence(U32 sequence, tableType_t const tableType)
 {
     if (tableType == byU16)
-        return (((sequence) * 2654435761U) >> ((MINMATCH4*8)-(LZ5_HASHLOG+1)));
+        return (((sequence) * 2654435761U) >> ((32)-(LZ5_HASHLOG+1)));
     else
-        return (((sequence) * 2654435761U) >> ((MINMATCH4*8)-LZ5_HASHLOG));
+        return (((sequence) * 2654435761U) >> ((32)-LZ5_HASHLOG));
 }
 
 static const U64 prime5bytes = 889523592379ULL;

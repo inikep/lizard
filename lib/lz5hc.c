@@ -33,11 +33,32 @@
 */
 
 
+/* *************************************
+*  Includes
+***************************************/
+#include "lz5hc.h"
+#include <stdio.h>
+
+
+/* *************************************
+*  Common LZ5 definition
+***************************************/
+#define LZ5_COMMONDEFS_ONLY
+#include "lz5.c"
+
 
 /* *************************************
 *  Tuning Parameter
 ***************************************/
 static const int LZ5HC_compressionLevel_default = 9;
+#define LZ5HC_DEBUG(fmt, args...) ; //printf(fmt, ##args)
+
+#if MINMATCH == 3
+    #define LZ5_read24(ptr) (uint32_t)(LZ5_read32(ptr)<<8) 
+#else
+    #define LZ5_read24(ptr) (uint32_t)(LZ5_read32(ptr)) 
+#endif
+
 
 /*!
  * HEAPMODE :
@@ -46,12 +67,6 @@ static const int LZ5HC_compressionLevel_default = 9;
  * Since workplace is rather large, heap mode is recommended.
  */
 #define LZ5HC_HEAPMODE 0
-
-
-/* *************************************
-*  Includes
-***************************************/
-#include "lz5hc.h"
 
 
 /* *************************************
@@ -67,27 +82,20 @@ static const int LZ5HC_compressionLevel_default = 9;
 
 
 /* *************************************
-*  Common LZ5 definition
-***************************************/
-#define LZ5_COMMONDEFS_ONLY
-#include "lz5.c"
-
-
-/* *************************************
 *  Local Constants
 ***************************************/
 #define DICTIONARY_LOGSIZE 22
 #define MAXD (1<<DICTIONARY_LOGSIZE)
 #define MAXD_MASK (MAXD - 1)
 
-#define HASH_LOG (DICTIONARY_LOGSIZE-1)
-#define HASH_LOG3 13
+#define HASH_LOG (DICTIONARY_LOGSIZE+1)
+#define HASH_LOG3 16
 #define HASHTABLESIZE (1 << HASH_LOG)
 #define HASHTABLESIZE3 (1 << HASH_LOG3)
 #define LZ5_SHORT_OFFSET_BITS 10
-#define LZ5_SHORT_OFFSET_DISTANCE (1<<10)
+#define LZ5_SHORT_OFFSET_DISTANCE (1<<LZ5_SHORT_OFFSET_BITS)
 
-#define OPTIMAL_ML (int)((ML_MASK-1)+MINMATCH)
+#define MAX(a,b) ((a)>(b))?(a):(b)
 
 static const int g_maxCompressionLevel = 16;
 
@@ -104,6 +112,7 @@ struct LZ5HC_Data_s
     const BYTE* base;       /* All index relative to this position */
     const BYTE* dictBase;   /* alternate base for extDict */
     BYTE* inputBuffer;      /* deprecated */
+    BYTE* outputBuffer;     /* deprecated */
     U32   dictLimit;        /* below that point, need extDict */
     U32   lowLimit;         /* below that point, no more dict */
     U32   nextToUpdate;     /* index from which to continue dictionary update */
@@ -114,68 +123,68 @@ struct LZ5HC_Data_s
 /**************************************
 *  Local Macros
 **************************************/
-#define HASH_FUNCTION(i)       (((i) * 2654435761U) >> ((MINMATCH4*8)-HASH_LOG))
-#define HASH_FUNCTION3(i)       (((i) * 506832829U) >> ((MINMATCH4*8)-HASH_LOG3))
-//#define DELTANEXTU16(p)        chainTable[(p) & MAXD_MASK]   /* flexible, MAXD dependent */
-#define DELTANEXTU16(p)        chainTable[(U16)(p)]   /* faster */
-#define DELTANEXTU32(p)        chainTable[(p) & MAXD_MASK]   /* flexible, MAXD dependent */
+#define HASH_FUNCTION(i)       (((i) * 506832829U) >> ((32)-HASH_LOG))
+//#define HASH_FUNCTION(i)       (((i) * 2654435761U) >> ((32)-HASH_LOG))
+#define HASH_FUNCTION3(i)       (((i) * 506832829U) >> ((32)-HASH_LOG3))
 
 static U32 LZ5HC_hashPtr(const void* ptr) { return HASH_FUNCTION(LZ5_read32(ptr)); }
-static U32 LZ5HC_hashPtr3(const void* ptr) { return HASH_FUNCTION3(LZ5_read32(ptr)); }
+static U32 LZ5HC_hashPtr3(const void* ptr) { return HASH_FUNCTION3(LZ5_read24(ptr)); }
 
-#define LZ5HC_LIMIT (1<<DICTIONARY_LOGSIZE)
+#define LZ5HC_LIMIT (1<<(DICTIONARY_LOGSIZE))
 
 
 /**************************************
 *  HC Compression
 **************************************/
-static void LZ5HC_init (LZ5HC_Data_Structure* hc4, const BYTE* start)
+static void LZ5HC_init (LZ5HC_Data_Structure* ctx, const BYTE* start)
 {
-    MEM_INIT((void*)hc4->hashTable, 0, sizeof(U32)*HASHTABLESIZE);
-    MEM_INIT((void*)hc4->hashTable3, 0, sizeof(U32)*HASHTABLESIZE3);
-    MEM_INIT(hc4->chainTable, 0xFF, sizeof(U32)*MAXD);
-    hc4->nextToUpdate = LZ5HC_LIMIT;
-    hc4->base = start - LZ5HC_LIMIT;
-    hc4->end = start;
-    hc4->dictBase = start - LZ5HC_LIMIT;
-    hc4->dictLimit = LZ5HC_LIMIT;
-    hc4->lowLimit = LZ5HC_LIMIT;
-    hc4->last_off = 1;
+    MEM_INIT((void*)ctx->hashTable, 0, sizeof(U32)*HASHTABLESIZE);
+    MEM_INIT((void*)ctx->hashTable3, 0, sizeof(U32)*HASHTABLESIZE3);
+    MEM_INIT(ctx->chainTable, 0xFF, sizeof(U32)*MAXD);
+    ctx->nextToUpdate = LZ5HC_LIMIT;
+    ctx->base = start - LZ5HC_LIMIT;
+    ctx->end = start;
+    ctx->dictBase = start - LZ5HC_LIMIT;
+    ctx->dictLimit = LZ5HC_LIMIT;
+    ctx->lowLimit = LZ5HC_LIMIT;
+    ctx->last_off = 1;
 }
 
 
 /* Update chains up to ip (excluded) */
-FORCE_INLINE void LZ5HC_Insert (LZ5HC_Data_Structure* hc4, const BYTE* ip)
+FORCE_INLINE void LZ5HC_Insert (LZ5HC_Data_Structure* ctx, const BYTE* ip)
 {
-    U32* chainTable = hc4->chainTable;
-    U32* HashTable  = hc4->hashTable;
-    const BYTE* const base = hc4->base;
+    U32* chainTable = ctx->chainTable;
+    U32* HashTable  = ctx->hashTable;
+#if MINMATCH == 3
+    U32* HashTable3  = ctx->hashTable3;
+#endif 
+    const BYTE* const base = ctx->base;
     const U32 target = (U32)(ip - base);
-    U32 idx = hc4->nextToUpdate;
+    U32 idx = ctx->nextToUpdate;
 
     while(idx < target)
     {
         U32 h = LZ5HC_hashPtr(base+idx);
-        size_t delta = idx - HashTable[h];
-        if (delta>MAX_DISTANCE) delta = MAX_DISTANCE;
-//        DELTANEXTU16(idx) = (U16)delta;
-        DELTANEXTU32(idx) = (U32)delta;
+        chainTable[idx & MAXD_MASK] = (U32)(idx - HashTable[h]);
         HashTable[h] = idx;
-        idx++;
+#if MINMATCH == 3
+        HashTable3[LZ5HC_hashPtr3(base+idx)] = idx;
+#endif 
+       idx++;
     }
 
-    hc4->nextToUpdate = target;
+    ctx->nextToUpdate = target;
 }
 
 
-#define LZ5_NUM_REPS 1
 #define LZ5_NORMAL_MATCH_COST(mlen,offset)	(LZ5_MATCH_COST(mlen,offset))
 #define LZ5_NORMAL_LIT_COST(len)				(len)
 
-#define LZ5_LIT_COST(len,offset)		((len)+((offset<(1 << LZ5_SHORT_OFFSET_BITS)) ? LZ5_SHORT_LITLEN_COST(len) : LZ5_LEN_COST(len)))
-#define LZ5_MATCH_COST(mlen,offset)	(LZ5_LEN_COST(mlen) + ((offset == 1) ? 1 : (offset<(1 << LZ5_SHORT_OFFSET_BITS) ? 2 : (offset<(1 << 16) ? 3 : 4))))
+#define LZ5_LIT_COST(len,offset)		((len)+((/*((offset) != 1) &&*/ ((offset)<LZ5_SHORT_OFFSET_DISTANCE)) ? LZ5_SHORT_LITLEN_COST(len) : LZ5_LEN_COST(len)))
+#define LZ5_MATCH_COST(mlen,offset)	(LZ5_LEN_COST(mlen) + (((offset) == 1) ? 1 : (offset<LZ5_SHORT_OFFSET_DISTANCE ? 2 : (offset<(1 << 16) ? 3 : 4))))
 #define LZ5_CODEWORD_COST(litlen,offset,mlen) (LZ5_MATCH_COST(mlen,offset) + LZ5_LIT_COST(litlen,offset))
-#define LZ5_LIT_ONLY_COST(len)		((len)+(LZ5_LEN_COST(len))+1)
+#define LZ5_LIT_ONLY_COST(len)		((len)+(LZ5_LEN_COST(len))+0)
 
 #define LZ5_SHORT_LITERALS			((1<<RUN_BITS2)-1)
 #define LZ5_MATCHES					((1<<ML_BITS)-1)
@@ -184,52 +193,46 @@ FORCE_INLINE void LZ5HC_Insert (LZ5HC_Data_Structure* hc4, const BYTE* ip)
 #define LZ5_LEN_COST(len)				(len<LZ5_MATCHES ? 0 : (len-LZ5_MATCHES < 255 ? 1 : (len-LZ5_MATCHES-255 < (1<<7) ? 2 : 3)))
 
     
-FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* hc4,   /* Index table will be updated */
+FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* ctx,   /* Index table will be updated */
                                                const BYTE* ip, const BYTE* const iLimit,
                                                const BYTE** matchpos,
                                                const int maxNbAttempts)
 {
-    U32* const chainTable = hc4->chainTable;
-    U32* const HashTable = hc4->hashTable;
-    const BYTE* const base = hc4->base;
-    const BYTE* const dictBase = hc4->dictBase;
-    const U32 dictLimit = hc4->dictLimit;
-    const U32 lowLimit = (hc4->lowLimit + LZ5HC_LIMIT > (U32)(ip-base)) ? hc4->lowLimit : (U32)(ip - base) - (LZ5HC_LIMIT - 1);
+    U32* const chainTable = ctx->chainTable;
+    U32* const HashTable = ctx->hashTable;
+    const BYTE* const base = ctx->base;
+    const BYTE* const dictBase = ctx->dictBase;
+    const U32 dictLimit = ctx->dictLimit;
+    const U32 lowLimit = (ctx->lowLimit + LZ5HC_LIMIT > (U32)(ip-base)) ? ctx->lowLimit : (U32)(ip - base) - (LZ5HC_LIMIT - 1);
     U32 matchIndex;
     const BYTE* match;
     int nbAttempts=maxNbAttempts;
     size_t ml=0, mlt;
 
-    match = ip - hc4->last_off;
+    /* HC4 match finder */
+    LZ5HC_Insert(ctx, ip);
+    matchIndex = HashTable[LZ5HC_hashPtr(ip)];
+
+    match = ip - ctx->last_off;
     if (LZ5_read24(match) == LZ5_read24(ip))
     {
         ml = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
         *matchpos = match;
-      //  return (int)ml;
+        return (int)ml;
     }
 
-    U32* const hashTable3 = hc4->hashTable3;
-    size_t h = LZ5HC_hashPtr3(ip);
-    size_t offset = ip - base - hashTable3[h];
-
+#if MINMATCH == 3
+    size_t offset = ip - base - ctx->hashTable3[LZ5HC_hashPtr3(ip)];
     if (offset > 0 && offset < LZ5_SHORT_OFFSET_DISTANCE)
     {
         match = ip - offset;
         if (match > base && LZ5_read24(ip) == LZ5_read24(match))
         {
-            mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
-            if (mlt > ml)
-            if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == hc4->last_off) ? 1 : (ip - match + LZ5_NUM_REPS)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == hc4->last_off) ? 1 : (ip - *matchpos + LZ5_NUM_REPS)) + (LZ5_NORMAL_LIT_COST(mlt - ml)))
-            { ml = mlt; *matchpos = match; }
+            ml = 3;//LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
+            *matchpos = match;
         }
     }
-
-    hashTable3[h] = ip - base;
-
-
-    /* HC4 match finder */
-    LZ5HC_Insert(hc4, ip);
-    matchIndex = HashTable[LZ5HC_hashPtr(ip)];
+#endif
 
     while ((matchIndex>=lowLimit) && (nbAttempts))
     {
@@ -237,19 +240,18 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* hc4,   /* I
         if (matchIndex >= dictLimit)
         {
             match = base + matchIndex;
-            if (*(match+ml) == *(ip+ml)
-                && (LZ5_read24(match) == LZ5_read24(ip)))
+            if (match < ip && *(match+ml) == *(ip+ml) && (LZ5_read32(match) == LZ5_read32(ip)))
             {
                 mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
                 if (mlt > ml)
-                if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == hc4->last_off) ? 1 : (ip - match + LZ5_NUM_REPS)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == hc4->last_off) ? 1 : (ip - *matchpos + LZ5_NUM_REPS)) + (LZ5_NORMAL_LIT_COST(mlt - ml)))
+                if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 1 : (ip - match)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == ctx->last_off) ? 1 : (ip - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - ml)))
                 { ml = mlt; *matchpos = match; }
             }
         }
         else
         {
             match = dictBase + matchIndex;
-            if (LZ5_read24(match) == LZ5_read24(ip))
+            if (LZ5_read32(match) == LZ5_read32(ip))
             {
                 const BYTE* vLimit = ip + (dictLimit - matchIndex);
                 if (vLimit > iLimit) vLimit = iLimit;
@@ -257,19 +259,32 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* hc4,   /* I
                 if ((ip+mlt == vLimit) && (vLimit < iLimit))
                     mlt += LZ5_count(ip+mlt, base+dictLimit, iLimit);
                 if (mlt > ml) 
-                if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == hc4->last_off) ? 1 : (ip - match + LZ5_NUM_REPS)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == hc4->last_off) ? 1 : (ip - *matchpos + LZ5_NUM_REPS)) + (LZ5_NORMAL_LIT_COST(mlt - ml)))
+                if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 1 : (ip - match)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == ctx->last_off) ? 1 : (ip - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - ml)))
                 { ml = mlt; *matchpos = base + matchIndex; }   /* virtual matchpos */
             }
         }
-        matchIndex -= DELTANEXTU32(matchIndex);
+        matchIndex -= chainTable[matchIndex & MAXD_MASK];
     }
 
     return (int)ml;
 }
 
+FORCE_INLINE int LZ5_MORE_PROFITABLE(uint32_t best_off, uint32_t best_common, uint32_t off, uint32_t common, int literals, uint32_t last_off)
+{
+	int sum;
+	
+	if (literals > 0)
+		sum = MAX(common + literals, best_common);
+	else
+		sum = MAX(common, best_common - literals);
+	
+//	return LZ5_CODEWORD_COST(sum - common, (off == last_off) ? 1 : (off), common - MINMATCH) <= LZ5_CODEWORD_COST(sum - best_common, (best_off == last_off) ? 1 : (best_off), best_common - MINMATCH);
+	return LZ5_NORMAL_MATCH_COST(common - MINMATCH, (off == last_off) ? 1 : (off)) + LZ5_NORMAL_LIT_COST(sum - common) <= LZ5_NORMAL_MATCH_COST(best_common - MINMATCH, (best_off == last_off) ? 1 : (best_off)) + LZ5_NORMAL_LIT_COST(sum - best_common);
+}
+
 
 FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
-    LZ5HC_Data_Structure* hc4,
+    LZ5HC_Data_Structure* ctx,
     const BYTE* const ip,
     const BYTE* const iLowLimit,
     const BYTE* const iHighLimit,
@@ -278,23 +293,23 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
     const BYTE** startpos,
     const int maxNbAttempts)
 {
-    U32* const chainTable = hc4->chainTable;
-    U32* const HashTable = hc4->hashTable;
-    const BYTE* const base = hc4->base;
-    const U32 dictLimit = hc4->dictLimit;
+    U32* const chainTable = ctx->chainTable;
+    U32* const HashTable = ctx->hashTable;
+    const BYTE* const base = ctx->base;
+    const U32 dictLimit = ctx->dictLimit;
     const BYTE* const lowPrefixPtr = base + dictLimit;
-    const U32 lowLimit = (hc4->lowLimit + LZ5HC_LIMIT > (U32)(ip-base)) ? hc4->lowLimit : (U32)(ip - base) - (LZ5HC_LIMIT - 1);
-    const BYTE* const dictBase = hc4->dictBase;
+    const U32 lowLimit = (ctx->lowLimit + LZ5HC_LIMIT > (U32)(ip-base)) ? ctx->lowLimit : (U32)(ip - base) - (LZ5HC_LIMIT - 1);
+    const BYTE* const dictBase = ctx->dictBase;
+    const BYTE* match;
     U32   matchIndex;
     int nbAttempts = maxNbAttempts;
-    int delta = (int)(ip-iLowLimit);
 
 
     /* First Match */
-    LZ5HC_Insert(hc4, ip);
+    LZ5HC_Insert(ctx, ip);
     matchIndex = HashTable[LZ5HC_hashPtr(ip)];
 
-    const BYTE* match = ip - hc4->last_off;
+    match = ip - ctx->last_off;
     if (LZ5_read24(match) == LZ5_read24(ip))
     {
         int mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iHighLimit) + MINMATCH;
@@ -304,35 +319,29 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
         mlt -= back;
 
         if (mlt > longest)
-        if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == hc4->last_off) ? 1 : (ip - match + LZ5_NUM_REPS)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip - *matchpos == hc4->last_off) ? 1 : (ip - *matchpos + LZ5_NUM_REPS)) + LZ5_NORMAL_LIT_COST(mlt - longest))
         {
             *matchpos = match+back;
             *startpos = ip+back;
             longest = (int)mlt;
-      //      return (int)mlt;
         }
     }
 
 
-
-    U32* const hashTable3 = hc4->hashTable3;
-    size_t h = LZ5HC_hashPtr3(ip);
-
-    size_t offset = ip - base - hashTable3[h];
-
+#if MINMATCH == 3
+    size_t offset = ip - base - ctx->hashTable3[LZ5HC_hashPtr3(ip)];
     if (offset > 0 && offset < LZ5_SHORT_OFFSET_DISTANCE)
     {
         match = ip - offset;
         if (match > base && LZ5_read24(ip) == LZ5_read24(match))
         {
-            int mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iHighLimit) + MINMATCH;
+            int mlt = 3;//LZ5_count(ip+MINMATCH, match+MINMATCH, iHighLimit) + MINMATCH;
 
             int back = 0;
             while ((ip+back>iLowLimit) && (match+back > lowPrefixPtr) && (ip[back-1] == match[back-1])) back--;
             mlt -= back;
 
             if (mlt > longest)
-            if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == hc4->last_off) ? 1 : (ip - match + LZ5_NUM_REPS)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip - *matchpos == hc4->last_off) ? 1 : (ip - *matchpos + LZ5_NUM_REPS)) + LZ5_NORMAL_LIT_COST(mlt - longest))
+            if (!longest || LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 1 : (ip - match)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip - *matchpos == ctx->last_off) ? 1 : (ip - *matchpos)) + LZ5_NORMAL_LIT_COST(mlt - longest))
             {
                 *matchpos = match+back;
                 *startpos = ip+back;
@@ -340,9 +349,7 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
             }
         }
     }
-
-    hashTable3[h] = ip - base;
-    
+#endif
 
     while ((matchIndex>=lowLimit) && (nbAttempts))
     {
@@ -350,8 +357,9 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
         if (matchIndex >= dictLimit)
         {
             const BYTE* matchPtr = base + matchIndex;
-            if (*(iLowLimit + longest) == *(matchPtr - delta + longest))
-                if (LZ5_read24(matchPtr) == LZ5_read24(ip))
+         //   if (*(ip + longest) == *(matchPtr + longest))
+                        
+                if (matchPtr < ip && LZ5_read32(matchPtr) == LZ5_read32(ip))
                 {
                     int mlt = MINMATCH + LZ5_count(ip+MINMATCH, matchPtr+MINMATCH, iHighLimit);
                     int back = 0;
@@ -363,8 +371,12 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
 
                     mlt -= back;
 
+//                    if ((ip - ctx->inputBuffer) >= 32867)
+//                        printf("mlt=%d back=%d off=%d longest=%d long_off=%d\n", mlt, back, (U32)(ip-matchPtr), longest, (U32)(*matchpos-*startpos));
+
+
                     if (mlt > longest)
-                    if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - matchPtr == hc4->last_off) ? 1 : (ip - matchPtr + LZ5_NUM_REPS)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip - *matchpos == hc4->last_off) ? 1 : (ip - *matchpos + LZ5_NUM_REPS)) + (LZ5_NORMAL_LIT_COST(mlt - longest)))
+                    if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - matchPtr == ctx->last_off) ? 1 : (ip - matchPtr)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip - *matchpos == ctx->last_off) ? 1 : (ip - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - longest) ))
                     {
                         longest = (int)mlt;
                         *matchpos = matchPtr+back;
@@ -375,7 +387,7 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
         else
         {
             const BYTE* matchPtr = dictBase + matchIndex;
-            if (LZ5_read24(matchPtr) == LZ5_read24(ip))
+            if (LZ5_read32(matchPtr) == LZ5_read32(ip))
             {
                 size_t mlt;
                 int back=0;
@@ -389,8 +401,7 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
                 if ((int)mlt > longest) { longest = (int)mlt; *matchpos = base + matchIndex + back; *startpos = ip+back; }
             }
         }
-//        matchIndex -= DELTANEXTU16(matchIndex);
-        matchIndex -= DELTANEXTU32(matchIndex);
+        matchIndex -= chainTable[matchIndex & MAXD_MASK];
     }
 
 
@@ -400,10 +411,13 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
 
 typedef enum { noLimit = 0, limitedOutput = 1 } limitedOutput_directive;
 
-#define LZ5HC_DEBUG 0
-#if LZ5HC_DEBUG
-static unsigned debug = 0;
-#endif
+/*
+LZ5 uses 3 types of codewords from 2 to 4 bytes long:
+- 1_OO_LL_MMM OOOOOOOO - 10-bit offset, 3-bit match length, 2-bit literal length
+- 00_LLL_MMM OOOOOOOO OOOOOOOO - 16-bit offset, 3-bit match length, 3-bit literal length
+- 010_LL_MMM OOOOOOOO OOOOOOOO OOOOOOOO - 24-bit offset, 3-bit match length, 2-bit literal length 
+- 011_LL_MMM - last offset, 3-bit match length, 2-bit literal length
+*/
 
 FORCE_INLINE int LZ5HC_encodeSequence (
     LZ5HC_Data_Structure* ctx,
@@ -417,10 +431,6 @@ FORCE_INLINE int LZ5HC_encodeSequence (
 {
     int length;
     BYTE* token;
-
-#if LZ5HC_DEBUG
-    if (debug) printf("literal : %u  --  match : %u  --  offset : %u\n", (U32)(*ip - *anchor), (U32)matchLength, (U32)(*ip-match));
-#endif
 
     /* Encode Literal length */
     length = (int)(*ip - *anchor);
@@ -473,6 +483,8 @@ FORCE_INLINE int LZ5HC_encodeSequence (
     if (length>=(int)ML_MASK) { *token+=ML_MASK; length-=ML_MASK; for(; length > 509 ; length-=510) { *(*op)++ = 255; *(*op)++ = 255; } if (length > 254) { length-=255; *(*op)++ = 255; } *(*op)++ = (BYTE)length; }
     else *token += (BYTE)(length);
 
+    LZ5HC_DEBUG("%u: ENCODE literals=%u off=%u mlen=%u out=%u\n", (U32)(*ip - ctx->inputBuffer), (U32)(*ip - *anchor), (U32)(*ip-match), (U32)matchLength, 2+(U32)(*op - ctx->outputBuffer));
+
     /* Prepare next loop */
     *ip += matchLength;
     *anchor = *ip;
@@ -492,6 +504,8 @@ static int LZ5HC_compress_generic (
     )
 {
     LZ5HC_Data_Structure* ctx = (LZ5HC_Data_Structure*) ctxvoid;
+    ctx->inputBuffer = (BYTE*) source;
+    ctx->outputBuffer = (BYTE*) dest;
     const BYTE* ip = (const BYTE*) source;
     const BYTE* anchor = ip;
     const BYTE* const iend = ip + inputSize;
@@ -510,7 +524,7 @@ static int LZ5HC_compress_generic (
     const BYTE* ref3=NULL;
     const BYTE* start0;
     const BYTE* ref0;
-
+    const BYTE* lowPrefixPtr = ctx->base + ctx->dictLimit;
 
     /* init */
     if (compressionLevel > g_maxCompressionLevel) compressionLevel = g_maxCompressionLevel;
@@ -520,37 +534,110 @@ static int LZ5HC_compress_generic (
 
     ip++;
 
+    printf("maxNbAttempts=%d\n", maxNbAttempts);
+    int swapped = 0;
+
     /* Main Loop */
     while (ip < mflimit)
     {
         ml = LZ5HC_InsertAndFindBestMatch (ctx, ip, matchlimit, (&ref), maxNbAttempts);
         if (!ml) { ip++; continue; }
 
-        if (ip-ref == ctx->last_off)  /* last offset */
-        {
-            if (LZ5HC_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, limit, oend)) return 0;
-            continue;
-        }
+        int back = 0;
+        while ((ip+back>anchor) && (ref+back > lowPrefixPtr) && (ip[back-1] == ref[back-1])) back--;
+        ml -= back;
+        ip += back;
+        ref += back;
 
         /* saved, in case we would skip too much */
         start0 = ip;
         ref0 = ref;
         ml0 = ml;
 
-_Search2:
-        if (ip+ml < mflimit)
-            ml2 = LZ5HC_InsertAndGetWiderMatch(ctx, ip + ml - 2, ip + 1, matchlimit, ml, &ref2, &start2, maxNbAttempts);
-        else ml2 = ml;
+_Search:
+        if (ip+ml >= mflimit) goto _Encode;
 
-        if (ml2 == ml)  /* No better match */
+        ml2 = LZ5HC_InsertAndGetWiderMatch(ctx, ip + ml - 2, anchor, matchlimit, 0, &ref2, &start2, maxNbAttempts);
+        if (ml2 == 0) goto _Encode;
+
+
+#if 0
+        if (start2 < ip)
         {
-            if (LZ5HC_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, limit, oend)) return 0;
-            continue;
+            start3 = start2; ref3 = ref2; ml3 = ml2;
+            start2 = ip; ref2 = ref; ml2 = ml;
+            ip = start3; ref = ref3; ml = ml3;
+            swapped = 1;
         }
+#endif
+
+        int price, best_price, off0=0, off1=0;
+        uint8_t *pos, *best_pos;
+
+    //	find the lowest price for encoding ml bytes
+        best_pos = (uint8_t*)ip;
+        best_price = 1<<30;
+        off0 = (uint8_t*)ip - ref;
+        off1 = start2 - ref2;
+
+        for (pos = (uint8_t*)ip + ml; pos >= start2; pos--)
+        {
+            int common0 = pos - ip;
+            if (common0 >= MINMATCH)
+            {
+                price = LZ5_CODEWORD_COST(ip - anchor, (off0 == ctx->last_off) ? 1 : off0, common0 - MINMATCH);
+                
+                int common1 = start2 + ml2 - pos;
+                if (common1 >= MINMATCH)
+                    price += LZ5_CODEWORD_COST(0, (off1 == off0) ? 1 : (off1), common1 - MINMATCH);
+                else
+                    price += LZ5_LIT_ONLY_COST(common1);
+
+/*                if ((U32)(ip - ctx->inputBuffer) == 73786)
+                {
+                    printf("1b common0=%d common1=%d price=%d best_price=%d\n", common0, common1, price, best_price);
+                }*/
+            }
+            else
+            {
+                price = LZ5_CODEWORD_COST(start2 - anchor, (off1 == ctx->last_off) ? 1 : off1, ml2 - MINMATCH);
+
+                if ((U32)(ip - ctx->inputBuffer) == 73786)
+                {
+                    printf("2 common0=%d price=%d best_price=%d\n", common0, price, best_price);
+                }
+            }
+
+            if (price < best_price)
+            {
+                best_price = price;
+                best_pos = pos;
+            }
+        }
+
+    //    LZ5HC_DEBUG("%u: TRY last_off=%d literals=%u off=%u mlen=%u literals2=%u off2=%u mlen2=%u best=%d\n", (U32)(ip - ctx->inputBuffer), ctx->last_off, (U32)(ip - anchor), off0, (U32)ml,  (U32)(start2 - anchor), off1, ml2, (U32)(best_pos - ip));
+        
+        ml = best_pos - ip;
+        if (ml < MINMATCH)
+        {
+            ip = start2;
+            ref = ref2;
+            ml = ml2;
+          //  LZ5HC_DEBUG("%u: (ml < MINMATCH : %u  --  match : %u  --  offset : %u\n", (U32)(ip - ctx->inputBuffer), (U32)(ip - anchor), (U32)ml, (U32)(ip-ref));
+            if (swapped)
+            {
+                swapped = 0;
+                goto _Encode;
+            }
+            goto _Search;
+        }
+        
+_Encode:
 
         if (start0 < ip)
         {
-            if (start2 < ip + ml0)   /* empirical */
+         //   LZ5HC_DEBUG("%u: 1literal : %u  --  match : %u  --  offset : %u\n", (U32)(ip - ctx->inputBuffer), (U32)(ip - anchor), (U32)ml, (U32)(ip-ref));
+            if (LZ5_MORE_PROFITABLE(ip - ref, ml, start0 - ref0, ml0, ref0 - ref, ctx->last_off))
             {
                 ip = start0;
                 ref = ref0;
@@ -558,122 +645,7 @@ _Search2:
             }
         }
 
-        /* Here, start0==ip */
-        if ((start2 - ip) < 3)   /* First Match too small : removed */
-        {
-            ml = ml2;
-            ip = start2;
-            ref =ref2;
-            goto _Search2;
-        }
-
-_Search3:
-        /*
-        * Currently we have :
-        * ml2 > ml1, and
-        * ip1+3 <= ip2 (usually < ip1+ml1)
-        */
-        if ((start2 - ip) < OPTIMAL_ML)
-        {
-            int correction;
-            int new_ml = ml;
-            if (new_ml > OPTIMAL_ML) new_ml = OPTIMAL_ML;
-            if (ip+new_ml > start2 + ml2 - MINMATCH) new_ml = (int)(start2 - ip) + ml2 - MINMATCH;
-            correction = new_ml - (int)(start2 - ip);
-            if (correction > 0)
-            {
-                start2 += correction;
-                ref2 += correction;
-                ml2 -= correction;
-            }
-        }
-        /* Now, we have start2 = ip+new_ml, with new_ml = min(ml, OPTIMAL_ML=18) */
-
-        if (start2 + ml2 < mflimit)
-            ml3 = LZ5HC_InsertAndGetWiderMatch(ctx, start2 + ml2 - 3, start2, matchlimit, ml2, &ref3, &start3, maxNbAttempts);
-        else ml3 = ml2;
-
-        if (ml3 == ml2) /* No better match : 2 sequences to encode */
-        {
-            /* ip & ref are known; Now for ml */
-            if (start2 < ip+ml)  ml = (int)(start2 - ip);
-            /* Now, encode 2 sequences */
-            if (LZ5HC_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, limit, oend)) return 0;
-            ip = start2;
-            if (LZ5HC_encodeSequence(ctx, &ip, &op, &anchor, ml2, ref2, limit, oend)) return 0;
-            continue;
-        }
-
-        if (start3 < ip+ml+3) /* Not enough space for match 2 : remove it */
-        {
-            if (start3 >= (ip+ml)) /* can write Seq1 immediately ==> Seq2 is removed, so Seq3 becomes Seq1 */
-            {
-                if (start2 < ip+ml)
-                {
-                    int correction = (int)(ip+ml - start2);
-                    start2 += correction;
-                    ref2 += correction;
-                    ml2 -= correction;
-                    if (ml2 < MINMATCH)
-                    {
-                        start2 = start3;
-                        ref2 = ref3;
-                        ml2 = ml3;
-                    }
-                }
-
-                if (LZ5HC_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, limit, oend)) return 0;
-                ip  = start3;
-                ref = ref3;
-                ml  = ml3;
-
-                start0 = start2;
-                ref0 = ref2;
-                ml0 = ml2;
-                goto _Search2;
-            }
-
-            start2 = start3;
-            ref2 = ref3;
-            ml2 = ml3;
-            goto _Search3;
-        }
-
-        /*
-        * OK, now we have 3 ascending matches; let's write at least the first one
-        * ip & ref are known; Now for ml
-        */
-        if (start2 < ip+ml)
-        {
-            if ((start2 - ip) < (int)ML_MASK)
-            {
-                int correction;
-                if (ml > OPTIMAL_ML) ml = OPTIMAL_ML;
-                if (ip + ml > start2 + ml2 - MINMATCH) ml = (int)(start2 - ip) + ml2 - MINMATCH;
-                correction = ml - (int)(start2 - ip);
-                if (correction > 0)
-                {
-                    start2 += correction;
-                    ref2 += correction;
-                    ml2 -= correction;
-                }
-            }
-            else
-            {
-                ml = (int)(start2 - ip);
-            }
-        }
         if (LZ5HC_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, limit, oend)) return 0;
-
-        ip = start2;
-        ref = ref2;
-        ml = ml2;
-
-        start2 = start3;
-        ref2 = ref3;
-        ml2 = ml3;
-
-        goto _Search3;
     }
 
     /* Encode Last Literals */
@@ -689,6 +661,7 @@ _Search3:
     /* End */
     return (int) (((char*)op)-dest);
 }
+
 
 
 int LZ5_sizeofStateHC(void) { return sizeof(LZ5HC_Data_Structure); }
