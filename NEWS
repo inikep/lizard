@@ -1,3 +1,8 @@
+r132
+- added: a new parser
+- added: a gain function
+- added: a special codeword for the last occured offset
+- added: support for 3-byte long matches
+
 r131
 The first release based on LZ4 r132 dev
-
