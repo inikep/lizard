@@ -336,14 +336,14 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
         match = ip - offset;
         if (match > base && LZ5_read24(ip) == LZ5_read24(match))
         {
-            int mlt = 3;//LZ5_count(ip+MINMATCH, match+MINMATCH, iHighLimit) + MINMATCH;
+            int mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iHighLimit) + MINMATCH;
 
             int back = 0;
             while ((ip+back>iLowLimit) && (match+back > lowPrefixPtr) && (ip[back-1] == match[back-1])) back--;
             mlt -= back;
 
             if (mlt > longest)
-            if (!longest || LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 0 : (ip - match)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip - *matchpos == ctx->last_off) ? 0 : (ip - *matchpos)) + LZ5_NORMAL_LIT_COST(mlt - longest))
+            if (!longest || LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 0 : (ip - match)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip+back - *matchpos == ctx->last_off) ? 0 : (ip+back - *matchpos)) + LZ5_NORMAL_LIT_COST(mlt - longest))
             {
                 *matchpos = match+back;
                 *startpos = ip+back;
@@ -374,7 +374,7 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
                     mlt -= back;
 
                     if (mlt > longest)
-                    if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - matchPtr == ctx->last_off) ? 0 : (ip - matchPtr)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip - *matchpos == ctx->last_off) ? 0 : (ip - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - longest) ))
+                    if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - matchPtr == ctx->last_off) ? 0 : (ip - matchPtr)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip+back - *matchpos == ctx->last_off) ? 0 : (ip+back - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - longest) ))
                     {
                         longest = (int)mlt;
                         *matchpos = matchPtr+back;
