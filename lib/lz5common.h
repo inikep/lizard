@@ -198,7 +198,7 @@ FORCE_INLINE int LZ5HC_more_profitable(uint32_t best_off, uint32_t best_common, 
 *  HC Types
 ***************************************/
 /** from faster to stronger */
-typedef enum { LZ5HC_lowest_fast, LZ5HC_lowest_price } LZ5HC_strategy;
+typedef enum { LZ5HC_fast, LZ5HC_price_fast, LZ5HC_lowest_price } LZ5HC_strategy;
 
 typedef struct
 {
@@ -234,7 +234,7 @@ struct LZ5HC_Data_s
 /* *************************************
 *  HC Pre-defined compression levels
 ***************************************/
-#define LZ5HC_MAX_CLEVEL 9
+#define LZ5HC_MAX_CLEVEL 12
 
 static const int g_maxCompressionLevel = LZ5HC_MAX_CLEVEL;
 static const int LZ5HC_compressionLevel_default = 5;
@@ -242,17 +242,30 @@ static const int LZ5HC_compressionLevel_default = 5;
 static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL+1] =
 {
     /* W,  C,  H, H3,  S,  L, strat */
-    {  0,  0,  0,  0,  0,  0,  0                 },  /* level 0 - never used */
-    { 22, 22, 13, 13,  1,  4, LZ5HC_lowest_price },  /* level 1 */
-    { 22, 22, 15, 13,  1,  4, LZ5HC_lowest_price },  /* level 2 */
-    { 22, 22, 17, 13,  1,  4, LZ5HC_lowest_price },  /* level 3 */
-    { 22, 22, 13, 13,  1,  4, LZ5HC_lowest_fast  },  /* level 4 */
-    { 22, 22, 17, 13,  1,  4, LZ5HC_lowest_fast  },  /* level 5 */
-    { 22, 22, 19, 16,  1,  4, LZ5HC_lowest_price },  /* level 6 */
-    { 22, 22, 23, 16,  3,  4, LZ5HC_lowest_price },  /* level 7 */
-    { 22, 22, 23, 16,  8,  4, LZ5HC_lowest_price },  /* level 8 */
-    { 22, 22, 23, 16, 32,  4, LZ5HC_lowest_price },  /* level 9 */
+    {  0,  0,  0,  0,  0,  0, LZ5HC_fast         },  // level 0 - never used
+    { 22, 22, 13,  0,  4,  6, LZ5HC_fast         },  // level 1
+ //   { 22, 22, 14,  0,  4,  6, LZ5HC_fast         },  // level 2
+    { 22, 22, 13,  0,  2,  6, LZ5HC_fast         },  // level 3
+ //   { 22, 22, 14,  0,  2,  6, LZ5HC_fast         },  // level 4
+ //   { 22, 22, 13,  0,  2,  5, LZ5HC_fast         },  // level 5
+ //   { 22, 22, 14,  0,  2,  5, LZ5HC_fast         },  // level 6
+    { 22, 22, 13,  0,  1,  5, LZ5HC_fast         },  // level 7
+ //   { 22, 22, 14,  0,  1,  5, LZ5HC_fast         },  // level 8
+ //   { 22, 22, 15,  0,  1,  5, LZ5HC_fast         },  // level 9
+ //   { 22, 22, 17,  0,  1,  5, LZ5HC_fast         },  // level 10
+ //   { 22, 22, 14, 13,  4,  6, LZ5HC_price_fast   },  // level 12
+ //   { 22, 22, 14, 13,  2,  5, LZ5HC_price_fast   },  // level 13
+    { 22, 22, 14, 13,  1,  4, LZ5HC_price_fast   },  // level 14
+    { 22, 22, 17, 13,  1,  4, LZ5HC_price_fast   },  // level 15
+    { 22, 22, 15, 13,  1,  4, LZ5HC_lowest_price },  // level 16
+    { 22, 22, 17, 13,  1,  4, LZ5HC_lowest_price },  // level 17
+    { 22, 22, 19, 16,  1,  4, LZ5HC_lowest_price },  // level 18
+    { 22, 22, 23, 16,  3,  4, LZ5HC_lowest_price },  // level 19
+    { 22, 22, 23, 16,  8,  4, LZ5HC_lowest_price },  // level 20
+    { 22, 22, 23, 16, 32,  4, LZ5HC_lowest_price },  // level 21
+    { 22, 22, 23, 16, 128, 4, LZ5HC_lowest_price },  // level 22 
 };
+
 
 #if defined (__cplusplus)
 }
