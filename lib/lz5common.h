@@ -1,3 +1,10 @@
+#ifndef LZ5COMMON_H
+#define LZ5COMMON_H
+
+#if defined (__cplusplus)
+extern "C" {
+#endif
+
 
 /**************************************
 *  Tuning parameters
@@ -8,6 +15,8 @@
  * in memory stack (0:default, fastest), or in memory heap (1:requires malloc()).
  */
 #define HEAPMODE 0
+#define LZ5HC_HEAPMODE 0
+
 
 /*
  * ACCELERATION_DEFAULT :
@@ -16,10 +25,6 @@
 #define ACCELERATION_DEFAULT 1
 
 
-/**************************************
-*  Includes
-**************************************/
-#include "lz5.h"
 
 
 /**************************************
@@ -103,8 +108,85 @@ static const int LZ5_minLength = (MFLIMIT+1);
 
 
 
+
+
 /* *************************************
-*  Types
+*  HC Constants
+***************************************/
+#define DICTIONARY_LOGSIZE 22
+#define MAXD (1<<DICTIONARY_LOGSIZE)
+#define MAXD_MASK (MAXD - 1)
+
+#define LZ5_SHORT_LITERALS          ((1<<RUN_BITS2)-1)
+#define LZ5_LITERALS                ((1<<RUN_BITS)-1)
+
+#define LZ5HC_LIMIT (1<<(DICTIONARY_LOGSIZE))
+
+
+
+/* *************************************
+*  HC Inline functions and Macros
+***************************************/
+#if MINMATCH == 3
+    #define MEM_read24(ptr) (uint32_t)(MEM_read32(ptr)<<8) 
+#else
+    #define MEM_read24(ptr) (uint32_t)(MEM_read32(ptr)) 
+#endif
+
+static const U32 prime3bytes = 506832829U;
+static U32 LZ5HC_hash3(U32 u, U32 h) { return (u * prime3bytes) << (32-24) >> (32-h) ; }
+static size_t LZ5HC_hash3Ptr(const void* ptr, U32 h) { return LZ5HC_hash3(MEM_read32(ptr), h); }
+    
+static const U32 prime4bytes = 2654435761U;
+static U32 LZ5HC_hash4(U32 u, U32 h) { return (u * prime4bytes) >> (32-h) ; }
+static size_t LZ5HC_hash4Ptr(const void* ptr, U32 h) { return LZ5HC_hash4(MEM_read32(ptr), h); }
+
+static const U64 prime5bytes = 889523592379ULL;
+static size_t LZ5HC_hash5(U64 u, U32 h) { return (size_t)((u * prime5bytes) << (64-40) >> (64-h)) ; }
+static size_t LZ5HC_hash5Ptr(const void* p, U32 h) { return LZ5HC_hash5(MEM_read64(p), h); }
+
+static const U64 prime6bytes = 227718039650203ULL;
+static size_t LZ5HC_hash6(U64 u, U32 h) { return (size_t)((u * prime6bytes) << (64-48) >> (64-h)) ; }
+static size_t LZ5HC_hash6Ptr(const void* p, U32 h) { return LZ5HC_hash6(MEM_read64(p), h); }
+
+static const U64 prime7bytes =    58295818150454627ULL;
+static size_t LZ5HC_hash7(U64 u, U32 h) { return (size_t)((u * prime7bytes) << (64-56) >> (64-h)) ; }
+static size_t LZ5HC_hash7Ptr(const void* p, U32 h) { return LZ5HC_hash7(MEM_read64(p), h); }
+
+static size_t LZ5HC_hashPtr(const void* p, U32 hBits, U32 mls)
+{
+    switch(mls)
+    {
+    default:
+    case 4: return LZ5HC_hash4Ptr(p, hBits);
+    case 5: return LZ5HC_hash5Ptr(p, hBits);
+    case 6: return LZ5HC_hash6Ptr(p, hBits);
+    case 7: return LZ5HC_hash7Ptr(p, hBits);
+    }
+}
+
+
+/**************************************
+*  HC Local Macros
+**************************************/
+#define LZ5HC_DEBUG(fmt, args...) ; //printf(fmt, ##args)
+#define MAX(a,b) ((a)>(b))?(a):(b)
+
+#define LZ5_SHORT_LITLEN_COST(len)  (len<LZ5_SHORT_LITERALS ? 0 : (len-LZ5_SHORT_LITERALS < 255 ? 1 : (len-LZ5_SHORT_LITERALS-255 < (1<<7) ? 2 : 3)))
+#define LZ5_LEN_COST(len)           (len<LZ5_LITERALS ? 0 : (len-LZ5_LITERALS < 255 ? 1 : (len-LZ5_LITERALS-255 < (1<<7) ? 2 : 3)))
+
+#define LZ5_LIT_COST(len,offset)                ((len)+((((offset) > LZ5_MID_OFFSET_DISTANCE) || ((offset)<LZ5_SHORT_OFFSET_DISTANCE)) ? LZ5_SHORT_LITLEN_COST(len) : LZ5_LEN_COST(len)))
+#define LZ5_MATCH_COST(mlen,offset)             (LZ5_LEN_COST(mlen) + (((offset) == 0) ? 1 : ((offset)<LZ5_SHORT_OFFSET_DISTANCE ? 2 : ((offset)<(1 << 16) ? 3 : 4))))
+#define LZ5_CODEWORD_COST(litlen,offset,mlen)   (LZ5_MATCH_COST(mlen,offset) + LZ5_LIT_COST(litlen,offset))
+#define LZ5_LIT_ONLY_COST(len)                  ((len)+(LZ5_LEN_COST(len)))
+
+#define LZ5_NORMAL_MATCH_COST(mlen,offset)  (LZ5_MATCH_COST(mlen,offset))
+#define LZ5_NORMAL_LIT_COST(len)            (len)
+
+
+
+/* *************************************
+*  HC Types
 ***************************************/
 /** from faster to stronger */
 typedef enum { LZ5HC_fast, LZ5HC_greedy, LZ5HC_lazy, LZ5HC_lazy2, LZ5HC_lazymax, LZ5HC_btlazy2 } LZ5HC_strategy;
@@ -120,16 +202,46 @@ typedef struct
     LZ5HC_strategy strategy;
 } LZ5HC_parameters;
 
+
+struct LZ5HC_Data_s
+{
+    U32*   hashTable;
+    U32*   hashTable3;
+    U32*   chainTable;
+    const BYTE* end;        /* next block here to continue on current prefix */
+    const BYTE* base;       /* All index relative to this position */
+    const BYTE* dictBase;   /* alternate base for extDict */
+    BYTE* inputBuffer;      /* deprecated */
+    BYTE* outputBuffer;     /* deprecated */
+    U32   dictLimit;        /* below that point, need extDict */
+    U32   lowLimit;         /* below that point, no more dict */
+    U32   nextToUpdate;     /* index from which to continue dictionary update */
+    U32   compressionLevel;
+    U32   last_off;
+    LZ5HC_parameters params;
+};
+
+
 /* *************************************
-*  Pre-defined compression levels
+*  HC Pre-defined compression levels
 ***************************************/
+static const int g_maxCompressionLevel = 12;
+static const int LZ5HC_compressionLevel_default = 9;
+
 #define LZ5HC_MAX_CLEVEL 4
 static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL] =
 {
-    /* W,  C,  H, H3, S,  L, strat */
-    { 17, 12, 12, 13,  1,  4, LZ5HC_fast    },  /* level  0 - never used */
-    { 17, 12, 13, 13,  1,  6, LZ5HC_fast    },  /* level  1 */
-    { 17, 15, 16, 13,  1,  5, LZ5HC_fast    },  /* level  2 */
-    { 17, 16, 17, 16,  1,  5, LZ5HC_fast    }   /* level  3 */
+    /* W,  C,  H, H3,  S,  L, strat */
+    {  0,  0,  0,  0,  0,  0, LZ5HC_fast    },  /* level  0 - never used */
+    {  0,  0, 23, 16,  1,  4, LZ5HC_fast    },  /* level  1 */
+    { 17, 15, 16, 13,  1,  4, LZ5HC_fast    },  /* level  2 */
+    { 17, 16, 17, 16,  1,  4, LZ5HC_fast    }   /* level  3 */
 };
 
+
+
+#if defined (__cplusplus)
+}
+#endif
+
+#endif /* LZ5COMMON_H */

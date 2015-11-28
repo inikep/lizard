@@ -413,7 +413,7 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
             if (cctxPtr->prefs.compressionLevel < minHClevel)
                 cctxPtr->lz5CtxPtr = (void*)LZ5_createStream();
             else
-                cctxPtr->lz5CtxPtr = (void*)LZ5_createStreamHC();
+                cctxPtr->lz5CtxPtr = (void*)LZ5_createStreamHC(cctxPtr->prefs.compressionLevel);
             cctxPtr->lz5CtxLevel = tableID;
         }
     }
@@ -439,7 +439,7 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
     if (cctxPtr->prefs.compressionLevel < minHClevel)
         LZ5_resetStream((LZ5_stream_t*)(cctxPtr->lz5CtxPtr));
     else
-        LZ5_resetStreamHC((LZ5_streamHC_t*)(cctxPtr->lz5CtxPtr), cctxPtr->prefs.compressionLevel);
+        LZ5_resetStreamHC((LZ5_streamHC_t*)(cctxPtr->lz5CtxPtr));
 
     /* Magic Number */
     LZ5F_writeLE32(dstPtr, LZ5F_MAGICNUMBER);

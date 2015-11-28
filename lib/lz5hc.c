@@ -37,143 +37,20 @@
 
 
 /* *************************************
-*  Tuning Parameter
-***************************************/
-static const int LZ5HC_compressionLevel_default = 9;
-
-/*!
- * HEAPMODE :
- * Select how default compression function will allocate workplace memory,
- * in stack (0:fastest), or in heap (1:requires malloc()).
- * Since workplace is rather large, heap mode is recommended.
- */
-#define LZ5HC_HEAPMODE 0
-
-
-/* *************************************
 *  Includes
 ***************************************/
 #include "lz5hc.h"
-#include <stdio.h>
-
-
-
-/* *************************************
-*  Common LZ5 definition
-***************************************/
 #include "mem.h"
 #include "lz5common.h"
-
-
-/* *************************************
-*  Local Constants
-***************************************/
-#define DICTIONARY_LOGSIZE 22
-#define MAXD (1<<DICTIONARY_LOGSIZE)
-#define MAXD_MASK (MAXD - 1)
-
-#define HASH_LOG (DICTIONARY_LOGSIZE+1)
-#define HASH_LOG3 16
-#define HASHTABLESIZE (1 << HASH_LOG)
-#define HASHTABLESIZE3 (1 << HASH_LOG3)
-
-#define LZ5_SHORT_LITERALS          ((1<<RUN_BITS2)-1)
-#define LZ5_LITERALS                ((1<<RUN_BITS)-1)
-
-#define LZ5HC_LIMIT (1<<(DICTIONARY_LOGSIZE))
-
-static const int g_maxCompressionLevel = 12;
-
-
-
-/**************************************
-*  Local Types
-**************************************/
-struct LZ5HC_Data_s
-{
-    U32*   hashTable;
-    U32*   hashTable3;
-    U32*   chainTable;
-    const BYTE* end;        /* next block here to continue on current prefix */
-    const BYTE* base;       /* All index relative to this position */
-    const BYTE* dictBase;   /* alternate base for extDict */
-    BYTE* inputBuffer;      /* deprecated */
-    BYTE* outputBuffer;     /* deprecated */
-    U32   dictLimit;        /* below that point, need extDict */
-    U32   lowLimit;         /* below that point, no more dict */
-    U32   nextToUpdate;     /* index from which to continue dictionary update */
-    U32   compressionLevel;
-    U32   last_off;
-    LZ5HC_parameters params;
-};
-
-
-/* *************************************
-*  Inline functions and Macros
-***************************************/
-#if MINMATCH == 3
-    #define MEM_read24(ptr) (uint32_t)(MEM_read32(ptr)<<8) 
-#else
-    #define MEM_read24(ptr) (uint32_t)(MEM_read32(ptr)) 
-#endif
-
-static const U32 prime3bytes = 506832829U;
-static U32 LZ5HC_hash3(U32 u, U32 h) { return (u * prime3bytes) << (32-24) >> (32-h) ; }
-static size_t LZ5HC_hash3Ptr(const void* ptr, U32 h) { return LZ5HC_hash3(MEM_read32(ptr), h); }
-    
-static const U32 prime4bytes = 2654435761U;
-static U32 LZ5HC_hash4(U32 u, U32 h) { return (u * prime4bytes) >> (32-h) ; }
-static size_t LZ5HC_hash4Ptr(const void* ptr, U32 h) { return LZ5HC_hash4(MEM_read32(ptr), h); }
-
-static const U64 prime5bytes = 889523592379ULL;
-static size_t LZ5HC_hash5(U64 u, U32 h) { return (size_t)((u * prime5bytes) << (64-40) >> (64-h)) ; }
-static size_t LZ5HC_hash5Ptr(const void* p, U32 h) { return LZ5HC_hash5(MEM_read64(p), h); }
-
-static const U64 prime6bytes = 227718039650203ULL;
-static size_t LZ5HC_hash6(U64 u, U32 h) { return (size_t)((u * prime6bytes) << (64-48) >> (64-h)) ; }
-static size_t LZ5HC_hash6Ptr(const void* p, U32 h) { return LZ5HC_hash6(MEM_read64(p), h); }
-
-static const U64 prime7bytes =    58295818150454627ULL;
-static size_t LZ5HC_hash7(U64 u, U32 h) { return (size_t)((u * prime7bytes) << (64-56) >> (64-h)) ; }
-static size_t LZ5HC_hash7Ptr(const void* p, U32 h) { return LZ5HC_hash7(MEM_read64(p), h); }
-
-static size_t LZ5HC_hashPtr(const void* p, U32 hBits, U32 mls)
-{
-    switch(mls)
-    {
-    default:
-    case 4: return LZ5HC_hash4Ptr(p, hBits);
-    case 5: return LZ5HC_hash5Ptr(p, hBits);
-    case 6: return LZ5HC_hash6Ptr(p, hBits);
-    case 7: return LZ5HC_hash7Ptr(p, hBits);
-    }
-}
-
-
-/**************************************
-*  Local Macros
-**************************************/
-#define LZ5HC_DEBUG(fmt, args...) ; //printf(fmt, ##args)
-#define MAX(a,b) ((a)>(b))?(a):(b)
-
-#define LZ5_SHORT_LITLEN_COST(len)  (len<LZ5_SHORT_LITERALS ? 0 : (len-LZ5_SHORT_LITERALS < 255 ? 1 : (len-LZ5_SHORT_LITERALS-255 < (1<<7) ? 2 : 3)))
-#define LZ5_LEN_COST(len)           (len<LZ5_LITERALS ? 0 : (len-LZ5_LITERALS < 255 ? 1 : (len-LZ5_LITERALS-255 < (1<<7) ? 2 : 3)))
-
-#define LZ5_LIT_COST(len,offset)                ((len)+((((offset) > LZ5_MID_OFFSET_DISTANCE) || ((offset)<LZ5_SHORT_OFFSET_DISTANCE)) ? LZ5_SHORT_LITLEN_COST(len) : LZ5_LEN_COST(len)))
-#define LZ5_MATCH_COST(mlen,offset)             (LZ5_LEN_COST(mlen) + (((offset) == 0) ? 1 : ((offset)<LZ5_SHORT_OFFSET_DISTANCE ? 2 : ((offset)<(1 << 16) ? 3 : 4))))
-#define LZ5_CODEWORD_COST(litlen,offset,mlen)   (LZ5_MATCH_COST(mlen,offset) + LZ5_LIT_COST(litlen,offset))
-#define LZ5_LIT_ONLY_COST(len)                  ((len)+(LZ5_LEN_COST(len)))
-
-#define LZ5_NORMAL_MATCH_COST(mlen,offset)  (LZ5_MATCH_COST(mlen,offset))
-#define LZ5_NORMAL_LIT_COST(len)            (len)
-
+#include "lz5.h"
+#include <stdio.h>
 
 
 /**************************************
 *  HC Compression
 **************************************/
 
-FORCE_INLINE int LZ5_MORE_PROFITABLE(uint32_t best_off, uint32_t best_common, uint32_t off, uint32_t common, int literals, uint32_t last_off)
+FORCE_INLINE int LZ5HC_more_profitable(uint32_t best_off, uint32_t best_common, uint32_t off, uint32_t common, int literals, uint32_t last_off)
 {
 	int sum;
 	
@@ -187,11 +64,40 @@ FORCE_INLINE int LZ5_MORE_PROFITABLE(uint32_t best_off, uint32_t best_common, ui
 }
 
 
+int LZ5_alloc_mem_HC(LZ5HC_Data_Structure* ctx, int compressionLevel)
+{
+    ctx->compressionLevel = compressionLevel;
+    ctx->params = LZ5HC_defaultParameters[1];
+
+    ctx->hashTable = ALLOCATOR(1, sizeof(U32)*((1 << ctx->params.hashLog3)+(1 << ctx->params.hashLog)));
+    if (!ctx->hashTable)
+        return 0;
+
+    ctx->hashTable3 = ctx->hashTable + (1 << ctx->params.hashLog);
+
+    ctx->chainTable = ALLOCATOR(1, sizeof(U32)*MAXD);
+    if (!ctx->chainTable)
+    {
+        FREEMEM(ctx->hashTable);
+        ctx->hashTable = NULL;
+        return 0;
+    }
+    
+    return 1;
+}
+
+void LZ5_free_mem_HC(LZ5HC_Data_Structure* statePtr)
+{
+    if (statePtr->chainTable) FREEMEM(statePtr->chainTable);
+    if (statePtr->hashTable) FREEMEM(statePtr->hashTable);    
+}
+
+
 static void LZ5HC_init (LZ5HC_Data_Structure* ctx, const BYTE* start)
 {
-    MEM_INIT((void*)ctx->hashTable, 0, sizeof(U32)*HASHTABLESIZE);
-    MEM_INIT((void*)ctx->hashTable3, 0, sizeof(U32)*HASHTABLESIZE3);
+    MEM_INIT((void*)ctx->hashTable, 0, sizeof(U32)*((1 << ctx->params.hashLog) + (1 << ctx->params.hashLog3)));
     MEM_INIT(ctx->chainTable, 0xFF, sizeof(U32)*MAXD);
+
     ctx->nextToUpdate = LZ5HC_LIMIT;
     ctx->base = start - LZ5HC_LIMIT;
     ctx->end = start;
@@ -520,12 +426,10 @@ static int LZ5HC_compress_generic (
     char* dest,
     int inputSize,
     int maxOutputSize,
-    int compressionLevel,
     limitedOutput_directive limit
     )
 {
     LZ5HC_Data_Structure* ctx = (LZ5HC_Data_Structure*) ctxvoid;
-    ctx->params = LZ5HC_defaultParameters[compressionLevel];
     ctx->inputBuffer = (BYTE*) source;
     ctx->outputBuffer = (BYTE*) dest;
     const BYTE* ip = (const BYTE*) source;
@@ -547,6 +451,7 @@ static int LZ5HC_compress_generic (
     const BYTE* lowPrefixPtr = ctx->base + ctx->dictLimit;
 
     /* init */
+    int compressionLevel = ctx->compressionLevel;
     if (compressionLevel > g_maxCompressionLevel) compressionLevel = g_maxCompressionLevel;
     if (compressionLevel < 1) compressionLevel = LZ5HC_compressionLevel_default;
     maxNbAttempts = 1 << (compressionLevel-1);
@@ -635,7 +540,7 @@ _Encode:
 
         if (start0 < ip)
         {
-            if (LZ5_MORE_PROFITABLE(ip - ref, ml, start0 - ref0, ml0, ref0 - ref, ctx->last_off))
+            if (LZ5HC_more_profitable(ip - ref, ml, start0 - ref0, ml0, ref0 - ref, ctx->last_off))
             {
                 ip = start0;
                 ref = ref0;
@@ -664,40 +569,16 @@ _Encode:
 
 int LZ5_sizeofStateHC(void) { return sizeof(LZ5HC_Data_Structure); }
 
-int LZ5_compress_HC_extStateHC (void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel)
+int LZ5_compress_HC_extStateHC (void* state, const char* src, char* dst, int srcSize, int maxDstSize)
 {
     if (((size_t)(state)&(sizeof(void*)-1)) != 0) return 0;   /* Error : state is not aligned for pointers (32 or 64 bits) */
     LZ5HC_init ((LZ5HC_Data_Structure*)state, (const BYTE*)src);
     if (maxDstSize < LZ5_compressBound(srcSize))
-        return LZ5HC_compress_generic (state, src, dst, srcSize, maxDstSize, compressionLevel, limitedOutput);
+        return LZ5HC_compress_generic (state, src, dst, srcSize, maxDstSize, limitedOutput);
     else
-        return LZ5HC_compress_generic (state, src, dst, srcSize, maxDstSize, compressionLevel, noLimit);
+        return LZ5HC_compress_generic (state, src, dst, srcSize, maxDstSize, noLimit);
 }
 
-int LZ5_alloc_mem_HC(LZ5HC_Data_Structure* statePtr)
-{
-    statePtr->hashTable = ALLOCATOR(1, sizeof(U32)*(HASHTABLESIZE3+HASHTABLESIZE));
-    if (!statePtr->hashTable)
-        return 0;
-
-    statePtr->hashTable3 = statePtr->hashTable + HASHTABLESIZE;
-
-    statePtr->chainTable = ALLOCATOR(1, sizeof(U32)*MAXD);
-    if (!statePtr->chainTable)
-    {
-        FREEMEM(statePtr->hashTable);
-        statePtr->hashTable = NULL;
-        return 0;
-    }
-    
-    return 1;
-}
-
-void LZ5_free_mem_HC(LZ5HC_Data_Structure* statePtr)
-{
-    if (statePtr->chainTable) FREEMEM(statePtr->chainTable);
-    if (statePtr->hashTable) FREEMEM(statePtr->hashTable);    
-}
 
 int LZ5_compress_HC(const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel)
 {
@@ -710,10 +591,10 @@ int LZ5_compress_HC(const char* src, char* dst, int srcSize, int maxDstSize, int
 
     int cSize = 0;
     
-    if (!LZ5_alloc_mem_HC(statePtr))
+    if (!LZ5_alloc_mem_HC(statePtr, compressionLevel))
         return 0;
         
-    cSize = LZ5_compress_HC_extStateHC(statePtr, src, dst, srcSize, maxDstSize, compressionLevel);
+    cSize = LZ5_compress_HC_extStateHC(statePtr, src, dst, srcSize, maxDstSize);
 
     LZ5_free_mem_HC(statePtr);
 
@@ -729,13 +610,13 @@ int LZ5_compress_HC(const char* src, char* dst, int srcSize, int maxDstSize, int
 *  Streaming Functions
 **************************************/
 /* allocation */
-LZ5_streamHC_t* LZ5_createStreamHC(void) 
+LZ5_streamHC_t* LZ5_createStreamHC(int compressionLevel) 
 { 
     LZ5HC_Data_Structure* statePtr = (LZ5HC_Data_Structure*)malloc(sizeof(LZ5_streamHC_t));
     if (!statePtr)
         return NULL;
 
-    if (!LZ5_alloc_mem_HC(statePtr))
+    if (!LZ5_alloc_mem_HC(statePtr, compressionLevel))
     {
         FREEMEM(statePtr);
         return NULL;
@@ -754,11 +635,10 @@ int LZ5_freeStreamHC (LZ5_streamHC_t* LZ5_streamHCPtr)
 
 
 /* initialization */
-void LZ5_resetStreamHC (LZ5_streamHC_t* LZ5_streamHCPtr, int compressionLevel)
+void LZ5_resetStreamHC (LZ5_streamHC_t* LZ5_streamHCPtr)
 {
     LZ5_STATIC_ASSERT(sizeof(LZ5HC_Data_Structure) <= sizeof(LZ5_streamHC_t));   /* if compilation fails here, LZ5_STREAMHCSIZE must be increased */
     ((LZ5HC_Data_Structure*)LZ5_streamHCPtr)->base = NULL;
-    ((LZ5HC_Data_Structure*)LZ5_streamHCPtr)->compressionLevel = (unsigned)compressionLevel;
 }
 
 int LZ5_loadDictHC (LZ5_streamHC_t* LZ5_streamHCPtr, const char* dictionary, int dictSize)
@@ -825,7 +705,7 @@ static int LZ5_compressHC_continue_generic (LZ5HC_Data_Structure* ctxPtr,
         }
     }
 
-    return LZ5HC_compress_generic (ctxPtr, source, dest, inputSize, maxOutputSize, ctxPtr->compressionLevel, limit);
+    return LZ5HC_compress_generic (ctxPtr, source, dest, inputSize, maxOutputSize, limit);
 }
 
 int LZ5_compress_HC_continue (LZ5_streamHC_t* LZ5_streamHCPtr, const char* source, char* dest, int inputSize, int maxOutputSize)
@@ -867,5 +747,5 @@ int LZ5_compressHC(const char* src, char* dst, int srcSize) { return LZ5_compres
 int LZ5_compressHC_limitedOutput(const char* src, char* dst, int srcSize, int maxDstSize) { return LZ5_compress_HC(src, dst, srcSize, maxDstSize, 0); }
 int LZ5_compressHC_continue (LZ5_streamHC_t* ctx, const char* src, char* dst, int srcSize) { return LZ5_compress_HC_continue (ctx, src, dst, srcSize, LZ5_compressBound(srcSize)); }
 int LZ5_compressHC_limitedOutput_continue (LZ5_streamHC_t* ctx, const char* src, char* dst, int srcSize, int maxDstSize) { return LZ5_compress_HC_continue (ctx, src, dst, srcSize, maxDstSize); } 
-int LZ5_compressHC_withStateHC (void* state, const char* src, char* dst, int srcSize) { return LZ5_compress_HC_extStateHC (state, src, dst, srcSize, LZ5_compressBound(srcSize), 0); }
-int LZ5_compressHC_limitedOutput_withStateHC (void* state, const char* src, char* dst, int srcSize, int maxDstSize) { return LZ5_compress_HC_extStateHC (state, src, dst, srcSize, maxDstSize, 0); } 
+int LZ5_compressHC_withStateHC (void* state, const char* src, char* dst, int srcSize) { return LZ5_compress_HC_extStateHC (state, src, dst, srcSize, LZ5_compressBound(srcSize)); }
+int LZ5_compressHC_limitedOutput_withStateHC (void* state, const char* src, char* dst, int srcSize, int maxDstSize) { return LZ5_compress_HC_extStateHC (state, src, dst, srcSize, maxDstSize); } 

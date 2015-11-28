@@ -33,15 +33,20 @@
    - LZ5 public forum : https://groups.google.com/forum/#!forum/lz5c
 */
 
+
+
+/**************************************
+*  Includes
+**************************************/
 #include "mem.h"
 #include "lz5common.h"
+#include "lz5.h"
 
 
 /**************************************
 *  Local Constants
 **************************************/
 #define LZ5_HASHLOG   (LZ5_MEMORY_USAGE-2)
-#define HASHTABLESIZE (1 << LZ5_MEMORY_USAGE)
 #define HASH_SIZE_U32 (1 << LZ5_HASHLOG)       /* required as macro for static allocation */
 
 static const int LZ5_64Klimit = ((64 KB) + (MFLIMIT-1));
@@ -86,12 +91,11 @@ int LZ5_sizeofState() { return LZ5_STREAMSIZE; }
 static U32 LZ5_hashSequence(U32 sequence, tableType_t const tableType)
 {
     if (tableType == byU16)
-        return (((sequence) * 2654435761U) >> ((32)-(LZ5_HASHLOG+1)));
+        return (((sequence) * prime4bytes) >> ((32)-(LZ5_HASHLOG+1)));
     else
-        return (((sequence) * 2654435761U) >> ((32)-LZ5_HASHLOG));
+        return (((sequence) * prime4bytes) >> ((32)-LZ5_HASHLOG));
 }
 
-static const U64 prime5bytes = 889523592379ULL;
 static U32 LZ5_hashSequence64(size_t sequence, tableType_t const tableType)
 {
     const U32 hashLog = (tableType == byU16) ? LZ5_HASHLOG+1 : LZ5_HASHLOG;

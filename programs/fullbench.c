@@ -471,7 +471,7 @@ static int local_LZ5_compress_forceDict(const char* in, char* out, int inSize)
 LZ5_streamHC_t LZ5_streamHC;
 static void local_LZ5_resetStreamHC(void)
 {
-    LZ5_resetStreamHC(&LZ5_streamHC, 0);
+    LZ5_resetStreamHC(&LZ5_streamHC);
 }
 
 static int local_LZ5_saveDictHC(const char* in, char* out, int inSize)
