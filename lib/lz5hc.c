@@ -66,8 +66,11 @@ FORCE_INLINE int LZ5HC_more_profitable(uint32_t best_off, uint32_t best_common, 
 
 int LZ5_alloc_mem_HC(LZ5HC_Data_Structure* ctx, int compressionLevel)
 {
-    ctx->compressionLevel = compressionLevel;
-    ctx->params = LZ5HC_defaultParameters[1];
+    ctx->compressionLevel = compressionLevel;  
+    if (compressionLevel > g_maxCompressionLevel) ctx->compressionLevel = g_maxCompressionLevel;
+    if (compressionLevel < 1) ctx->compressionLevel = LZ5HC_compressionLevel_default;
+
+    ctx->params = LZ5HC_defaultParameters[ctx->compressionLevel];
 
     ctx->hashTable = ALLOCATOR(1, sizeof(U32)*((1 << ctx->params.hashLog3)+(1 << ctx->params.hashLog)));
     if (!ctx->hashTable)
@@ -139,8 +142,7 @@ FORCE_INLINE void LZ5HC_Insert (LZ5HC_Data_Structure* ctx, const BYTE* ip)
     
 FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* ctx,   /* Index table will be updated */
                                                const BYTE* ip, const BYTE* const iLimit,
-                                               const BYTE** matchpos,
-                                               const int maxNbAttempts)
+                                               const BYTE** matchpos)
 {
     U32* const chainTable = ctx->chainTable;
     U32* const HashTable = ctx->hashTable;
@@ -152,7 +154,7 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* ctx,   /* I
     const U32 contentMask = (1 << ctx->params.contentLog) - 1;
     U32 matchIndex;
     const BYTE* match;
-    int nbAttempts=maxNbAttempts;
+    int nbAttempts=ctx->params.searchNum;
     size_t ml=0, mlt;
 
     /* HC4 match finder */
@@ -224,8 +226,7 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
     const BYTE* const iHighLimit,
     int longest,
     const BYTE** matchpos,
-    const BYTE** startpos,
-    const int maxNbAttempts)
+    const BYTE** startpos)
 {
     U32* const chainTable = ctx->chainTable;
     U32* const HashTable = ctx->hashTable;
@@ -238,7 +239,7 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
     const BYTE* const dictBase = ctx->dictBase;
     const BYTE* match;
     U32   matchIndex;
-    int nbAttempts = maxNbAttempts;
+    int nbAttempts = ctx->params.searchNum;
 
 
     /* First Match */
@@ -446,7 +447,6 @@ static int LZ5HC_compress_generic (
     BYTE* op = (BYTE*) dest;
     BYTE* const oend = op + maxOutputSize;
 
-    unsigned maxNbAttempts;
     int   ml, ml2, ml0;
     const BYTE* ref=NULL;
     const BYTE* start2=NULL;
@@ -456,10 +456,6 @@ static int LZ5HC_compress_generic (
     const BYTE* lowPrefixPtr = ctx->base + ctx->dictLimit;
 
     /* init */
-    int compressionLevel = ctx->compressionLevel;
-    if (compressionLevel > g_maxCompressionLevel) compressionLevel = g_maxCompressionLevel;
-    if (compressionLevel < 1) compressionLevel = LZ5HC_compressionLevel_default;
-    maxNbAttempts = 1 << (compressionLevel-1);
     ctx->end += inputSize;
 
     ip++;
@@ -467,7 +463,7 @@ static int LZ5HC_compress_generic (
     /* Main Loop */
     while (ip < mflimit)
     {
-        ml = LZ5HC_InsertAndFindBestMatch (ctx, ip, matchlimit, (&ref), maxNbAttempts);
+        ml = LZ5HC_InsertAndFindBestMatch (ctx, ip, matchlimit, (&ref));
         if (!ml) { ip++; continue; }
 
         int back = 0;
@@ -484,7 +480,7 @@ static int LZ5HC_compress_generic (
 _Search:
         if (ip+ml >= mflimit) goto _Encode;
 
-        ml2 = LZ5HC_InsertAndGetWiderMatch(ctx, ip + ml - 2, anchor, matchlimit, 0, &ref2, &start2, maxNbAttempts);
+        ml2 = LZ5HC_InsertAndGetWiderMatch(ctx, ip + ml - 2, anchor, matchlimit, 0, &ref2, &start2);
         if (ml2 == 0) goto _Encode;
 
 

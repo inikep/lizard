@@ -212,17 +212,22 @@ struct LZ5HC_Data_s
 /* *************************************
 *  HC Pre-defined compression levels
 ***************************************/
-static const int g_maxCompressionLevel = 12;
-static const int LZ5HC_compressionLevel_default = 9;
+#define LZ5HC_MAX_CLEVEL 8
 
-#define LZ5HC_MAX_CLEVEL 4
+static const int g_maxCompressionLevel = LZ5HC_MAX_CLEVEL-1;
+static const int LZ5HC_compressionLevel_default = 5;
+
 static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL] =
 {
     /* W,  C,  H, H3,  S,  L, strat */
     {  0,  0,  0,  0,  0,  0, LZ5HC_fast    },  /* level  0 - never used */
-    { 22, 22, 23, 16,  1,  4, LZ5HC_fast    },  /* level  1 */
-    { 17, 15, 16, 13,  1,  4, LZ5HC_fast    },  /* level  2 */
-    { 17, 16, 17, 16,  1,  4, LZ5HC_fast    }   /* level  3 */
+    { 22, 22, 15, 13,  1,  4, LZ5HC_fast    },  /* level  1 */
+    { 22, 22, 17, 13,  1,  4, LZ5HC_fast    },  /* level  2 */
+    { 22, 22, 19, 16,  1,  4, LZ5HC_fast    },  /* level  3 */
+    { 22, 22, 23, 16,  3,  4, LZ5HC_fast    },  /* level  4 */
+    { 22, 22, 23, 16,  8,  4, LZ5HC_fast    },  /* level  5 */
+    { 22, 22, 23, 16, 16,  4, LZ5HC_fast    },  /* level  6 */
+    { 22, 22, 23, 16, 32,  4, LZ5HC_fast    },  /* level  7 */
 };
 
 
