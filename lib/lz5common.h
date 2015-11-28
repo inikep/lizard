@@ -133,7 +133,7 @@ static const U64 prime6bytes = 227718039650203ULL;
 static size_t LZ5HC_hash6(U64 u, U32 h) { return (size_t)((u * prime6bytes) << (64-48) >> (64-h)) ; }
 static size_t LZ5HC_hash6Ptr(const void* p, U32 h) { return LZ5HC_hash6(MEM_read64(p), h); }
 
-static const U64 prime7bytes =    58295818150454627ULL;
+static const U64 prime7bytes = 58295818150454627ULL;
 static size_t LZ5HC_hash7(U64 u, U32 h) { return (size_t)((u * prime7bytes) << (64-56) >> (64-h)) ; }
 static size_t LZ5HC_hash7Ptr(const void* p, U32 h) { return LZ5HC_hash7(MEM_read64(p), h); }
 
@@ -176,7 +176,7 @@ static size_t LZ5HC_hashPtr(const void* p, U32 hBits, U32 mls)
 *  HC Types
 ***************************************/
 /** from faster to stronger */
-typedef enum { LZ5HC_fast, LZ5HC_greedy, LZ5HC_lazy, LZ5HC_lazy2, LZ5HC_lazymax, LZ5HC_btlazy2 } LZ5HC_strategy;
+typedef enum { LZ5HC_lowest_fast, LZ5HC_lowest_price } LZ5HC_strategy;
 
 typedef struct
 {
@@ -212,24 +212,25 @@ struct LZ5HC_Data_s
 /* *************************************
 *  HC Pre-defined compression levels
 ***************************************/
-#define LZ5HC_MAX_CLEVEL 8
+#define LZ5HC_MAX_CLEVEL 9
 
-static const int g_maxCompressionLevel = LZ5HC_MAX_CLEVEL-1;
+static const int g_maxCompressionLevel = LZ5HC_MAX_CLEVEL;
 static const int LZ5HC_compressionLevel_default = 5;
 
-static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL] =
+static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL+1] =
 {
     /* W,  C,  H, H3,  S,  L, strat */
-    {  0,  0,  0,  0,  0,  0, LZ5HC_fast    },  /* level  0 - never used */
-    { 22, 22, 15, 13,  1,  4, LZ5HC_fast    },  /* level  1 */
-    { 22, 22, 17, 13,  1,  4, LZ5HC_fast    },  /* level  2 */
-    { 22, 22, 19, 16,  1,  4, LZ5HC_fast    },  /* level  3 */
-    { 22, 22, 23, 16,  3,  4, LZ5HC_fast    },  /* level  4 */
-    { 22, 22, 23, 16,  8,  4, LZ5HC_fast    },  /* level  5 */
-    { 22, 22, 23, 16, 16,  4, LZ5HC_fast    },  /* level  6 */
-    { 22, 22, 23, 16, 32,  4, LZ5HC_fast    },  /* level  7 */
+    {  0,  0,  0,  0,  0,  0,  0                 },  /* level 0 - never used */
+    { 22, 22, 13, 13,  1,  4, LZ5HC_lowest_price },  /* level 1 */
+    { 22, 22, 15, 13,  1,  4, LZ5HC_lowest_price },  /* level 2 */
+    { 22, 22, 17, 13,  1,  4, LZ5HC_lowest_price },  /* level 3 */
+    { 22, 22, 13, 13,  1,  4, LZ5HC_lowest_fast  },  /* level 4 */
+    { 22, 22, 17, 13,  1,  4, LZ5HC_lowest_fast  },  /* level 5 */
+    { 22, 22, 19, 16,  1,  4, LZ5HC_lowest_price },  /* level 6 */
+    { 22, 22, 23, 16,  3,  4, LZ5HC_lowest_price },  /* level 7 */
+    { 22, 22, 23, 16,  8,  4, LZ5HC_lowest_price },  /* level 8 */
+    { 22, 22, 23, 16, 32,  4, LZ5HC_lowest_price },  /* level 9 */
 };
-
 
 #if defined (__cplusplus)
 }
