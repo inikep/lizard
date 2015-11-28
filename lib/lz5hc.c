@@ -34,32 +34,12 @@
 */
 
 
-/* *************************************
-*  Includes
-***************************************/
-#include "lz5hc.h"
-#include <stdio.h>
-
-
-/* *************************************
-*  Common LZ5 definition
-***************************************/
-#define LZ5_COMMONDEFS_ONLY
-#include "lz5.c"
 
 
 /* *************************************
 *  Tuning Parameter
 ***************************************/
 static const int LZ5HC_compressionLevel_default = 9;
-#define LZ5HC_DEBUG(fmt, args...) ; //printf(fmt, ##args)
-
-#if MINMATCH == 3
-    #define LZ5_read24(ptr) (uint32_t)(LZ5_read32(ptr)<<8) 
-#else
-    #define LZ5_read24(ptr) (uint32_t)(LZ5_read32(ptr)) 
-#endif
-
 
 /*!
  * HEAPMODE :
@@ -68,6 +48,13 @@ static const int LZ5HC_compressionLevel_default = 9;
  * Since workplace is rather large, heap mode is recommended.
  */
 #define LZ5HC_HEAPMODE 0
+
+
+/* *************************************
+*  Includes
+***************************************/
+#include "lz5hc.h"
+#include <stdio.h>
 
 
 /* *************************************
@@ -82,6 +69,14 @@ static const int LZ5HC_compressionLevel_default = 9;
 #endif
 
 
+
+/* *************************************
+*  Common LZ5 definition
+***************************************/
+#define LZ5_COMMONDEFS_ONLY
+#include "lz5.c"
+
+
 /* *************************************
 *  Local Constants
 ***************************************/
@@ -93,25 +88,9 @@ static const int LZ5HC_compressionLevel_default = 9;
 #define HASH_LOG3 16
 #define HASHTABLESIZE (1 << HASH_LOG)
 #define HASHTABLESIZE3 (1 << HASH_LOG3)
-#define LZ5_SHORT_OFFSET_BITS 10
-#define LZ5_SHORT_OFFSET_DISTANCE (1<<LZ5_SHORT_OFFSET_BITS)
-
-#define MAX(a,b) ((a)>(b))?(a):(b)
 
 #define LZ5_SHORT_LITERALS          ((1<<RUN_BITS2)-1)
 #define LZ5_LITERALS                ((1<<RUN_BITS)-1)
-
-#define LZ5_SHORT_LITLEN_COST(len)  (len<LZ5_SHORT_LITERALS ? 0 : (len-LZ5_SHORT_LITERALS < 255 ? 1 : (len-LZ5_SHORT_LITERALS-255 < (1<<7) ? 2 : 3)))
-#define LZ5_LEN_COST(len)           (len<LZ5_LITERALS ? 0 : (len-LZ5_LITERALS < 255 ? 1 : (len-LZ5_LITERALS-255 < (1<<7) ? 2 : 3)))
-
-#define LZ5_LIT_COST(len,offset)                ((len)+((((offset) > (1<<16)) || ((offset)<LZ5_SHORT_OFFSET_DISTANCE)) ? LZ5_SHORT_LITLEN_COST(len) : LZ5_LEN_COST(len)))
-#define LZ5_MATCH_COST(mlen,offset)             (LZ5_LEN_COST(mlen) + (((offset) == 0) ? 1 : (offset<LZ5_SHORT_OFFSET_DISTANCE ? 2 : (offset<(1 << 16) ? 3 : 4))))
-#define LZ5_CODEWORD_COST(litlen,offset,mlen)   (LZ5_MATCH_COST(mlen,offset) + LZ5_LIT_COST(litlen,offset))
-#define LZ5_LIT_ONLY_COST(len)                  ((len)+(LZ5_LEN_COST(len)))
-
-#define LZ5_NORMAL_MATCH_COST(mlen,offset)  (LZ5_MATCH_COST(mlen,offset))
-#define LZ5_NORMAL_LIT_COST(len)            (len)
-
 
 static const int g_maxCompressionLevel = 12;
 
@@ -140,6 +119,13 @@ struct LZ5HC_Data_s
 /**************************************
 *  Local Macros
 **************************************/
+#if MINMATCH == 3
+    #define LZ5_read24(ptr) (uint32_t)(LZ5_read32(ptr)<<8) 
+#else
+    #define LZ5_read24(ptr) (uint32_t)(LZ5_read32(ptr)) 
+#endif
+
+#define MAX(a,b) ((a)>(b))?(a):(b)
 #define HASH_FUNCTION(i)       (((i) * 2654435761U) >> ((32)-HASH_LOG))
 #define HASH_FUNCTION3(i)       (((i) * 506832829U) >> ((32)-HASH_LOG3))
 
@@ -149,9 +135,39 @@ static U32 LZ5HC_hashPtr3(const void* ptr) { return HASH_FUNCTION3(LZ5_read24(pt
 #define LZ5HC_LIMIT (1<<(DICTIONARY_LOGSIZE))
 
 
+#define LZ5HC_DEBUG(fmt, args...) ; //printf(fmt, ##args)
+
+#define LZ5_SHORT_LITLEN_COST(len)  (len<LZ5_SHORT_LITERALS ? 0 : (len-LZ5_SHORT_LITERALS < 255 ? 1 : (len-LZ5_SHORT_LITERALS-255 < (1<<7) ? 2 : 3)))
+#define LZ5_LEN_COST(len)           (len<LZ5_LITERALS ? 0 : (len-LZ5_LITERALS < 255 ? 1 : (len-LZ5_LITERALS-255 < (1<<7) ? 2 : 3)))
+
+#define LZ5_LIT_COST(len,offset)                ((len)+((((offset) > LZ5_MID_OFFSET_DISTANCE) || ((offset)<LZ5_SHORT_OFFSET_DISTANCE)) ? LZ5_SHORT_LITLEN_COST(len) : LZ5_LEN_COST(len)))
+#define LZ5_MATCH_COST(mlen,offset)             (LZ5_LEN_COST(mlen) + (((offset) == 0) ? 1 : ((offset)<LZ5_SHORT_OFFSET_DISTANCE ? 2 : ((offset)<(1 << 16) ? 3 : 4))))
+#define LZ5_CODEWORD_COST(litlen,offset,mlen)   (LZ5_MATCH_COST(mlen,offset) + LZ5_LIT_COST(litlen,offset))
+#define LZ5_LIT_ONLY_COST(len)                  ((len)+(LZ5_LEN_COST(len)))
+
+#define LZ5_NORMAL_MATCH_COST(mlen,offset)  (LZ5_MATCH_COST(mlen,offset))
+#define LZ5_NORMAL_LIT_COST(len)            (len)
+
+
+
 /**************************************
 *  HC Compression
 **************************************/
+
+FORCE_INLINE int LZ5_MORE_PROFITABLE(uint32_t best_off, uint32_t best_common, uint32_t off, uint32_t common, int literals, uint32_t last_off)
+{
+	int sum;
+	
+	if (literals > 0)
+		sum = MAX(common + literals, best_common);
+	else
+		sum = MAX(common, best_common - literals);
+	
+//	return LZ5_CODEWORD_COST(sum - common, (off == last_off) ? 0 : (off), common - MINMATCH) <= LZ5_CODEWORD_COST(sum - best_common, (best_off == last_off) ? 0 : (best_off), best_common - MINMATCH);
+	return LZ5_NORMAL_MATCH_COST(common - MINMATCH, (off == last_off) ? 0 : (off)) + LZ5_NORMAL_LIT_COST(sum - common) <= LZ5_NORMAL_MATCH_COST(best_common - MINMATCH, (best_off == last_off) ? 0 : (best_off)) + LZ5_NORMAL_LIT_COST(sum - best_common);
+}
+
+
 static void LZ5HC_init (LZ5HC_Data_Structure* ctx, const BYTE* start)
 {
     MEM_INIT((void*)ctx->hashTable, 0, sizeof(U32)*HASHTABLESIZE);
@@ -271,18 +287,6 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* ctx,   /* I
     return (int)ml;
 }
 
-FORCE_INLINE int LZ5_MORE_PROFITABLE(uint32_t best_off, uint32_t best_common, uint32_t off, uint32_t common, int literals, uint32_t last_off)
-{
-	int sum;
-	
-	if (literals > 0)
-		sum = MAX(common + literals, best_common);
-	else
-		sum = MAX(common, best_common - literals);
-	
-//	return LZ5_CODEWORD_COST(sum - common, (off == last_off) ? 0 : (off), common - MINMATCH) <= LZ5_CODEWORD_COST(sum - best_common, (best_off == last_off) ? 0 : (best_off), best_common - MINMATCH);
-	return LZ5_NORMAL_MATCH_COST(common - MINMATCH, (off == last_off) ? 0 : (off)) + LZ5_NORMAL_LIT_COST(sum - common) <= LZ5_NORMAL_MATCH_COST(best_common - MINMATCH, (best_off == last_off) ? 0 : (best_off)) + LZ5_NORMAL_LIT_COST(sum - best_common);
-}
 
 
 FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
@@ -435,7 +439,7 @@ FORCE_INLINE int LZ5HC_encodeSequence (
     token = (*op)++;
     if ((limitedOutputBuffer) && ((*op + (length>>8) + length + (2 + 1 + LASTLITERALS)) > oend)) return 1;   /* Check output limit */
 
-    if (*ip-match >= (1<<10) && *ip-match < (1<<16) && *ip-match != ctx->last_off)
+    if (*ip-match >= LZ5_SHORT_OFFSET_DISTANCE && *ip-match < LZ5_MID_OFFSET_DISTANCE && *ip-match != ctx->last_off)
     {
         if (length>=(int)RUN_MASK) { int len; *token=(RUN_MASK<<ML_BITS); len = length-RUN_MASK; for(; len > 254 ; len-=255) *(*op)++ = 255;  *(*op)++ = (BYTE)len; }
         else *token = (BYTE)(length<<ML_BITS);
@@ -458,13 +462,13 @@ FORCE_INLINE int LZ5HC_encodeSequence (
 //            printf("2last_off=%d *token=%d\n", last_off, *token);
     }
     else
-	if (*ip-match < (1<<10))
+	if (*ip-match < LZ5_SHORT_OFFSET_DISTANCE)
 	{
 		*token+=((4+((*ip-match)>>8))<<ML_RUN_BITS2);
 		**op=*ip-match; (*op)++;
 	}
 	else
-	if (*ip-match < (1<<16))
+	if (*ip-match < LZ5_MID_OFFSET_DISTANCE)
 	{
 		LZ5_writeLE16(*op, (U16)(*ip-match)); *op+=2;
 	}
@@ -652,13 +656,11 @@ int LZ5_compress_HC_extStateHC (void* state, const char* src, char* dst, int src
 
 int LZ5_alloc_mem_HC(LZ5HC_Data_Structure* statePtr)
 {
-    statePtr->hashTable = ALLOCATOR(1, sizeof(U32)*HASHTABLESIZE);
+    statePtr->hashTable = ALLOCATOR(1, sizeof(U32)*(HASHTABLESIZE3+HASHTABLESIZE));
     if (!statePtr->hashTable)
         return 0;
 
-    statePtr->hashTable3 = ALLOCATOR(1, sizeof(U32)*HASHTABLESIZE3);
-    if (!statePtr->hashTable3)
-        return 0;
+    statePtr->hashTable3 = statePtr->hashTable + HASHTABLESIZE;
 
     statePtr->chainTable = ALLOCATOR(1, sizeof(U32)*MAXD);
     if (!statePtr->chainTable)

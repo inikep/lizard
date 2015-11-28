@@ -316,6 +316,10 @@ static const int LZ5_minLength = (MFLIMIT+1);
 #define ML_RUN_BITS (ML_BITS + RUN_BITS)
 #define ML_RUN_BITS2 (ML_BITS + RUN_BITS2)
 
+#define LZ5_SHORT_OFFSET_BITS 10
+#define LZ5_SHORT_OFFSET_DISTANCE (1<<LZ5_SHORT_OFFSET_BITS)
+#define LZ5_MID_OFFSET_BITS 16
+#define LZ5_MID_OFFSET_DISTANCE (1<<LZ5_MID_OFFSET_BITS)
 
 
 /**************************************
@@ -622,7 +626,7 @@ FORCE_INLINE int LZ5_compress_generic(
             if ((outputLimited) && (unlikely(op + litLength + (2 + 1 + LASTLITERALS) + (litLength/255) > olimit)))
                 return 0;   /* Check output limit */
 
-            if (ip-match >= (1<<10) && ip-match < (1<<16) && ip-match != last_off)
+            if (ip-match >= LZ5_SHORT_OFFSET_DISTANCE && ip-match < LZ5_MID_OFFSET_DISTANCE && ip-match != last_off)
             {
                 if (litLength>=RUN_MASK)
                 {
@@ -658,13 +662,13 @@ _next_match:
 //            printf("2last_off=%d *token=%d\n", last_off, *token);
         }
         else
-        if (ip-match < (1<<10))
+        if (ip-match < LZ5_SHORT_OFFSET_DISTANCE)
         {
             *token+=((4+((ip-match)>>8))<<ML_RUN_BITS2);
             *op++=(ip-match);
         }
         else
-        if (ip-match < (1<<16))
+        if (ip-match < LZ5_MID_OFFSET_DISTANCE)
         {
             LZ5_writeLE16(op, (U16)(ip-match)); op+=2;
         }
@@ -916,7 +920,7 @@ static int LZ5_compress_destSize_generic(
                 goto _last_literals;
             }
 
-            if (ip-match >= (1<<10) && ip-match < (1<<16) && ip-match != last_off)
+            if (ip-match >= LZ5_SHORT_OFFSET_DISTANCE && ip-match < LZ5_MID_OFFSET_DISTANCE && ip-match != last_off)
             {
                 if (litLength>=RUN_MASK)
                 {
@@ -951,13 +955,13 @@ _next_match:
             *token+=(3<<ML_RUN_BITS2);          
         }
         else
-        if (ip-match < (1<<10))
+        if (ip-match < LZ5_SHORT_OFFSET_DISTANCE)
         {
             *token+=((4+((ip-match)>>8))<<ML_RUN_BITS2);
             *op++=(ip-match);
         }
         else
-        if (ip-match < (1<<16))
+        if (ip-match < LZ5_MID_OFFSET_DISTANCE)
         {
             LZ5_writeLE16(op, (U16)(ip-match)); op+=2;
         }
