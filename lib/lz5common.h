@@ -108,22 +108,6 @@ static const int LZ5_minLength = (MFLIMIT+1);
 
 
 
-
-
-/* *************************************
-*  HC Constants
-***************************************/
-#define DICTIONARY_LOGSIZE 22
-#define MAXD (1<<DICTIONARY_LOGSIZE)
-#define MAXD_MASK (MAXD - 1)
-
-#define LZ5_SHORT_LITERALS          ((1<<RUN_BITS2)-1)
-#define LZ5_LITERALS                ((1<<RUN_BITS)-1)
-
-#define LZ5HC_LIMIT (1<<(DICTIONARY_LOGSIZE))
-
-
-
 /* *************************************
 *  HC Inline functions and Macros
 ***************************************/
@@ -171,6 +155,9 @@ static size_t LZ5HC_hashPtr(const void* p, U32 hBits, U32 mls)
 **************************************/
 #define LZ5HC_DEBUG(fmt, args...) ; //printf(fmt, ##args)
 #define MAX(a,b) ((a)>(b))?(a):(b)
+
+#define LZ5_SHORT_LITERALS          ((1<<RUN_BITS2)-1)
+#define LZ5_LITERALS                ((1<<RUN_BITS)-1)
 
 #define LZ5_SHORT_LITLEN_COST(len)  (len<LZ5_SHORT_LITERALS ? 0 : (len-LZ5_SHORT_LITERALS < 255 ? 1 : (len-LZ5_SHORT_LITERALS-255 < (1<<7) ? 2 : 3)))
 #define LZ5_LEN_COST(len)           (len<LZ5_LITERALS ? 0 : (len-LZ5_LITERALS < 255 ? 1 : (len-LZ5_LITERALS-255 < (1<<7) ? 2 : 3)))
@@ -233,11 +220,10 @@ static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL] =
 {
     /* W,  C,  H, H3,  S,  L, strat */
     {  0,  0,  0,  0,  0,  0, LZ5HC_fast    },  /* level  0 - never used */
-    {  0,  0, 23, 16,  1,  4, LZ5HC_fast    },  /* level  1 */
+    { 22, 22, 23, 16,  1,  4, LZ5HC_fast    },  /* level  1 */
     { 17, 15, 16, 13,  1,  4, LZ5HC_fast    },  /* level  2 */
     { 17, 16, 17, 16,  1,  4, LZ5HC_fast    }   /* level  3 */
 };
-
 
 
 #if defined (__cplusplus)

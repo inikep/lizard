@@ -75,14 +75,14 @@ int LZ5_alloc_mem_HC(LZ5HC_Data_Structure* ctx, int compressionLevel)
 
     ctx->hashTable3 = ctx->hashTable + (1 << ctx->params.hashLog);
 
-    ctx->chainTable = ALLOCATOR(1, sizeof(U32)*MAXD);
+    ctx->chainTable = ALLOCATOR(1, sizeof(U32)*(1 << ctx->params.contentLog));
     if (!ctx->chainTable)
     {
         FREEMEM(ctx->hashTable);
         ctx->hashTable = NULL;
         return 0;
     }
-    
+
     return 1;
 }
 
@@ -96,14 +96,14 @@ void LZ5_free_mem_HC(LZ5HC_Data_Structure* statePtr)
 static void LZ5HC_init (LZ5HC_Data_Structure* ctx, const BYTE* start)
 {
     MEM_INIT((void*)ctx->hashTable, 0, sizeof(U32)*((1 << ctx->params.hashLog) + (1 << ctx->params.hashLog3)));
-    MEM_INIT(ctx->chainTable, 0xFF, sizeof(U32)*MAXD);
+    MEM_INIT(ctx->chainTable, 0xFF, sizeof(U32)*(1 << ctx->params.contentLog));
 
-    ctx->nextToUpdate = LZ5HC_LIMIT;
-    ctx->base = start - LZ5HC_LIMIT;
+    ctx->nextToUpdate = (1 << ctx->params.windowLog);
+    ctx->base = start - (1 << ctx->params.windowLog);
     ctx->end = start;
-    ctx->dictBase = start - LZ5HC_LIMIT;
-    ctx->dictLimit = LZ5HC_LIMIT;
-    ctx->lowLimit = LZ5HC_LIMIT;
+    ctx->dictBase = start - (1 << ctx->params.windowLog);
+    ctx->dictLimit = (1 << ctx->params.windowLog);
+    ctx->lowLimit = (1 << ctx->params.windowLog);
     ctx->last_off = 1;
 }
 
@@ -118,12 +118,13 @@ FORCE_INLINE void LZ5HC_Insert (LZ5HC_Data_Structure* ctx, const BYTE* ip)
 #endif 
     const BYTE* const base = ctx->base;
     const U32 target = (U32)(ip - base);
+    const U32 contentMask = (1 << ctx->params.contentLog) - 1;
     U32 idx = ctx->nextToUpdate;
 
     while(idx < target)
     {
         U32 h = LZ5HC_hashPtr(base+idx, ctx->params.hashLog, ctx->params.searchLength);
-        chainTable[idx & MAXD_MASK] = (U32)(idx - HashTable[h]);
+        chainTable[idx & contentMask] = (U32)(idx - HashTable[h]);
         HashTable[h] = idx;
 #if MINMATCH == 3
         HashTable3[LZ5HC_hash3Ptr(base+idx, ctx->params.hashLog3)] = idx;
@@ -146,7 +147,9 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* ctx,   /* I
     const BYTE* const base = ctx->base;
     const BYTE* const dictBase = ctx->dictBase;
     const U32 dictLimit = ctx->dictLimit;
-    const U32 lowLimit = (ctx->lowLimit + LZ5HC_LIMIT > (U32)(ip-base)) ? ctx->lowLimit : (U32)(ip - base) - (LZ5HC_LIMIT - 1);
+    const U32 maxDistance = (1 << ctx->params.windowLog);     
+    const U32 lowLimit = (ctx->lowLimit + maxDistance > (U32)(ip-base)) ? ctx->lowLimit : (U32)(ip - base) - (maxDistance - 1);
+    const U32 contentMask = (1 << ctx->params.contentLog) - 1;
     U32 matchIndex;
     const BYTE* match;
     int nbAttempts=maxNbAttempts;
@@ -206,7 +209,7 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* ctx,   /* I
                 { ml = mlt; *matchpos = base + matchIndex; }   /* virtual matchpos */
             }
         }
-        matchIndex -= chainTable[matchIndex & MAXD_MASK];
+        matchIndex -= chainTable[matchIndex & contentMask];
     }
 
     return (int)ml;
@@ -229,7 +232,9 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
     const BYTE* const base = ctx->base;
     const U32 dictLimit = ctx->dictLimit;
     const BYTE* const lowPrefixPtr = base + dictLimit;
-    const U32 lowLimit = (ctx->lowLimit + LZ5HC_LIMIT > (U32)(ip-base)) ? ctx->lowLimit : (U32)(ip - base) - (LZ5HC_LIMIT - 1);
+    const U32 maxDistance = (1 << ctx->params.windowLog);
+    const U32 lowLimit = (ctx->lowLimit + maxDistance > (U32)(ip-base)) ? ctx->lowLimit : (U32)(ip - base) - (maxDistance - 1);
+    const U32 contentMask = (1 << ctx->params.contentLog) - 1;
     const BYTE* const dictBase = ctx->dictBase;
     const BYTE* match;
     U32   matchIndex;
@@ -328,7 +333,7 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
                 if ((int)mlt > longest) { longest = (int)mlt; *matchpos = base + matchIndex + back; *startpos = ip+back; }
             }
         }
-        matchIndex -= chainTable[matchIndex & MAXD_MASK];
+        matchIndex -= chainTable[matchIndex & contentMask];
     }
 
 
