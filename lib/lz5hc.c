@@ -50,19 +50,6 @@
 *  HC Compression
 **************************************/
 
-FORCE_INLINE int LZ5HC_more_profitable(uint32_t best_off, uint32_t best_common, uint32_t off, uint32_t common, int literals, uint32_t last_off)
-{
-	int sum;
-	
-	if (literals > 0)
-		sum = MAX(common + literals, best_common);
-	else
-		sum = MAX(common, best_common - literals);
-	
-//	return LZ5_CODEWORD_COST(sum - common, (off == last_off) ? 0 : (off), common - MINMATCH) <= LZ5_CODEWORD_COST(sum - best_common, (best_off == last_off) ? 0 : (best_off), best_common - MINMATCH);
-	return LZ5_NORMAL_MATCH_COST(common - MINMATCH, (off == last_off) ? 0 : (off)) + LZ5_NORMAL_LIT_COST(sum - common) <= LZ5_NORMAL_MATCH_COST(best_common - MINMATCH, (best_off == last_off) ? 0 : (best_off)) + LZ5_NORMAL_LIT_COST(sum - best_common);
-}
-
 
 int LZ5_alloc_mem_HC(LZ5HC_Data_Structure* ctx, int compressionLevel)
 {
@@ -188,8 +175,8 @@ FORCE_INLINE int LZ5HC_FindBestMatch (LZ5HC_Data_Structure* ctx,   /* Index tabl
             if (match < ip && *(match+ml) == *(ip+ml) && (MEM_read32(match) == MEM_read32(ip)))
             {
                 mlt = MEM_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
-                if (mlt > ml)
-                if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 0 : (ip - match)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == ctx->last_off) ? 0 : (ip - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - ml)))
+                if (!ml || (mlt > ml && LZ5HC_better_price(ip - *matchpos, ml, ip - match, mlt, ctx->last_off)))
+//                if (mlt > ml && (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 0 : (ip - match)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == ctx->last_off) ? 0 : (ip - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - ml))))
                 { ml = mlt; *matchpos = match; }
             }
         }
@@ -203,8 +190,8 @@ FORCE_INLINE int LZ5HC_FindBestMatch (LZ5HC_Data_Structure* ctx,   /* Index tabl
                 mlt = MEM_count(ip+MINMATCH, match+MINMATCH, vLimit) + MINMATCH;
                 if ((ip+mlt == vLimit) && (vLimit < iLimit))
                     mlt += MEM_count(ip+mlt, base+dictLimit, iLimit);
-                if (mlt > ml) 
-                if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 0 : (ip - match)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == ctx->last_off) ? 0 : (ip - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - ml)))
+                if (!ml || (mlt > ml && LZ5HC_better_price(ip - *matchpos, ml, ip - match, mlt, ctx->last_off)))
+             //   if (mlt > ml && (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 0 : (ip - match)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == ctx->last_off) ? 0 : (ip - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - ml))))
                 { ml = mlt; *matchpos = base + matchIndex; }   /* virtual matchpos */
             }
         }
@@ -256,7 +243,8 @@ FORCE_INLINE int LZ5HC_FindBestMatchFast (LZ5HC_Data_Structure* ctx, U32 matchIn
             if (match < ip && *(match+ml) == *(ip+ml) && (MEM_read32(match) == MEM_read32(ip)))
             {
                 mlt = MEM_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
-                if (ml==0 || ((mlt > ml) && LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 0 : (ip - match)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == ctx->last_off) ? 0 : (ip - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - ml))))
+                if (!ml || (mlt > ml && LZ5HC_better_price(ip - *matchpos, ml, ip - match, mlt, ctx->last_off)))
+         //       if (ml==0 || ((mlt > ml) && LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 0 : (ip - match)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == ctx->last_off) ? 0 : (ip - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - ml))))
                 { ml = mlt; *matchpos = match; }
             }
         }
@@ -270,7 +258,8 @@ FORCE_INLINE int LZ5HC_FindBestMatchFast (LZ5HC_Data_Structure* ctx, U32 matchIn
                 mlt = MEM_count(ip+MINMATCH, match+MINMATCH, vLimit) + MINMATCH;
                 if ((ip+mlt == vLimit) && (vLimit < iLimit))
                     mlt += MEM_count(ip+mlt, base+dictLimit, iLimit);
-                if (ml==0 || ((mlt > ml) && LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 0 : (ip - match)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == ctx->last_off) ? 0 : (ip - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - ml))))
+                if (!ml || (mlt > ml && LZ5HC_better_price(ip - *matchpos, ml, ip - match, mlt, ctx->last_off)))
+//                if (ml==0 || ((mlt > ml) && LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 0 : (ip - match)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == ctx->last_off) ? 0 : (ip - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - ml))))
                 { ml = mlt; *matchpos = base + matchIndex; }   /* virtual matchpos */
             }
         }
@@ -387,8 +376,8 @@ FORCE_INLINE int LZ5HC_GetWiderMatch (
             while ((ip+back>iLowLimit) && (match+back > lowPrefixPtr) && (ip[back-1] == match[back-1])) back--;
             mlt -= back;
 
-            if (mlt > longest)
-            if (!longest || LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 0 : (ip - match)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip+back - *matchpos == ctx->last_off) ? 0 : (ip+back - *matchpos)) + LZ5_NORMAL_LIT_COST(mlt - longest))
+            if (!longest || (mlt > longest && LZ5HC_better_price(ip+back - *matchpos, longest, ip - match, mlt, ctx->last_off)))
+//          if (!longest || (mlt > longest && LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 0 : (ip - match)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip+back - *matchpos == ctx->last_off) ? 0 : (ip+back - *matchpos)) + LZ5_NORMAL_LIT_COST(mlt - longest)))
             {
                 *matchpos = match+back;
                 *startpos = ip+back;
@@ -403,43 +392,42 @@ FORCE_INLINE int LZ5HC_GetWiderMatch (
         nbAttempts--;
         if (matchIndex >= dictLimit)
         {
-            const BYTE* matchPtr = base + matchIndex;
-         //   if (*(ip + longest) == *(matchPtr + longest))
-                        
-                if (matchPtr < ip && MEM_read32(matchPtr) == MEM_read32(ip))
+            match = base + matchIndex;
+
+       //   if (*(ip + longest) == *(matchPtr + longest))
+            if (match < ip && MEM_read32(match) == MEM_read32(ip))
+            {
+                int mlt = MINMATCH + MEM_count(ip+MINMATCH, match+MINMATCH, iHighLimit);
+                int back = 0;
+
+                while ((ip+back>iLowLimit)
+                       && (match+back > lowPrefixPtr)
+                       && (ip[back-1] == match[back-1]))
+                        back--;
+
+                mlt -= back;
+
+                if (!longest || (mlt > longest && LZ5HC_better_price(ip+back - *matchpos, longest, ip - match, mlt, ctx->last_off)))
                 {
-                    int mlt = MINMATCH + MEM_count(ip+MINMATCH, matchPtr+MINMATCH, iHighLimit);
-                    int back = 0;
-
-                    while ((ip+back>iLowLimit)
-                           && (matchPtr+back > lowPrefixPtr)
-                           && (ip[back-1] == matchPtr[back-1]))
-                            back--;
-
-                    mlt -= back;
-
-                    if (mlt > longest)
-                    if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - matchPtr == ctx->last_off) ? 0 : (ip - matchPtr)) < LZ5_NORMAL_MATCH_COST(longest - MINMATCH, (ip+back - *matchpos == ctx->last_off) ? 0 : (ip+back - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - longest) ))
-                    {
-                        longest = (int)mlt;
-                        *matchpos = matchPtr+back;
-                        *startpos = ip+back;
-                    }
+                    longest = (int)mlt;
+                    *matchpos = match+back;
+                    *startpos = ip+back;
                 }
+            }
         }
         else
         {
-            const BYTE* matchPtr = dictBase + matchIndex;
-            if (MEM_read32(matchPtr) == MEM_read32(ip))
+            const BYTE* match = dictBase + matchIndex;
+            if (MEM_read32(match) == MEM_read32(ip))
             {
                 size_t mlt;
                 int back=0;
                 const BYTE* vLimit = ip + (dictLimit - matchIndex);
                 if (vLimit > iHighLimit) vLimit = iHighLimit;
-                mlt = MEM_count(ip+MINMATCH, matchPtr+MINMATCH, vLimit) + MINMATCH;
+                mlt = MEM_count(ip+MINMATCH, match+MINMATCH, vLimit) + MINMATCH;
                 if ((ip+mlt == vLimit) && (vLimit < iHighLimit))
                     mlt += MEM_count(ip+mlt, base+dictLimit, iHighLimit);
-                while ((ip+back > iLowLimit) && (matchIndex+back > lowLimit) && (ip[back-1] == matchPtr[back-1])) back--;
+                while ((ip+back > iLowLimit) && (matchIndex+back > lowLimit) && (ip[back-1] == match[back-1])) back--;
                 mlt -= back;
                 if ((int)mlt > longest) { longest = (int)mlt; *matchpos = base + matchIndex + back; *startpos = ip+back; }
             }
