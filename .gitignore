@@ -8,6 +8,9 @@ examples/
 versionsTest/
 visual/
 
+# Archives
+*.zip 
+
 # Object files
 *.o
 *.ko

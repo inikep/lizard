@@ -57,24 +57,12 @@ static const int LZ5HC_compressionLevel_default = 9;
 #include <stdio.h>
 
 
-/* *************************************
-*  Local Compiler Options
-***************************************/
-#if defined(__GNUC__)
-#  pragma GCC diagnostic ignored "-Wunused-function"
-#endif
-
-#if defined (__clang__)
-#  pragma clang diagnostic ignored "-Wunused-function"
-#endif
-
-
 
 /* *************************************
 *  Common LZ5 definition
 ***************************************/
-#define LZ5_COMMONDEFS_ONLY
-#include "lz5.c"
+#include "mem.h"
+#include "lz5common.h"
 
 
 /* *************************************
@@ -91,6 +79,8 @@ static const int LZ5HC_compressionLevel_default = 9;
 
 #define LZ5_SHORT_LITERALS          ((1<<RUN_BITS2)-1)
 #define LZ5_LITERALS                ((1<<RUN_BITS)-1)
+
+#define LZ5HC_LIMIT (1<<(DICTIONARY_LOGSIZE))
 
 static const int g_maxCompressionLevel = 12;
 
@@ -114,28 +104,57 @@ struct LZ5HC_Data_s
     U32   nextToUpdate;     /* index from which to continue dictionary update */
     U32   compressionLevel;
     U32   last_off;
+    LZ5HC_parameters params;
 };
+
+
+/* *************************************
+*  Inline functions and Macros
+***************************************/
+#if MINMATCH == 3
+    #define MEM_read24(ptr) (uint32_t)(MEM_read32(ptr)<<8) 
+#else
+    #define MEM_read24(ptr) (uint32_t)(MEM_read32(ptr)) 
+#endif
+
+static const U32 prime3bytes = 506832829U;
+static U32 LZ5HC_hash3(U32 u, U32 h) { return (u * prime3bytes) << (32-24) >> (32-h) ; }
+static size_t LZ5HC_hash3Ptr(const void* ptr, U32 h) { return LZ5HC_hash3(MEM_read32(ptr), h); }
+    
+static const U32 prime4bytes = 2654435761U;
+static U32 LZ5HC_hash4(U32 u, U32 h) { return (u * prime4bytes) >> (32-h) ; }
+static size_t LZ5HC_hash4Ptr(const void* ptr, U32 h) { return LZ5HC_hash4(MEM_read32(ptr), h); }
+
+static const U64 prime5bytes = 889523592379ULL;
+static size_t LZ5HC_hash5(U64 u, U32 h) { return (size_t)((u * prime5bytes) << (64-40) >> (64-h)) ; }
+static size_t LZ5HC_hash5Ptr(const void* p, U32 h) { return LZ5HC_hash5(MEM_read64(p), h); }
+
+static const U64 prime6bytes = 227718039650203ULL;
+static size_t LZ5HC_hash6(U64 u, U32 h) { return (size_t)((u * prime6bytes) << (64-48) >> (64-h)) ; }
+static size_t LZ5HC_hash6Ptr(const void* p, U32 h) { return LZ5HC_hash6(MEM_read64(p), h); }
+
+static const U64 prime7bytes =    58295818150454627ULL;
+static size_t LZ5HC_hash7(U64 u, U32 h) { return (size_t)((u * prime7bytes) << (64-56) >> (64-h)) ; }
+static size_t LZ5HC_hash7Ptr(const void* p, U32 h) { return LZ5HC_hash7(MEM_read64(p), h); }
+
+static size_t LZ5HC_hashPtr(const void* p, U32 hBits, U32 mls)
+{
+    switch(mls)
+    {
+    default:
+    case 4: return LZ5HC_hash4Ptr(p, hBits);
+    case 5: return LZ5HC_hash5Ptr(p, hBits);
+    case 6: return LZ5HC_hash6Ptr(p, hBits);
+    case 7: return LZ5HC_hash7Ptr(p, hBits);
+    }
+}
+
 
 /**************************************
 *  Local Macros
 **************************************/
-#if MINMATCH == 3
-    #define LZ5_read24(ptr) (uint32_t)(LZ5_read32(ptr)<<8) 
-#else
-    #define LZ5_read24(ptr) (uint32_t)(LZ5_read32(ptr)) 
-#endif
-
-#define MAX(a,b) ((a)>(b))?(a):(b)
-#define HASH_FUNCTION(i)       (((i) * 2654435761U) >> ((32)-HASH_LOG))
-#define HASH_FUNCTION3(i)       (((i) * 506832829U) >> ((32)-HASH_LOG3))
-
-static U32 LZ5HC_hashPtr(const void* ptr) { return HASH_FUNCTION(LZ5_read32(ptr)); }
-static U32 LZ5HC_hashPtr3(const void* ptr) { return HASH_FUNCTION3(LZ5_read24(ptr)); }
-
-#define LZ5HC_LIMIT (1<<(DICTIONARY_LOGSIZE))
-
-
 #define LZ5HC_DEBUG(fmt, args...) ; //printf(fmt, ##args)
+#define MAX(a,b) ((a)>(b))?(a):(b)
 
 #define LZ5_SHORT_LITLEN_COST(len)  (len<LZ5_SHORT_LITERALS ? 0 : (len-LZ5_SHORT_LITERALS < 255 ? 1 : (len-LZ5_SHORT_LITERALS-255 < (1<<7) ? 2 : 3)))
 #define LZ5_LEN_COST(len)           (len<LZ5_LITERALS ? 0 : (len-LZ5_LITERALS < 255 ? 1 : (len-LZ5_LITERALS-255 < (1<<7) ? 2 : 3)))
@@ -197,11 +216,11 @@ FORCE_INLINE void LZ5HC_Insert (LZ5HC_Data_Structure* ctx, const BYTE* ip)
 
     while(idx < target)
     {
-        U32 h = LZ5HC_hashPtr(base+idx);
+        U32 h = LZ5HC_hashPtr(base+idx, ctx->params.hashLog, ctx->params.searchLength);
         chainTable[idx & MAXD_MASK] = (U32)(idx - HashTable[h]);
         HashTable[h] = idx;
 #if MINMATCH == 3
-        HashTable3[LZ5HC_hashPtr3(base+idx)] = idx;
+        HashTable3[LZ5HC_hash3Ptr(base+idx, ctx->params.hashLog3)] = idx;
 #endif 
        idx++;
     }
@@ -229,24 +248,24 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* ctx,   /* I
 
     /* HC4 match finder */
     LZ5HC_Insert(ctx, ip);
-    matchIndex = HashTable[LZ5HC_hashPtr(ip)];
+    matchIndex = HashTable[LZ5HC_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength)];
 
     match = ip - ctx->last_off;
-    if (LZ5_read24(match) == LZ5_read24(ip))
+    if (MEM_read24(match) == MEM_read24(ip))
     {
-        ml = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
+        ml = MEM_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
         *matchpos = match;
         return (int)ml;
     }
 
 #if MINMATCH == 3
-    size_t offset = ip - base - ctx->hashTable3[LZ5HC_hashPtr3(ip)];
+    size_t offset = ip - base - ctx->hashTable3[LZ5HC_hash3Ptr(ip, ctx->params.hashLog3)];
     if (offset > 0 && offset < LZ5_SHORT_OFFSET_DISTANCE)
     {
         match = ip - offset;
-        if (match > base && LZ5_read24(ip) == LZ5_read24(match))
+        if (match > base && MEM_read24(ip) == MEM_read24(match))
         {
-            ml = 3;//LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
+            ml = 3;//MEM_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
             *matchpos = match;
         }
     }
@@ -258,9 +277,9 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* ctx,   /* I
         if (matchIndex >= dictLimit)
         {
             match = base + matchIndex;
-            if (match < ip && *(match+ml) == *(ip+ml) && (LZ5_read32(match) == LZ5_read32(ip)))
+            if (match < ip && *(match+ml) == *(ip+ml) && (MEM_read32(match) == MEM_read32(ip)))
             {
-                mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
+                mlt = MEM_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
                 if (mlt > ml)
                 if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 0 : (ip - match)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == ctx->last_off) ? 0 : (ip - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - ml)))
                 { ml = mlt; *matchpos = match; }
@@ -269,13 +288,13 @@ FORCE_INLINE int LZ5HC_InsertAndFindBestMatch (LZ5HC_Data_Structure* ctx,   /* I
         else
         {
             match = dictBase + matchIndex;
-            if (LZ5_read32(match) == LZ5_read32(ip))
+            if (MEM_read32(match) == MEM_read32(ip))
             {
                 const BYTE* vLimit = ip + (dictLimit - matchIndex);
                 if (vLimit > iLimit) vLimit = iLimit;
-                mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, vLimit) + MINMATCH;
+                mlt = MEM_count(ip+MINMATCH, match+MINMATCH, vLimit) + MINMATCH;
                 if ((ip+mlt == vLimit) && (vLimit < iLimit))
-                    mlt += LZ5_count(ip+mlt, base+dictLimit, iLimit);
+                    mlt += MEM_count(ip+mlt, base+dictLimit, iLimit);
                 if (mlt > ml) 
                 if (LZ5_NORMAL_MATCH_COST(mlt - MINMATCH, (ip - match == ctx->last_off) ? 0 : (ip - match)) < LZ5_NORMAL_MATCH_COST(ml - MINMATCH, (ip - *matchpos == ctx->last_off) ? 0 : (ip - *matchpos)) + (LZ5_NORMAL_LIT_COST(mlt - ml)))
                 { ml = mlt; *matchpos = base + matchIndex; }   /* virtual matchpos */
@@ -313,12 +332,12 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
 
     /* First Match */
     LZ5HC_Insert(ctx, ip);
-    matchIndex = HashTable[LZ5HC_hashPtr(ip)];
+    matchIndex = HashTable[LZ5HC_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength)];
 
     match = ip - ctx->last_off;
-    if (LZ5_read24(match) == LZ5_read24(ip))
+    if (MEM_read24(match) == MEM_read24(ip))
     {
-        int mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iHighLimit) + MINMATCH;
+        int mlt = MEM_count(ip+MINMATCH, match+MINMATCH, iHighLimit) + MINMATCH;
         
         int back = 0;
         while ((ip+back>iLowLimit) && (match+back > lowPrefixPtr) && (ip[back-1] == match[back-1])) back--;
@@ -334,13 +353,13 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
 
 
 #if MINMATCH == 3
-    size_t offset = ip - base - ctx->hashTable3[LZ5HC_hashPtr3(ip)];
+    size_t offset = ip - base - ctx->hashTable3[LZ5HC_hash3Ptr(ip, ctx->params.hashLog3)];
     if (offset > 0 && offset < LZ5_SHORT_OFFSET_DISTANCE)
     {
         match = ip - offset;
-        if (match > base && LZ5_read24(ip) == LZ5_read24(match))
+        if (match > base && MEM_read24(ip) == MEM_read24(match))
         {
-            int mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iHighLimit) + MINMATCH;
+            int mlt = MEM_count(ip+MINMATCH, match+MINMATCH, iHighLimit) + MINMATCH;
 
             int back = 0;
             while ((ip+back>iLowLimit) && (match+back > lowPrefixPtr) && (ip[back-1] == match[back-1])) back--;
@@ -365,9 +384,9 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
             const BYTE* matchPtr = base + matchIndex;
          //   if (*(ip + longest) == *(matchPtr + longest))
                         
-                if (matchPtr < ip && LZ5_read32(matchPtr) == LZ5_read32(ip))
+                if (matchPtr < ip && MEM_read32(matchPtr) == MEM_read32(ip))
                 {
-                    int mlt = MINMATCH + LZ5_count(ip+MINMATCH, matchPtr+MINMATCH, iHighLimit);
+                    int mlt = MINMATCH + MEM_count(ip+MINMATCH, matchPtr+MINMATCH, iHighLimit);
                     int back = 0;
 
                     while ((ip+back>iLowLimit)
@@ -389,15 +408,15 @@ FORCE_INLINE int LZ5HC_InsertAndGetWiderMatch (
         else
         {
             const BYTE* matchPtr = dictBase + matchIndex;
-            if (LZ5_read32(matchPtr) == LZ5_read32(ip))
+            if (MEM_read32(matchPtr) == MEM_read32(ip))
             {
                 size_t mlt;
                 int back=0;
                 const BYTE* vLimit = ip + (dictLimit - matchIndex);
                 if (vLimit > iHighLimit) vLimit = iHighLimit;
-                mlt = LZ5_count(ip+MINMATCH, matchPtr+MINMATCH, vLimit) + MINMATCH;
+                mlt = MEM_count(ip+MINMATCH, matchPtr+MINMATCH, vLimit) + MINMATCH;
                 if ((ip+mlt == vLimit) && (vLimit < iHighLimit))
-                    mlt += LZ5_count(ip+mlt, base+dictLimit, iHighLimit);
+                    mlt += MEM_count(ip+mlt, base+dictLimit, iHighLimit);
                 while ((ip+back > iLowLimit) && (matchIndex+back > lowLimit) && (ip[back-1] == matchPtr[back-1])) back--;
                 mlt -= back;
                 if ((int)mlt > longest) { longest = (int)mlt; *matchpos = base + matchIndex + back; *startpos = ip+back; }
@@ -452,7 +471,7 @@ FORCE_INLINE int LZ5HC_encodeSequence (
     }
 
     /* Copy Literals */
-    LZ5_wildCopy(*op, *anchor, (*op) + length);
+    MEM_wildCopy(*op, *anchor, (*op) + length);
     *op += length;
 
     /* Encode Offset */
@@ -470,12 +489,12 @@ FORCE_INLINE int LZ5HC_encodeSequence (
 	else
 	if (*ip-match < LZ5_MID_OFFSET_DISTANCE)
 	{
-		LZ5_writeLE16(*op, (U16)(*ip-match)); *op+=2;
+		MEM_writeLE16(*op, (U16)(*ip-match)); *op+=2;
 	}
 	else
 	{
 		*token+=(2<<ML_RUN_BITS2);
-		LZ5_writeLE24(*op, (U32)(*ip-match)); *op+=3;
+		MEM_writeLE24(*op, (U32)(*ip-match)); *op+=3;
 	}
     ctx->last_off = *ip-match;
 
@@ -506,6 +525,7 @@ static int LZ5HC_compress_generic (
     )
 {
     LZ5HC_Data_Structure* ctx = (LZ5HC_Data_Structure*) ctxvoid;
+    ctx->params = LZ5HC_defaultParameters[compressionLevel];
     ctx->inputBuffer = (BYTE*) source;
     ctx->outputBuffer = (BYTE*) dest;
     const BYTE* ip = (const BYTE*) source;
