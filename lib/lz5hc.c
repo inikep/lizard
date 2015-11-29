@@ -59,13 +59,13 @@ int LZ5_alloc_mem_HC(LZ5HC_Data_Structure* ctx, int compressionLevel)
 
     ctx->params = LZ5HC_defaultParameters[ctx->compressionLevel];
 
-    ctx->hashTable = ALLOCATOR(1, sizeof(U32)*((1 << ctx->params.hashLog3)+(1 << ctx->params.hashLog)));
+    ctx->hashTable = (U32*) ALLOCATOR(1, sizeof(U32)*((1 << ctx->params.hashLog3)+(1 << ctx->params.hashLog)));
     if (!ctx->hashTable)
         return 0;
 
     ctx->hashTable3 = ctx->hashTable + (1 << ctx->params.hashLog);
 
-    ctx->chainTable = ALLOCATOR(1, sizeof(U32)*(1 << ctx->params.contentLog));
+    ctx->chainTable = (U32*) ALLOCATOR(1, sizeof(U32)*(1 << ctx->params.contentLog));
     if (!ctx->chainTable)
     {
         FREEMEM(ctx->hashTable);
@@ -625,7 +625,7 @@ _Search:
         ml2 = LZ5HC_GetWiderMatch(ctx, ip + ml - 2, anchor, matchlimit, 0, &ref2, &start2);
         if (ml2 == 0) goto _Encode;
 
-
+        {
         int price, best_price, off0=0, off1=0;
         uint8_t *pos, *best_pos;
 
@@ -667,10 +667,11 @@ _Search:
                 break;
             }
         }
-
     //    LZ5HC_DEBUG("%u: TRY last_off=%d literals=%u off=%u mlen=%u literals2=%u off2=%u mlen2=%u best=%d\n", (U32)(ip - ctx->inputBuffer), ctx->last_off, (U32)(ip - anchor), off0, (U32)ml,  (U32)(start2 - anchor), off1, ml2, (U32)(best_pos - ip));
-        
         ml = best_pos - ip;
+        }
+
+
         if (ml < MINMATCH)
         {
             ip = start2;
@@ -761,12 +762,14 @@ static int LZ5HC_compress_price_fast (
 
         if (ip - ref == ctx->last_off) { ml2=0; goto _Encode; }
         
+        {
         int back = 0;
         while ((ip+back>anchor) && (ref+back > lowPrefixPtr) && (ip[back-1] == ref[back-1])) back--;
         ml -= back;
         ip += back;
         ref += back;
-
+        }
+        
 _Search:
         if (ip+ml >= mflimit) goto _Encode;
 
@@ -776,11 +779,13 @@ _Search:
         *HashPos = (U32)(start2 - base);
         if (!ml2) goto _Encode;
 
-        back = 0;
+        {
+        int back = 0;
         while ((start2+back>ip) && (ref2+back > lowPrefixPtr) && (start2[back-1] == ref2[back-1])) back--;
         ml2 -= back;
         start2 += back;
         ref2 += back;
+        }
 
     //    LZ5HC_DEBUG("%u: TRY last_off=%d literals=%u off=%u mlen=%u literals2=%u off2=%u mlen2=%u best=%d\n", (U32)(ip - ctx->inputBuffer), ctx->last_off, (U32)(ip - anchor), off0, (U32)ml,  (U32)(start2 - anchor), off1, ml2, (U32)(best_pos - ip));
 
@@ -1098,7 +1103,7 @@ int LZ5_saveDictHC (LZ5_streamHC_t* LZ5_streamHCPtr, char* safeBuffer, int dictS
 *  Deprecated Functions
 ***********************************/
 /* Deprecated compression functions */
-/* These functions are planned to start generate warnings by r131 approximately */
+/* These functions are planned to start generate warnings by r132 approximately */
 int LZ5_compressHC(const char* src, char* dst, int srcSize) { return LZ5_compress_HC (src, dst, srcSize, LZ5_compressBound(srcSize), 0); }
 int LZ5_compressHC_limitedOutput(const char* src, char* dst, int srcSize, int maxDstSize) { return LZ5_compress_HC(src, dst, srcSize, maxDstSize, 0); }
 int LZ5_compressHC_continue (LZ5_streamHC_t* ctx, const char* src, char* dst, int srcSize) { return LZ5_compress_HC_continue (ctx, src, dst, srcSize, LZ5_compressBound(srcSize)); }

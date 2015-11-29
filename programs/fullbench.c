@@ -483,7 +483,7 @@ static int local_LZ5_saveDictHC(const char* in, char* out, int inSize)
 static int local_LZ5_compressHC_withStateHC(const char* in, char* out, int inSize)
 {
     int res = 0;
-    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC)))
+    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC),0))
     {
         res = LZ5_compressHC_withStateHC(&LZ5_streamHC, in, out, inSize);
         LZ5_free_mem_HC((LZ5HC_Data_Structure*)&LZ5_streamHC);
@@ -494,7 +494,7 @@ static int local_LZ5_compressHC_withStateHC(const char* in, char* out, int inSiz
 static int local_LZ5_compressHC_limitedOutput_withStateHC(const char* in, char* out, int inSize)
 {
     int res = 0;
-    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC)))
+    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC),0))
     {
         res = LZ5_compressHC_limitedOutput_withStateHC(&LZ5_streamHC, in, out, inSize, LZ5_compressBound(inSize)-1);
         LZ5_free_mem_HC((LZ5HC_Data_Structure*)&LZ5_streamHC);
@@ -505,7 +505,7 @@ static int local_LZ5_compressHC_limitedOutput_withStateHC(const char* in, char* 
 static int local_LZ5_compressHC_limitedOutput(const char* in, char* out, int inSize)
 {
     int res = 0;
-    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC)))
+    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC),0))
     {
         res = LZ5_compressHC_limitedOutput(in, out, inSize, LZ5_compressBound(inSize)-1);
         LZ5_free_mem_HC((LZ5HC_Data_Structure*)&LZ5_streamHC);
@@ -516,7 +516,7 @@ static int local_LZ5_compressHC_limitedOutput(const char* in, char* out, int inS
 static int local_LZ5_compressHC_continue(const char* in, char* out, int inSize)
 {
     int res = 0;
-    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC)))
+    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC),0))
     {
         res = LZ5_compressHC_continue(&LZ5_streamHC, in, out, inSize);
         LZ5_free_mem_HC((LZ5HC_Data_Structure*)&LZ5_streamHC);
@@ -527,7 +527,7 @@ static int local_LZ5_compressHC_continue(const char* in, char* out, int inSize)
 static int local_LZ5_compressHC_limitedOutput_continue(const char* in, char* out, int inSize)
 {
     int res = 0;
-    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC)))
+    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC),0))
     {
         res = LZ5_compressHC_limitedOutput_continue(&LZ5_streamHC, in, out, inSize, LZ5_compressBound(inSize)-1);
         LZ5_free_mem_HC((LZ5HC_Data_Structure*)&LZ5_streamHC);
@@ -734,7 +734,7 @@ int fullSpeedBench(char** fileNamesTable, int nbFiles)
                         LZ5_loadDict(&LZ5_stream, chunkP[0].origBuffer, chunkP[0].origSize);
                         break;
             case 41: compressionFunction = local_LZ5_saveDictHC; compressorName = "LZ5_saveDictHC";
-                        if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC)))
+                        if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC),0))
                         {
                             LZ5_loadDictHC(&LZ5_streamHC, chunkP[0].origBuffer, chunkP[0].origSize);
                             LZ5_free_mem_HC((LZ5HC_Data_Structure*)&LZ5_streamHC);

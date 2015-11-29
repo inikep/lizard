@@ -166,7 +166,7 @@ int LZ5_saveDictHC (LZ5_streamHC_t* streamHCPtr, char* safeBuffer, int maxDictSi
 #endif // LZ5_DEPRECATE_WARNING_DEFBLOCK
 
 /* compression functions */
-/* these functions are planned to trigger warning messages by r131 approximately */
+/* these functions are planned to trigger warning messages by r132 approximately */
 int LZ5_compressHC                (const char* source, char* dest, int inputSize);
 int LZ5_compressHC_limitedOutput  (const char* source, char* dest, int inputSize, int maxOutputSize);
 int LZ5_compressHC_continue               (LZ5_streamHC_t* LZ5_streamHCPtr, const char* source, char* dest, int inputSize);
