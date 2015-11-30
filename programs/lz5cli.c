@@ -86,8 +86,8 @@
 *  Constants
 ******************************/
 #define COMPRESSOR_NAME "LZ5 command line interface"
-#define AUTHOR "Yann Collet"
-#define WELCOME_MESSAGE "*** %s %i-bits %s, by %s (%s) ***\n", COMPRESSOR_NAME, (int)(sizeof(void*)*8), LZ5_VERSION, AUTHOR, __DATE__
+#define AUTHOR "Y.Collet & P.Skibinski"
+#define WELCOME_MESSAGE "%s %i-bit %s by %s (%s)\n", COMPRESSOR_NAME, (int)(sizeof(void*)*8), LZ5_VERSION, AUTHOR, __DATE__
 #define LZ5_EXTENSION ".lz5"
 #define LZ5CAT "lz5cat"
 #define UNLZ5 "unlz5"

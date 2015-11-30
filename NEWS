@@ -1,8 +1,7 @@
 r132
-- added: a new parser
-- added: a gain function
-- added: a special codeword for the last occured offset
-- added: support for 3-byte long matches
+- added: new parsers: LZ5HC_fast, LZ5HC_price_fast, LZ5HC_lowest_price
+- added: a special 1-byte codeword for the last occured offset
+- added: support for 3-byte long matches (MINMATCH = 3)
 
 r131
 The first release based on LZ4 r132 dev
