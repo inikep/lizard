@@ -430,7 +430,7 @@ int BMK_benchFiles(const char** fileNamesTable, int nbFiles, int cLevel)
   }
 
   if (nbFiles > 1)
-        DISPLAY("%-16.16s :%10llu ->%10llu (%5.2f%%), %6.1f MB/s , %6.1f MB/s\n", "  TOTAL", (long long unsigned int)totals, (long long unsigned int)totalz, (double)totalz/(double)totals*100., (double)totals/totalc/1000., (double)totals/totald/1000.);
+        DISPLAY("%-16.16s :%10" PRIu64 " ->%10" PRIu64 " (%5.2f%%), %6.1f MB/s , %6.1f MB/s\n", "  TOTAL", (long long unsigned int)totals, (long long unsigned int)totalz, (double)totalz/(double)totals*100.0, (double)totals/totalc/1000.0, (double)totals/totald/1000.0);
 
   if (BMK_pause) { DISPLAY("\npress enter...\n"); (void)getchar(); }
 

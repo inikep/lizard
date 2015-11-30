@@ -152,7 +152,6 @@ int LZ5_saveDictHC (LZ5_streamHC_t* streamHCPtr, char* safeBuffer, int maxDictSi
    You can also define LZ5_DEPRECATE_WARNING_DEFBLOCK. */
 #ifndef LZ5_DEPRECATE_WARNING_DEFBLOCK
 #  define LZ5_DEPRECATE_WARNING_DEFBLOCK
-#  define LZ5_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #  if (LZ5_GCC_VERSION >= 405) || defined(__clang__)
 #    define LZ5_DEPRECATED(message) __attribute__((deprecated(message)))
 #  elif (LZ5_GCC_VERSION >= 301)

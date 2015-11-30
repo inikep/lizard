@@ -47,20 +47,6 @@ extern "C" {
 
 
 
-/* *************************************
-*  Local Compiler Options
-***************************************/
-#if defined(__GNUC__)
-#  pragma GCC diagnostic ignored "-Wunused-function"
-#endif
-
-#if defined (__clang__)
-#  pragma clang diagnostic ignored "-Wunused-function"
-#endif
-
-
-
-
 /******************************************
 *  Compiler-specific
 ******************************************/

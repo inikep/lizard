@@ -38,12 +38,12 @@ BINDIR  := $(PREFIX)/bin
 MANDIR  := $(PREFIX)/share/man/man1
 LZ5DIR  := ../lib
 
-DESTDIR ?=
-PREFIX  ?= /usr/local
-CFLAGS  ?= -O3   # can select customized optimized flags such as for example : CFLAGS="-O2 -g" make
-CFLAGS  += -std=c99 -Wall -Wextra -Wundef -Wshadow -Wcast-qual -Wcast-align -Wstrict-prototypes -pedantic
-CPPFLAGS:= -I$(LZ5DIR) -DXXH_NAMESPACE=LZ5_ -DLZ5_VERSION=\"$(RELEASE)\"
-FLAGS   := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+DESTDIR  ?=
+PREFIX   ?= /usr/local
+OPTFLAGS ?= -O3 -fomit-frame-pointer -fstrict-aliasing -fforce-addr -ffast-math    # can select customized optimized flags such as for example : CFLAGS="-O2 -g" make
+CFLAGS   ?= -std=c99 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wstrict-prototypes -pedantic -Wno-variadic-macros -Wno-format
+CPPFLAGS := -I$(LZ5DIR) -DXXH_NAMESPACE=LZ5_ -DLZ5_VERSION=\"$(RELEASE)\"
+FLAGS    := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(OPTFLAGS)
 
 
 # Define *.exe as extension for Windows systems
@@ -92,6 +92,9 @@ frametest32: $(LZ5DIR)/lz5frame.c $(LZ5DIR)/lz5.c $(LZ5DIR)/lz5hc.c $(LZ5DIR)/xx
 
 datagen : datagen.o datagencli.c
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
+
+.c.o:
+	$(CC) $(FLAGS) $< -c -o $@
 
 clean:
 	@$(MAKE) -C $(LZ5DIR) $@ > $(VOID)

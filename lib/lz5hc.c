@@ -39,10 +39,10 @@
 /* *************************************
 *  Includes
 ***************************************/
-#include "lz5hc.h"
 #include "mem.h"
 #include "lz5common.h"
 #include "lz5.h"
+#include "lz5hc.h"
 #include <stdio.h>
 
 
@@ -459,7 +459,7 @@ FORCE_INLINE int LZ5HC_GetWiderMatch (
         }
         else
         {
-            const BYTE* match = dictBase + matchIndex;
+            match = dictBase + matchIndex;
             if (MEM_read32(match) == MEM_read32(ip))
             {
                 size_t mlt;
@@ -626,7 +626,8 @@ _Search:
         if (ml2 == 0) goto _Encode;
 
         {
-        int price, best_price, off0=0, off1=0;
+        int price, best_price;
+        U32 off0=0, off1=0;
         uint8_t *pos, *best_pos;
 
     //	find the lowest price for encoding ml bytes

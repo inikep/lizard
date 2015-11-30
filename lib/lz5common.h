@@ -47,7 +47,8 @@ extern "C" {
 #  endif   /* __STDC_VERSION__ */
 #endif  /* _MSC_VER */
 
-/* LZ5_GCC_VERSION is defined into lz5.h */
+#define LZ5_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
+
 #if (LZ5_GCC_VERSION >= 302) || (__INTEL_COMPILER >= 800) || defined(__clang__)
 #  define expect(expr,value)    (__builtin_expect ((expr),(value)) )
 #else
@@ -56,6 +57,22 @@ extern "C" {
 
 #define likely(expr)     expect((expr) != 0, 1)
 #define unlikely(expr)   expect((expr) != 0, 0)
+
+
+
+/* *************************************
+*  Local Compiler Options
+***************************************/
+#if defined(__GNUC__)
+#  pragma GCC diagnostic ignored "-Wunused-function"
+#endif
+
+#if defined (__clang__)
+#  pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
+
+
 
 
 /**************************************

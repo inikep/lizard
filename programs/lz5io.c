@@ -39,6 +39,10 @@
 #  pragma warning(disable : 4127)      /* disable: C4127: conditional expression is constant */
 #endif
 
+/* Add support for %lld in printf */
+#define __STDC_FORMAT_MACROS // now PRIu64 will work
+#include <inttypes.h> 
+
 #define _LARGE_FILES           /* Large file support on 32-bits AIX */
 #define _FILE_OFFSET_BITS 64   /* Large file support on 32-bits unix */
 
@@ -99,10 +103,10 @@
 #define _8BITS 0xFF
 
 #define MAGICNUMBER_SIZE    4
-#define LZ5IO_MAGICNUMBER   0x184D2205
-#define LZ5IO_SKIPPABLE0    0x184D2A50
-#define LZ5IO_SKIPPABLEMASK 0xFFFFFFF0
-#define LEGACY_MAGICNUMBER  0x184C2102
+#define LZ5IO_MAGICNUMBER   0x184D2205U
+#define LZ5IO_SKIPPABLE0    0x184D2A50U
+#define LZ5IO_SKIPPABLEMASK 0xFFFFFFF0U
+#define LEGACY_MAGICNUMBER  0x184C2102U
 
 #define CACHELINE 64
 #define LEGACY_BLOCKSIZE   (8 MB)
@@ -396,7 +400,7 @@ int LZ5IO_compressFilename_Legacy(const char* input_filename, const char* output
     end = clock();
     DISPLAYLEVEL(2, "\r%79s\r", "");
     filesize += !filesize;   /* avoid divide by zero */
-    DISPLAYLEVEL(2,"Compressed %llu bytes into %llu bytes ==> %.2f%%\n",
+    DISPLAYLEVEL(2,"Compressed %" PRIu64 " bytes into %" PRIu64 " bytes ==> %.2f%%\n",
         (unsigned long long) filesize, (unsigned long long) compressedfilesize, (double)compressedfilesize/filesize*100);
     {
         double seconds = (double)(end - start)/CLOCKS_PER_SEC;
@@ -558,7 +562,7 @@ static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName,
 
     /* Final Status */
     DISPLAYLEVEL(2, "\r%79s\r", "");
-    DISPLAYLEVEL(2, "Compressed %llu bytes into %llu bytes ==> %.2f%%\n",
+    DISPLAYLEVEL(2, "Compressed %" PRIu64 " bytes into %" PRIu64 " bytes ==> %.2f%%\n",
         filesize, compressedfilesize, (double)compressedfilesize/(filesize + !filesize)*100);   /* avoid division by zero */
 
     return 0;
@@ -980,7 +984,7 @@ static int LZ5IO_decompressFile_extRess(dRess_t ress, const char* input_filename
 
     /* Final Status */
     DISPLAYLEVEL(2, "\r%79s\r", "");
-    DISPLAYLEVEL(2, "Successfully decoded %llu bytes \n", filesize);
+    DISPLAYLEVEL(2, "Successfully decoded %" PRIu64 " bytes \n", filesize);
 
     /* Close */
     fclose(finput);
