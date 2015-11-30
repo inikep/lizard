@@ -510,7 +510,7 @@ FORCE_INLINE int LZ5HC_encodeSequence (
     token = (*op)++;
     if ((limitedOutputBuffer) && ((*op + (length>>8) + length + (2 + 1 + LASTLITERALS)) > oend)) return 1;   /* Check output limit */
 
-    if (*ip-match >= LZ5_SHORT_OFFSET_DISTANCE && *ip-match < LZ5_MID_OFFSET_DISTANCE && *ip-match != ctx->last_off)
+    if (*ip-match >= LZ5_SHORT_OFFSET_DISTANCE && *ip-match < LZ5_MID_OFFSET_DISTANCE && (U32)(*ip-match) != ctx->last_off)
     {
         if (length>=(int)RUN_MASK) { int len; *token=(RUN_MASK<<ML_BITS); len = length-RUN_MASK; for(; len > 254 ; len-=255) *(*op)++ = 255;  *(*op)++ = (BYTE)len; }
         else *token = (BYTE)(length<<ML_BITS);
@@ -527,7 +527,7 @@ FORCE_INLINE int LZ5HC_encodeSequence (
     *op += length;
 
     /* Encode Offset */
-    if (*ip-match == ctx->last_off)
+    if ((U32)(*ip-match) == ctx->last_off)
     {
         *token+=(3<<ML_RUN_BITS2);
 //            printf("2last_off=%d *token=%d\n", last_off, *token);
@@ -760,7 +760,7 @@ static int LZ5HC_compress_price_fast (
 #endif 
         if (!ml) { ip++; continue; }
 
-        if (ip - ref == ctx->last_off) { ml2=0; goto _Encode; }
+        if ((U32)(ip - ref) == ctx->last_off) { ml2=0; goto _Encode; }
         
         {
         int back = 0;

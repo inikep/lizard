@@ -23,8 +23,7 @@
 #  - LZ5 public forum : https://groups.google.com/forum/#!forum/lz5c
 # ##########################################################################
 # lz5 : Command Line Utility, supporting gzip-like arguments
-# lz5c  : CLU, supporting also legacy lz5demo arguments
-# lz5c32: Same as lz5c, but forced to compile in 32-bits mode
+# lz5_32: Same as lz5, but forced to compile in 32-bits mode
 # frametest  : Test tool, to check lz5frame integrity on target platform
 # frametest32: Same as frametest, but forced to compile in 32-bits mode
 # fullbench  : Precisely measure speed for each LZ5 function variant
@@ -63,7 +62,7 @@ FUZZER_TIME  := -T9mn
 
 default: lz5
 
-m32: lz5c32 fullbench32 frametest32
+m32: lz5_32 fullbench32 frametest32
 
 bins: lz5 fullbench frametest datagen
 
@@ -72,11 +71,8 @@ all: bins m32
 lz5: $(LZ5DIR)/lz5.o $(LZ5DIR)/lz5hc.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash.o bench.o lz5io.o lz5cli.o
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-lz5c  : $(LZ5DIR)/lz5.o $(LZ5DIR)/lz5hc.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash.o bench.o lz5io.o lz5cli.o
-	$(CC) $(FLAGS) -DENABLE_LZ5C_LEGACY_OPTIONS $^ -o $@$(EXT)
-
-lz5c32: $(LZ5DIR)/lz5.c $(LZ5DIR)/lz5hc.c $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash.c bench.c lz5io.c lz5cli.c
-	$(CC) -m32 $(FLAGS) -DENABLE_LZ5C_LEGACY_OPTIONS $^ -o $@$(EXT)
+lz5_32: $(LZ5DIR)/lz5.c $(LZ5DIR)/lz5hc.c $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash.c bench.c lz5io.c lz5cli.c
+	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
 fullbench: $(LZ5DIR)/lz5.o $(LZ5DIR)/lz5hc.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash.o fullbench.o
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
@@ -99,7 +95,7 @@ datagen : datagen.o datagencli.c
 clean:
 	@$(MAKE) -C $(LZ5DIR) $@ > $(VOID)
 	@rm -f core *.o *.test tmp* \
-        lz5$(EXT) lz5c$(EXT) lz5c32$(EXT) \
+        lz5$(EXT) lz5_32$(EXT) \
         fullbench$(EXT) fullbench32$(EXT) \
         frametest$(EXT) frametest32$(EXT) \
         datagen$(EXT)
@@ -110,16 +106,14 @@ clean:
 #make install is validated only for Linux, OSX, kFreeBSD and Hurd targets
 ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU))
 
-install: lz5 lz5c
+install: lz5 
 	@echo Installing binaries
 	@install -d -m 755 $(DESTDIR)$(BINDIR)/ $(DESTDIR)$(MANDIR)/
 	@install -m 755 lz5 $(DESTDIR)$(BINDIR)/lz5
 	@ln -sf lz5 $(DESTDIR)$(BINDIR)/lz5cat
 	@ln -sf lz5 $(DESTDIR)$(BINDIR)/unlz5
-	@install -m 755 lz5c $(DESTDIR)$(BINDIR)/lz5c
 	@echo Installing man pages
 	@install -m 644 lz5.1 $(DESTDIR)$(MANDIR)/lz5.1
-	@ln -sf lz5.1 $(DESTDIR)$(MANDIR)/lz5c.1
 	@ln -sf lz5.1 $(DESTDIR)$(MANDIR)/lz5cat.1
 	@ln -sf lz5.1 $(DESTDIR)$(MANDIR)/unlz5.1
 	@echo lz5 installation completed
@@ -128,16 +122,14 @@ uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/lz5cat
 	rm -f $(DESTDIR)$(BINDIR)/unlz5
 	[ -x $(DESTDIR)$(BINDIR)/lz5 ] && rm -f $(DESTDIR)$(BINDIR)/lz5
-	[ -x $(DESTDIR)$(BINDIR)/lz5c ] && rm -f $(DESTDIR)$(BINDIR)/lz5c
 	[ -f $(DESTDIR)$(MANDIR)/lz5.1 ] && rm -f $(DESTDIR)$(MANDIR)/lz5.1
-	rm -f $(DESTDIR)$(MANDIR)/lz5c.1
 	rm -f $(DESTDIR)$(MANDIR)/lz5cat.1
 	rm -f $(DESTDIR)$(MANDIR)/unlz5.1
 	@echo lz5 programs successfully uninstalled
 
-test: test-lz5 test-lz5c test-frametest test-fullbench test-fuzzer test-mem
+test: test-lz5 test-frametest test-fullbench test-fuzzer test-mem
 
-test32: test-lz5c32 test-frametest32 test-fullbench32 test-fuzzer32 test-mem32
+test32: test-lz5_32 test-frametest32 test-fullbench32 test-fuzzer32 test-mem32
 
 test-all: test test32
 
@@ -234,28 +226,24 @@ test-lz5: lz5 datagen test-lz5-basic test-lz5-multiple test-lz5-sparse test-lz5-
 	@echo "\n ---- test pass-through ----"
 	./datagen | ./lz5 -tf
 
-test-lz5c: lz5c datagen
-	@echo "\n ---- test lz5c version ----"
-	./datagen -g256MB | ./lz5c -l -v    | ./lz5c   -t
-
-test-interop-32-64: lz5 lz5c32 datagen
+test-interop-32-64: lz5 lz5_32 datagen
 	@echo "\n ---- test interoperability 32-bits -vs- 64 bits ----"
-	./datagen -g16KB  | ./lz5c32 -9     | ./lz5    -t
-	./datagen -P10    | ./lz5    -9B4   | ./lz5c32 -t
-	./datagen         | ./lz5c32        | ./lz5    -t
-	./datagen -g1M    | ./lz5    -3B5   | ./lz5c32 -t
-	./datagen -g256MB | ./lz5c32 -vqB4D | ./lz5    -qt
-	./datagen -g1G -P90 | ./lz5         | ./lz5c32 -t
-	./datagen -g6GB   | ./lz5c32 -vq9BD | ./lz5    -qt
+	./datagen -g16KB  | ./lz5_32 -9     | ./lz5    -t
+	./datagen -P10    | ./lz5    -9B4   | ./lz5_32 -t
+	./datagen         | ./lz5_32        | ./lz5    -t
+	./datagen -g1M    | ./lz5    -3B5   | ./lz5_32 -t
+	./datagen -g256MB | ./lz5_32 -vqB4D | ./lz5    -qt
+	./datagen -g1G -P90 | ./lz5         | ./lz5_32 -t
+	./datagen -g6GB   | ./lz5_32 -vq9BD | ./lz5    -qt
 
-test-lz5c32-basic: lz5c32 datagen
-	@echo "\n ---- test lz5c32 32-bits version ----"
-	./datagen -g16KB  | ./lz5c32 -9     | ./lz5c32 -t
-	./datagen         | ./lz5c32        | ./lz5c32 -t
-	./datagen -g256MB | ./lz5c32 -vqB4D | ./lz5c32 -qt
-	./datagen -g6GB   | ./lz5c32 -vqB5D | ./lz5c32 -qt
+test-lz5_32-basic: lz5_32 datagen
+	@echo "\n ---- test lz5_32 32-bits version ----"
+	./datagen -g16KB  | ./lz5_32 -9     | ./lz5_32 -t
+	./datagen         | ./lz5_32        | ./lz5_32 -t
+	./datagen -g256MB | ./lz5_32 -vqB4D | ./lz5_32 -qt
+	./datagen -g6GB   | ./lz5_32 -vqB5D | ./lz5_32 -qt
 
-test-lz5c32: test-lz5c32-basic test-interop-32-64
+test-lz5_32: test-lz5_32-basic test-interop-32-64
 
 test-fullbench: fullbench
 	./fullbench --no-prompt $(NB_LOOPS) $(TEST_FILES)
@@ -294,7 +282,7 @@ test-mem: lz5 datagen fuzzer frametest fullbench
 	valgrind --leak-check=yes --error-exitcode=1 ./fuzzer -i64 -t1
 	valgrind --leak-check=yes --error-exitcode=1 ./frametest -i256
 
-test-mem32: lz5c32 datagen
+test-mem32: lz5_32 datagen
 # unfortunately, valgrind doesn't seem to work with non-native binary...
 
 endif

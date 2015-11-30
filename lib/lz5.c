@@ -249,7 +249,7 @@ FORCE_INLINE int LZ5_compress_generic(
             if ((outputLimited) && (unlikely(op + litLength + (2 + 1 + LASTLITERALS) + (litLength/255) > olimit)))
                 return 0;   /* Check output limit */
 
-            if (ip-match >= LZ5_SHORT_OFFSET_DISTANCE && ip-match < LZ5_MID_OFFSET_DISTANCE && ip-match != last_off)
+            if (ip-match >= LZ5_SHORT_OFFSET_DISTANCE && ip-match < LZ5_MID_OFFSET_DISTANCE && (U32)(ip-match) != last_off)
             {
                 if (litLength>=RUN_MASK)
                 {
@@ -279,7 +279,7 @@ FORCE_INLINE int LZ5_compress_generic(
 
 _next_match:
         /* Encode Offset */
-        if (ip-match == last_off)
+        if ((U32)(ip-match) == last_off)
         {
             *token+=(3<<ML_RUN_BITS2);
 //            printf("2last_off=%d *token=%d\n", last_off, *token);
@@ -543,7 +543,7 @@ static int LZ5_compress_destSize_generic(
                 goto _last_literals;
             }
 
-            if (ip-match >= LZ5_SHORT_OFFSET_DISTANCE && ip-match < LZ5_MID_OFFSET_DISTANCE && ip-match != last_off)
+            if ((U32)(ip-match) >= LZ5_SHORT_OFFSET_DISTANCE && (U32)(ip-match) < LZ5_MID_OFFSET_DISTANCE && (U32)(ip-match) != last_off)
             {
                 if (litLength>=RUN_MASK)
                 {
@@ -573,7 +573,7 @@ static int LZ5_compress_destSize_generic(
 
 _next_match:
         /* Encode Offset */
-        if (ip-match == last_off)
+        if ((U32)(ip-match) == last_off)
         {
             *token+=(3<<ML_RUN_BITS2);          
         }
