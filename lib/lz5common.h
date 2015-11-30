@@ -60,21 +60,6 @@ extern "C" {
 
 
 
-/* *************************************
-*  Local Compiler Options
-***************************************/
-#if defined(__GNUC__)
-#  pragma GCC diagnostic ignored "-Wunused-function"
-#endif
-
-#if defined (__clang__)
-#  pragma clang diagnostic ignored "-Wunused-function"
-#endif
-
-
-
-
-
 /**************************************
 *  Memory routines
 **************************************/
@@ -125,9 +110,35 @@ static const int LZ5_minLength = (MFLIMIT+1);
 
 
 
+/****************************************************************
+*  Basic Types
+*****************************************************************/
+#if defined (__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) /* C99 */)
+# include <stdint.h>
+  typedef  uint8_t BYTE;
+  typedef uint16_t U16;
+  typedef  int16_t S16;
+  typedef uint32_t U32;
+  typedef  int32_t S32;
+  typedef uint64_t U64;
+  typedef  int64_t S64;
+#else
+  typedef unsigned char       BYTE;
+  typedef unsigned short      U16;
+  typedef   signed short      S16;
+  typedef unsigned int        U32;
+  typedef   signed int        S32;
+  typedef unsigned long long  U64;
+  typedef   signed long long  S64;
+#endif
+
+
+
 /* *************************************
 *  HC Inline functions and Macros
 ***************************************/
+#include "mem.h" // MEM_read
+
 #if MINMATCH == 3
     #define MEM_read24(ptr) (uint32_t)(MEM_read32(ptr)<<8) 
 #else

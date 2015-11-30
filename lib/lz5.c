@@ -38,7 +38,6 @@
 /**************************************
 *  Includes
 **************************************/
-#include "mem.h"
 #include "lz5common.h"
 #include "lz5.h"
 #include <stdio.h>

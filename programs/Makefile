@@ -40,8 +40,8 @@ LZ5DIR  := ../lib
 
 DESTDIR  ?=
 PREFIX   ?= /usr/local
-OPTFLAGS ?= -O3 -fomit-frame-pointer -fstrict-aliasing -fforce-addr -ffast-math    # can select customized optimized flags such as for example : CFLAGS="-O2 -g" make
-CFLAGS   ?= -std=c99 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wstrict-prototypes -pedantic -Wno-variadic-macros -Wno-format
+OPTFLAGS ?= -O3 -fomit-frame-pointer -fstrict-aliasing -fforce-addr -ffast-math    # can select customized optimized flags such as for example: make CFLAGS="g"
+CFLAGS   ?= -std=c99 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wstrict-prototypes -pedantic -Wno-variadic-macros -Wno-format -Wno-unused-function
 CPPFLAGS := -I$(LZ5DIR) -DXXH_NAMESPACE=LZ5_ -DLZ5_VERSION=\"$(RELEASE)\"
 FLAGS    := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(OPTFLAGS)
 
