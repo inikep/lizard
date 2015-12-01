@@ -75,10 +75,10 @@ int LZ5_alloc_mem_HC(LZ5HC_Data_Structure* ctx, int compressionLevel)
     return 1;
 }
 
-void LZ5_free_mem_HC(LZ5HC_Data_Structure* statePtr)
+void LZ5_free_mem_HC(LZ5HC_Data_Structure* ctx)
 {
-    if (statePtr->chainTable) FREEMEM(statePtr->chainTable);
-    if (statePtr->hashTable) FREEMEM(statePtr->hashTable);    
+    if (ctx->chainTable) FREEMEM(ctx->chainTable);
+    if (ctx->hashTable) FREEMEM(ctx->hashTable);    
 }
 
 
@@ -982,15 +982,17 @@ LZ5_streamHC_t* LZ5_createStreamHC(int compressionLevel)
         FREEMEM(statePtr);
         return NULL;
     }
-    
     return (LZ5_streamHC_t*) statePtr; 
 }
 
 int LZ5_freeStreamHC (LZ5_streamHC_t* LZ5_streamHCPtr)
 {
     LZ5HC_Data_Structure* statePtr = (LZ5HC_Data_Structure*)LZ5_streamHCPtr;
-    LZ5_free_mem_HC(statePtr);
-    free(LZ5_streamHCPtr); 
+    if (statePtr)
+    {
+        LZ5_free_mem_HC(statePtr);
+        free(LZ5_streamHCPtr); 
+    }
     return 0; 
 }
 
