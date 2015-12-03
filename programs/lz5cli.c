@@ -30,14 +30,6 @@
   The license of this compression CLI program is GPLv2.
 */
 
-/**************************************
-*  Tuning parameters
-***************************************/
-/* ENABLE_LZ5C_LEGACY_OPTIONS :
-   Control the availability of -c0, -c1 and -hc legacy arguments
-   Default : Legacy options are disabled */
-/* #define ENABLE_LZ5C_LEGACY_OPTIONS */
-
 
 /**************************************
 *  Compiler Options
@@ -60,6 +52,7 @@
 #include <string.h>   /* strcmp, strlen */
 #include "bench.h"    /* BMK_benchFile, BMK_SetNbIterations, BMK_SetBlocksize, BMK_SetPause */
 #include "lz5io.h"    /* LZ5IO_compressFilename, LZ5IO_decompressFilename, LZ5IO_compressMultipleFilenames */
+#include "lz5common.h"
 
 
 /****************************
@@ -86,15 +79,11 @@
 *  Constants
 ******************************/
 #define COMPRESSOR_NAME "LZ5 command line interface"
-#define AUTHOR "Yann Collet"
-#define WELCOME_MESSAGE "*** %s %i-bits %s, by %s (%s) ***\n", COMPRESSOR_NAME, (int)(sizeof(void*)*8), LZ5_VERSION, AUTHOR, __DATE__
+#define AUTHOR "Y.Collet & P.Skibinski"
+#define WELCOME_MESSAGE "%s %i-bit %s by %s (%s)\n", COMPRESSOR_NAME, (int)(sizeof(void*)*8), LZ5_VERSION, AUTHOR, __DATE__
 #define LZ5_EXTENSION ".lz5"
 #define LZ5CAT "lz5cat"
 #define UNLZ5 "unlz5"
-
-#define KB *(1U<<10)
-#define MB *(1U<<20)
-#define GB *(1U<<30)
 
 #define LZ5_BLOCKSIZEID_DEFAULT 7
 
@@ -150,12 +139,12 @@ static int usage(void)
     DISPLAY( "input   : a filename\n");
     DISPLAY( "          with no FILE, or when FILE is - or %s, read standard input\n", stdinmark);
     DISPLAY( "Arguments :\n");
-    DISPLAY( " -1     : Fast compression (default) \n");
-    DISPLAY( " -9     : High compression \n");
-    DISPLAY( " -d     : decompression (default for %s extension)\n", LZ5_EXTENSION);
-    DISPLAY( " -z     : force compression\n");
-    DISPLAY( " -f     : overwrite output without prompting \n");
-    DISPLAY( " -h/-H  : display help/long help and exit\n");
+    DISPLAY( " -0       : Fast compression (default) \n");
+    DISPLAY( " -1...-%d : High compression; higher number == more compression but slower\n", LZ5HC_MAX_CLEVEL);
+    DISPLAY( " -d       : decompression (default for %s extension)\n", LZ5_EXTENSION);
+    DISPLAY( " -z       : force compression\n");
+    DISPLAY( " -f       : overwrite output without prompting \n");
+    DISPLAY( " -h/-H    : display help/long help and exit\n");
     return 0;
 }
 
@@ -181,13 +170,6 @@ static int usage_advanced(void)
     DISPLAY( "Benchmark arguments :\n");
     DISPLAY( " -b     : benchmark file(s)\n");
     DISPLAY( " -i#    : iteration loops [1-9](default : 3), benchmark mode only\n");
-#if defined(ENABLE_LZ5C_LEGACY_OPTIONS)
-    DISPLAY( "Legacy arguments :\n");
-    DISPLAY( " -c0    : fast compression\n");
-    DISPLAY( " -c1    : high compression\n");
-    DISPLAY( " -hc    : high compression\n");
-    DISPLAY( " -y     : overwrite output without prompting \n");
-#endif /* ENABLE_LZ5C_LEGACY_OPTIONS */
     EXTENDED_HELP;
     return 0;
 }
@@ -214,8 +196,8 @@ static int usage_longhelp(void)
     DISPLAY( "\n");
     DISPLAY( "Compression levels : \n");
     DISPLAY( "---------------------\n");
-    DISPLAY( "-0 ... -2  => Fast compression, all identicals\n");
-    DISPLAY( "-3 ... -16 => High compression; higher number == more compression but slower\n");
+    DISPLAY( "-0 => Fast compression\n");
+    DISPLAY( "-1 ... -%d => High compression; higher number == more compression but slower\n", LZ5HC_MAX_CLEVEL);
     DISPLAY( "\n");
     DISPLAY( "stdin, stdout and the console : \n");
     DISPLAY( "--------------------------------\n");
@@ -239,17 +221,6 @@ static int usage_longhelp(void)
     DISPLAY( "-------------------------------------\n");
     DISPLAY( "3 : compress data stream from 'generator', send result to 'consumer'\n");
     DISPLAY( "          generator | %s | consumer \n", programName);
-#if defined(ENABLE_LZ5C_LEGACY_OPTIONS)
-    DISPLAY( "\n");
-    DISPLAY( "***** Warning  *****\n");
-    DISPLAY( "Legacy arguments take precedence. Therefore : \n");
-    DISPLAY( "---------------------------------\n");
-    DISPLAY( "          %s -hc filename\n", programName);
-    DISPLAY( "means 'compress filename in high compression mode'\n");
-    DISPLAY( "It is not equivalent to :\n");
-    DISPLAY( "          %s -h -c filename\n", programName);
-    DISPLAY( "which would display help text and exit\n");
-#endif /* ENABLE_LZ5C_LEGACY_OPTIONS */
     return 0;
 }
 
@@ -340,14 +311,6 @@ int main(int argc, char** argv)
             while (argument[1]!=0)
             {
                 argument ++;
-
-#if defined(ENABLE_LZ5C_LEGACY_OPTIONS)
-                /* Legacy arguments (-c0, -c1, -hc, -y, -s) */
-                if ((argument[0]=='c') && (argument[1]=='0')) { cLevel=0; argument++; continue; }  /* -c0 (fast compression) */
-                if ((argument[0]=='c') && (argument[1]=='1')) { cLevel=9; argument++; continue; }  /* -c1 (high compression) */
-                if ((argument[0]=='h') && (argument[1]=='c')) { cLevel=9; argument++; continue; }  /* -hc (high compression) */
-                if (*argument=='y') { LZ5IO_setOverwrite(1); continue; }                           /* -y (answer 'yes' to overwrite permission) */
-#endif /* ENABLE_LZ5C_LEGACY_OPTIONS */
 
                 if ((*argument>='0') && (*argument<='9'))
                 {
