@@ -1092,7 +1092,7 @@ FORCE_INLINE int LZ5_decompress_generic(
         } else { MEM_copy8(op, match); match+=8; }
         op += 8;
 
-        if (unlikely(cpy>oend-12))
+        if (unlikely(cpy>oend-(16-MINMATCH)))
         {
             BYTE* const oCopyLimit = oend-(WILDCOPYLENGTH-1);
             if (cpy > oend-LASTLITERALS) goto _output_error;    /* Error : last LASTLITERALS bytes must be literals (uncompressed) */
