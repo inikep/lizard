@@ -711,7 +711,8 @@ static int LZ5HC_compress_optimal_price (
     BYTE* op = (BYTE*) dest;
     BYTE* const oend = op + maxOutputSize;
     const int sufficient_len = ctx->params.sufficientLength;
-
+    const bool faster_get_matches = (ctx->params.sufficientLength % 2) == 0; 
+    
     LZ5HC_optimal_t opt[LZ5_OPT_NUM+4];
     LZ5HC_match_t matches[LZ5_OPT_NUM+1];
     const uint8_t *inr;
@@ -759,11 +760,9 @@ static int LZ5HC_compress_optimal_price (
  
        best_mlen = (last_pos) ? last_pos : MINMATCH;
 
-#ifdef LZ5_FASTER_GET_MATCHES
-       if (last_pos)
+       if (faster_get_matches && last_pos)
            match_num = 0;
        else
-#endif
        {
             LZ5HC_Insert(ctx, ip);
             match_num = LZ5HC_GetAllMatches(ctx, ip, ip, matchlimit, best_mlen, matches);
@@ -906,9 +905,8 @@ static int LZ5HC_compress_optimal_price (
                 }
 
                 best_mlen = mlen;
-#ifdef LZ5_FASTER_GET_MATCHES
-                skip_num = best_mlen;
-#endif
+                if (faster_get_matches)
+                    skip_num = best_mlen;
 
                 LZ5_LOG_PARSER("%d: Found REP mlen=%d off=%d price=%d litlen=%d price[%d]=%d\n", (int)(inr-source), mlen, 0, price, litlen, cur - litlen, opt[cur - litlen].price);
 
@@ -921,13 +919,11 @@ static int LZ5HC_compress_optimal_price (
                 while (mlen >= MINMATCH);
             }
 
-#ifdef LZ5_FASTER_GET_MATCHES
-            if (skip_num > 0)
+            if (faster_get_matches && skip_num > 0)
             {
                 skip_num--; 
                 continue;
             }
-#endif
 
 
             best_mlen = (best_mlen > MINMATCH) ? best_mlen : MINMATCH;      

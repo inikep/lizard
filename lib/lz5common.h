@@ -188,7 +188,6 @@ static size_t LZ5HC_hashPtr(const void* p, U32 hBits, U32 mls)
 
 #define MAX(a,b) ((a)>(b))?(a):(b)
 #define LZ5_OPT_NUM   (1<<12)
-#define LZ5_FASTER_GET_MATCHES
 
 #define LZ5_SHORT_LITERALS          ((1<<RUN_BITS2)-1)
 #define LZ5_LITERALS                ((1<<RUN_BITS)-1)
@@ -308,13 +307,13 @@ static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL+1] =
     { 22, 22, 19, 16,    1,  4,  0, LZ5HC_lowest_price },  // level 8
     { 22, 22, 23, 16,    3,  4,  0, LZ5HC_lowest_price },  // level 9
     { 22, 22, 23, 16,    8,  4,  0, LZ5HC_lowest_price },  // level 10
-    { 22, 22, 23, 16,   32,  4,  0, LZ5HC_lowest_price },  // level 11
-    { 22, 22, 23, 16,  128,  4,  0, LZ5HC_lowest_price },  // level 12
-    { 22, 22, 23, 16, 1024,  4,  0, LZ5HC_lowest_price },  // level 13
-    { 22, 22, 23, 16,    8,  4, 16, LZ5HC_optimal_price }, // level 14
-    { 22, 22, 23, 16,    8,  4, 32, LZ5HC_optimal_price }, // level 15
-    { 22, 22, 23, 16,   32,  4, 16, LZ5HC_optimal_price }, // level 16
-    { 22, 22, 23, 16,   32,  4, 32, LZ5HC_optimal_price }, // level 17
+    { 22, 22, 23, 16,    8,  4, 12, LZ5HC_optimal_price }, // level 11
+    { 22, 22, 23, 16,    8,  4, 64, LZ5HC_optimal_price }, // level 12
+    { 22, 22, 23, 16,    8,  4, 65, LZ5HC_optimal_price }, // level 13
+    { 22, 22, 23, 16,   32,  4, 64, LZ5HC_optimal_price }, // level 14
+    { 22, 22, 23, 16,   32,  4, 65, LZ5HC_optimal_price }, // level 15
+    { 22, 22, 23, 16,  128,  4, 64, LZ5HC_optimal_price }, // level 14
+    { 22, 22, 23, 16,  128,  4, 65, LZ5HC_optimal_price }, // level 15
 };
 
 
