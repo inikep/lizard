@@ -1121,11 +1121,11 @@ encode: // cur, last_pos, best_mlen, best_off have to be set
     /* Encode Last Literals */
     {
         int lastRun = (int)(iend - anchor);
-        printf("%d: ENCODE_LAST literals=%d\n", (int)(ip-base), (int)(iend-anchor));
+        if (lastRun < LASTLITERALS) printf("lastRun=%d\n", lastRun);
         if ((limit) && (((char*)op - dest) + lastRun + 1 + ((lastRun+255-RUN_MASK)/255) > (U32)maxOutputSize)) return 0;  /* Check output limit */
         if (lastRun>=(int)RUN_MASK) { *op++=(RUN_MASK<<ML_BITS); lastRun-=RUN_MASK; for(; lastRun > 254 ; lastRun-=255) *op++ = 255; *op++ = (BYTE) lastRun; }
         else *op++ = (BYTE)(lastRun<<ML_BITS);
-        printf("%d: ENCODE_LAST2 literals=%d out=%d\n", (int)(ip-base), (int)(iend-anchor), (int)((char*)op -dest));
+        LZ5_LOG_ENCODE("%d: ENCODE_LAST literals=%d out=%d\n", (int)(ip-base), (int)(iend-anchor), (int)((char*)op -dest));
         memcpy(op, anchor, iend - anchor);
         op += iend-anchor;
     }
