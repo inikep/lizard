@@ -203,7 +203,7 @@ FORCE_INLINE int LZ5HC_FindBestMatch (LZ5HC_Data_Structure* ctx,   /* Index tabl
 }
 
 
-FORCE_INLINE int LZ5HC_FindBestMatchFast (LZ5HC_Data_Structure* ctx, U32 matchIndex, U32 matchIndex3, /* Index table will be updated */
+FORCE_INLINE int LZ5HC_FindMatchFast (LZ5HC_Data_Structure* ctx, U32 matchIndex, U32 matchIndex3, /* Index table will be updated */
                                                const BYTE* ip, const BYTE* const iLimit,
                                                const BYTE** matchpos)
 {
@@ -270,7 +270,7 @@ FORCE_INLINE int LZ5HC_FindBestMatchFast (LZ5HC_Data_Structure* ctx, U32 matchIn
 }
 
 
-FORCE_INLINE int LZ5HC_FindBestMatchFaster (LZ5HC_Data_Structure* ctx, U32 matchIndex,  /* Index table will be updated */
+FORCE_INLINE int LZ5HC_FindMatchFaster (LZ5HC_Data_Structure* ctx, U32 matchIndex,  /* Index table will be updated */
                                                const BYTE* ip, const BYTE* const iLimit,
                                                const BYTE** matchpos)
 {
@@ -320,7 +320,7 @@ FORCE_INLINE int LZ5HC_FindBestMatchFaster (LZ5HC_Data_Structure* ctx, U32 match
 }
 
 
-FORCE_INLINE int LZ5HC_FindBestMatchFastest (LZ5HC_Data_Structure* ctx, U32 matchIndex,  /* Index table will be updated */
+FORCE_INLINE int LZ5HC_FindMatchFastest (LZ5HC_Data_Structure* ctx, U32 matchIndex,  /* Index table will be updated */
                                                const BYTE* ip, const BYTE* const iLimit,
                                                const BYTE** matchpos)
 {
@@ -1305,7 +1305,7 @@ static int LZ5HC_compress_price_fast (
     {
         HashPos = &HashTable[LZ5HC_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength)];
         HashPos3 = &HashTable3[LZ5HC_hash3Ptr(ip, ctx->params.hashLog3)];
-        ml = LZ5HC_FindBestMatchFast (ctx, *HashPos, *HashPos3, ip, matchlimit, (&ref));
+        ml = LZ5HC_FindMatchFast (ctx, *HashPos, *HashPos3, ip, matchlimit, (&ref));
         *HashPos =  (U32)(ip - base);
 #if MINMATCH == 3
         *HashPos3 = (U32)(ip - base);
@@ -1327,7 +1327,7 @@ _Search:
 
         start2 = ip + ml - 2;
         HashPos = &HashTable[LZ5HC_hashPtr(start2, ctx->params.hashLog, ctx->params.searchLength)];
-        ml2 = LZ5HC_FindBestMatchFaster(ctx, *HashPos, start2, matchlimit, (&ref2));      
+        ml2 = LZ5HC_FindMatchFaster(ctx, *HashPos, start2, matchlimit, (&ref2));      
         *HashPos = (U32)(start2 - base);
         if (!ml2) goto _Encode;
 
@@ -1431,7 +1431,7 @@ static int LZ5HC_compress_fast (
     while (ip < mflimit)
     {
         HashPos = &HashTable[LZ5HC_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength)];
-        ml = LZ5HC_FindBestMatchFastest (ctx, *HashPos, ip, matchlimit, (&ref));
+        ml = LZ5HC_FindMatchFastest (ctx, *HashPos, ip, matchlimit, (&ref));
         *HashPos =  (U32)(ip - base);
         if (!ml) { ip+=accel; continue; }
 
