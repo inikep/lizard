@@ -288,7 +288,7 @@ typedef struct
 /* *************************************
 *  HC Pre-defined compression levels
 ***************************************/
-#define LZ5HC_MAX_CLEVEL 17
+#define LZ5HC_MAX_CLEVEL 16
 
 static const int g_maxCompressionLevel = LZ5HC_MAX_CLEVEL;
 static const int LZ5HC_compressionLevel_default = 6;
@@ -311,9 +311,8 @@ static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL+1] =
     { 22, 22, 23, 16,    8,  4, 64, LZ5HC_optimal_price }, // level 12
     { 22, 22, 23, 16,    8,  4, 65, LZ5HC_optimal_price }, // level 13
     { 22, 22, 23, 16,   32,  4, 64, LZ5HC_optimal_price }, // level 14
-    { 22, 22, 23, 16,   32,  4, 65, LZ5HC_optimal_price }, // level 15
-    { 22, 22, 23, 16,  128,  4, 64, LZ5HC_optimal_price }, // level 14
-    { 22, 22, 23, 16,  128,  4, 65, LZ5HC_optimal_price }, // level 15
+    { 22, 22, 23, 16,  128,  4, 64, LZ5HC_optimal_price }, // level 15
+    { 22, 22, 23, 16,  512,  4, 64, LZ5HC_optimal_price }, // level 16
 };
 
 
