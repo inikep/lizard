@@ -247,6 +247,7 @@ typedef struct
     U32 hashLog3;      /* dispatch table : larger == more memory, faster*/
     U32 searchNum;     /* nb of searches : larger == more compression, slower*/
     U32 searchLength;  /* size of matches : larger == faster decompression */
+    U32 sufficientLength;  /* used only by optimal parser: size of matches which is acceptable: larger == more compression, slower */
     LZ5HC_strategy strategy;
 } LZ5HC_parameters;
 
@@ -288,30 +289,32 @@ typedef struct
 /* *************************************
 *  HC Pre-defined compression levels
 ***************************************/
-#define LZ5HC_MAX_CLEVEL 15
+#define LZ5HC_MAX_CLEVEL 17
 
 static const int g_maxCompressionLevel = LZ5HC_MAX_CLEVEL;
 static const int LZ5HC_compressionLevel_default = 6;
 
 static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL+1] =
 {
-    /* W,  C,  H, H3, Snum,  L, strat */
-    {  0,  0,  0,  0,    0,  0, LZ5HC_fast         },  // level 0 - never used
-    { 22, 22, 13,  0,    4,  6, LZ5HC_fast         },  // level 1
-    { 22, 22, 13,  0,    2,  6, LZ5HC_fast         },  // level 2
-    { 22, 22, 13,  0,    1,  5, LZ5HC_fast         },  // level 3
-    { 22, 22, 14, 13,    1,  4, LZ5HC_price_fast   },  // level 4
-    { 22, 22, 17, 13,    1,  4, LZ5HC_price_fast   },  // level 5
-    { 22, 22, 15, 13,    1,  4, LZ5HC_lowest_price },  // level 6
-    { 22, 22, 17, 13,    1,  4, LZ5HC_lowest_price },  // level 7
-    { 22, 22, 19, 16,    1,  4, LZ5HC_lowest_price },  // level 8
-    { 22, 22, 23, 16,    3,  4, LZ5HC_lowest_price },  // level 9
-    { 22, 22, 23, 16,    8,  4, LZ5HC_lowest_price },  // level 10
-    { 22, 22, 23, 16,   32,  4, LZ5HC_lowest_price },  // level 11
-    { 22, 22, 23, 16,  128,  4, LZ5HC_lowest_price },  // level 12
-    { 22, 22, 23, 16, 1024,  4, LZ5HC_lowest_price },  // level 13
-    { 22, 22, 23, 16,    8,  4, LZ5HC_optimal_price },  // level 14
-    { 22, 22, 23, 16,   32,  4, LZ5HC_optimal_price },  // level 15
+    /* W,  C,  H, H3, Snum, Se, Su, strat */
+    {  0,  0,  0,  0,    0,  0,  0, LZ5HC_fast         },  // level 0 - never used
+    { 22, 22, 13,  0,    4,  6,  0, LZ5HC_fast         },  // level 1
+    { 22, 22, 13,  0,    2,  6,  0, LZ5HC_fast         },  // level 2
+    { 22, 22, 13,  0,    1,  5,  0, LZ5HC_fast         },  // level 3
+    { 22, 22, 14, 13,    1,  4,  0, LZ5HC_price_fast   },  // level 4
+    { 22, 22, 17, 13,    1,  4,  0, LZ5HC_price_fast   },  // level 5
+    { 22, 22, 15, 13,    1,  4,  0, LZ5HC_lowest_price },  // level 6
+    { 22, 22, 17, 13,    1,  4,  0, LZ5HC_lowest_price },  // level 7
+    { 22, 22, 19, 16,    1,  4,  0, LZ5HC_lowest_price },  // level 8
+    { 22, 22, 23, 16,    3,  4,  0, LZ5HC_lowest_price },  // level 9
+    { 22, 22, 23, 16,    8,  4,  0, LZ5HC_lowest_price },  // level 10
+    { 22, 22, 23, 16,   32,  4,  0, LZ5HC_lowest_price },  // level 11
+    { 22, 22, 23, 16,  128,  4,  0, LZ5HC_lowest_price },  // level 12
+    { 22, 22, 23, 16, 1024,  4,  0, LZ5HC_lowest_price },  // level 13
+    { 22, 22, 23, 16,    8,  4, 16, LZ5HC_optimal_price }, // level 14
+    { 22, 22, 23, 16,    8,  4, 32, LZ5HC_optimal_price }, // level 15
+    { 22, 22, 23, 16,   32,  4, 16, LZ5HC_optimal_price }, // level 16
+    { 22, 22, 23, 16,   32,  4, 32, LZ5HC_optimal_price }, // level 17
 };
 
 
