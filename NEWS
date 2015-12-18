@@ -1,3 +1,6 @@
+v1.3.3
+- added: a new parser: LZ5HC_optimal_price
+
 r132
 - improved compression ratio
 - added: new parsers: LZ5HC_fast, LZ5HC_price_fast, LZ5HC_lowest_price
