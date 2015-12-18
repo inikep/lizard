@@ -3,21 +3,21 @@ Introduction
 
 LZ5 is a modification of [LZ4] which gives a better ratio at cost of slower compression and decompression speed. 
 The improvement in compression ratio is caused mainly because of:
-1. 22-bit dictionary instead of 16-bit in LZ4
-2. using 4 new parsers (including an optimal parser) optimized for a bigger dictionary
-2. support for 3-byte long matches (MINMATCH = 3)
-3. a special 1-byte codeword for the last occured offset
+- 22-bit dictionary instead of 16-bit in LZ4
+- using 4 new parsers (including an optimal parser) optimized for a bigger dictionary
+- support for 3-byte long matches (MINMATCH = 3)
+- a special 1-byte codeword for the last occured offset
 
 **In my experiments there is no open-source bytewise compressor that gives better ratio than lz5hc.**
 
 LZ5 uses different output codewords and is not compatible with LZ4. LZ4 output codewords are 3 byte long (24-bit) and look as follows:
-1. LLLL_MMMM OOOOOOOO OOOOOOOO - 16-bit offset, 4-bit match length, 4-bit literal length 
+- LLLL_MMMM OOOOOOOO OOOOOOOO - 16-bit offset, 4-bit match length, 4-bit literal length 
 
 LZ5 uses 4 types of codewords from 1 to 4 bytes long:
-1. [1_OO_LL_MMM] [OOOOOOOO] - 10-bit offset, 3-bit match length, 2-bit literal length
-2. [00_LLL_MMM] [OOOOOOOO] [OOOOOOOO] - 16-bit offset, 3-bit match length, 3-bit literal length
-3. [010_LL_MMM] [OOOOOOOO] [OOOOOOOO] [OOOOOOOO] - 24-bit offset, 3-bit match length, 2-bit literal length
-4. [011_LL_MMM] - last offset, 3-bit match length, 2-bit literal length
+- [1_OO_LL_MMM] [OOOOOOOO] - 10-bit offset, 3-bit match length, 2-bit literal length
+- [00_LLL_MMM] [OOOOOOOO] [OOOOOOOO] - 16-bit offset, 3-bit match length, 3-bit literal length
+- [010_LL_MMM] [OOOOOOOO] [OOOOOOOO] [OOOOOOOO] - 24-bit offset, 3-bit match length, 2-bit literal length
+- [011_LL_MMM] - last offset, 3-bit match length, 2-bit literal length
 
 1, 00, 010, 011 can be seen as Huffman codes and are selected according to frequences of given codewords for my test files. 
 Match lengths have always 3-bits (MMM) and literal lengths are usually 2-bits (LL) because it gives better ratio than any other division of 5-bits remaining bits. 
