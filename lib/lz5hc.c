@@ -787,11 +787,6 @@ static int LZ5HC_compress_optimal_price (
        {
            mlen = (i>0) ? matches[i-1].len+1 : best_mlen;
            best_mlen = (matches[i].len < LZ5_OPT_NUM) ? matches[i].len : LZ5_OPT_NUM;
-        /*   if (ip + best_mlen > matchlimit)
-           { 
-               best_mlen = matchlimit - ip;
-               if (best_mlen < MINMATCH) best_mlen = 0;
-           } */
            LZ5_LOG_PARSER("%d: start Found mlen=%d off=%d best_mlen=%d last_pos=%d\n", (int)((char*)ip-source), matches[i].len, matches[i].off, best_mlen, last_pos);
            while (mlen <= best_mlen)
            {
@@ -931,8 +926,7 @@ static int LZ5HC_compress_optimal_price (
             best_mlen = (best_mlen > MINMATCH) ? best_mlen : MINMATCH;      
 
             LZ5HC_Insert(ctx, inr);
-         //   if (inr < mflimit)
-                match_num = LZ5HC_GetAllMatches(ctx, inr, ip, matchlimit, best_mlen, matches);
+            match_num = LZ5HC_GetAllMatches(ctx, inr, ip, matchlimit, best_mlen, matches);
 
             if (match_num > 0 && matches[match_num-1].len > sufficient_len)
             {
@@ -951,11 +945,6 @@ static int LZ5HC_compress_optimal_price (
                 mlen = (i>0) ? matches[i-1].len+1 : best_mlen;
                 cur2 = cur - matches[i].back;
                 best_mlen = (cur2 + matches[i].len < LZ5_OPT_NUM) ? matches[i].len : LZ5_OPT_NUM - cur2;
-            /*    if (ip + cur2 + best_mlen > matchlimit)
-                {
-                    best_mlen = matchlimit - ip - cur2;
-                    if (best_mlen < MINMATCH) best_mlen = 0;
-                }*/
                 LZ5_LOG_PARSER("%d: Found1 cur=%d cur2=%d mlen=%d off=%d best_mlen=%d last_pos=%d\n", (int)((char*)inr-source), cur, cur2, matches[i].len, matches[i].off, best_mlen, last_pos);
 
                 while (mlen <= best_mlen)
@@ -1043,9 +1032,6 @@ static int LZ5HC_compress_optimal_price (
         cur = last_pos - best_mlen;
 
 encode: // cur, last_pos, best_mlen, best_off have to be set
-/*        if (ip + cur + best_mlen >= matchlimit)
-            best_mlen = matchlimit - ip - cur;*/
-
         for (int i = 1; i <= last_pos; i++)
         {
             LZ5_LOG_PARSER("%d: price[%d/%d]=%d off=%d mlen=%d litlen=%d rep=%d\n", (int)((char*)ip-source+i), i, last_pos, opt[i].price, opt[i].off, opt[i].mlen, opt[i].litlen, opt[i].rep); 
@@ -1103,7 +1089,7 @@ encode: // cur, last_pos, best_mlen, best_off have to be set
     /* Encode Last Literals */
     {
         int lastRun = (int)(iend - anchor);
-        if (inputSize > LASTLITERALS && lastRun < LASTLITERALS) { printf("ERROR: lastRun=%d\n", lastRun); }
+    //    if (inputSize > LASTLITERALS && lastRun < LASTLITERALS) { printf("ERROR: lastRun=%d\n", lastRun); }
         if ((limit) && (((char*)op - dest) + lastRun + 1 + ((lastRun+255-RUN_MASK)/255) > (U32)maxOutputSize)) return 0;  /* Check output limit */
         if (lastRun>=(int)RUN_MASK) { *op++=(RUN_MASK<<ML_BITS); lastRun-=RUN_MASK; for(; lastRun > 254 ; lastRun-=255) *op++ = 255; *op++ = (BYTE) lastRun; }
         else *op++ = (BYTE)(lastRun<<ML_BITS);
