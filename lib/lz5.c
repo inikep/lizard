@@ -970,7 +970,7 @@ FORCE_INLINE int LZ5_decompress_generic(
 
         /* copy literals */
         cpy = op+length;
-        if (((endOnInput) && ((cpy>(partialDecoding?oexit:oend-MFLIMIT)) || (ip+length>iend-(0+1+LASTLITERALS))) )
+        if (((endOnInput) && ((cpy>(partialDecoding?oexit:oend-WILDCOPYLENGTH)) || (ip+length>iend-(0+1+LASTLITERALS))) )
             || ((!endOnInput) && (cpy>oend-WILDCOPYLENGTH)))
         {
             if (partialDecoding)
