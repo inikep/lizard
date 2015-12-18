@@ -505,25 +505,8 @@ FORCE_INLINE int LZ5HC_GetAllMatches (
     int nbAttempts = ctx->params.searchNum;
     int mnum = 0;
 
-
     /* First Match */
     matchIndex = HashTable[LZ5HC_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength)];
-
-/*    match = ip - ctx->last_off;
-    if (MEM_read24(match) == MEM_read24(ip))
-    {
-        int mlt = MEM_count(ip+MINMATCH, match+MINMATCH, iHighLimit) + MINMATCH;
-        
-        int back = 0;
-        while ((ip+back>iLowLimit) && (match+back > lowPrefixPtr) && (ip[back-1] == match[back-1])) back--;
-        mlt -= back;
-
-        matches[mnum].off = ctx->last_off;
-        matches[mnum].len = mlt;
-        matches[mnum].back = -back;
-        mnum++;
-    }
-*/
 
 #if MINMATCH == 3
     size_t offset = ip - base - ctx->hashTable3[LZ5HC_hash3Ptr(ip, ctx->params.hashLog3)];
@@ -767,7 +750,7 @@ static int LZ5HC_compress_optimal_price (
             do
             {
                 litlen = 0;
-                price = LZ5HC_get_price(llen, 0+1, mlen - MINMATCH) - llen;
+                price = LZ5HC_get_price(llen, 0, mlen - MINMATCH) - llen;
                // printf("llen=%d mlen=%d sufficient_len=%d price=%d\n", llen, mlen, sufficient_len, price);
                 if (mlen > last_pos || price < opt[mlen].price)
                     SET_PRICE(mlen, mlen, 0, litlen, price);
@@ -815,7 +798,7 @@ static int LZ5HC_compress_optimal_price (
            while (mlen <= best_mlen)
            {
                 litlen = 0;
-                price = LZ5HC_get_price(llen + litlen, matches[i].off+1, mlen - MINMATCH) - llen;
+                price = LZ5HC_get_price(llen + litlen, matches[i].off, mlen - MINMATCH) - llen;
                 if (mlen > last_pos || price < opt[mlen].price)
                     SET_PRICE(mlen, mlen, matches[i].off, litlen, price);
                 mlen++;
@@ -909,20 +892,20 @@ static int LZ5HC_compress_optimal_price (
 
                     if (cur != litlen)
                     {
-                        price = opt[cur - litlen].price + LZ5HC_get_price(litlen, 1, mlen - MINMATCH);
+                        price = opt[cur - litlen].price + LZ5HC_get_price(litlen, 0, mlen - MINMATCH);
                         LZ5_LOG_PRICE("%d: TRY1 opt[%d].price=%d price=%d cur=%d litlen=%d\n", (int)(inr-base), cur - litlen, opt[cur - litlen].price, price, cur, litlen);                  
                     }
                     else
                     {
-                        price = LZ5HC_get_price(llen + litlen, 1, mlen - MINMATCH) - llen;
+                        price = LZ5HC_get_price(llen + litlen, 0, mlen - MINMATCH) - llen;
                         LZ5_LOG_PRICE("%d: TRY2 price=%d cur=%d litlen=%d llen=%d\n", (int)(inr-base), price, cur, litlen, llen);                       
                     }
                 }
                 else
                 {
                     litlen = 0;
-                    price = opt[cur].price + LZ5HC_get_price(litlen, 1, mlen - MINMATCH);
-                    LZ5_LOG_PRICE("%d: TRY3 price=%d cur=%d litlen=%d getprice=%d\n", (int)(inr-base), price, cur, litlen, LZ5HC_get_price(litlen, 1, mlen - MINMATCH));
+                    price = opt[cur].price + LZ5HC_get_price(litlen, 0, mlen - MINMATCH);
+                    LZ5_LOG_PRICE("%d: TRY3 price=%d cur=%d litlen=%d getprice=%d\n", (int)(inr-base), price, cur, litlen, LZ5HC_get_price(litlen, 0, mlen - MINMATCH));
                 }
 
                 best_mlen = mlen;
@@ -986,14 +969,14 @@ static int LZ5HC_compress_optimal_price (
                         litlen = opt[cur2].litlen;
 
                         if (cur2 != litlen)
-                            price = opt[cur2 - litlen].price + LZ5HC_get_price(litlen, matches[i].off+1, mlen - MINMATCH);
+                            price = opt[cur2 - litlen].price + LZ5HC_get_price(litlen, matches[i].off, mlen - MINMATCH);
                         else
-                            price = LZ5HC_get_price(llen + litlen, matches[i].off+1, mlen - MINMATCH) - llen;
+                            price = LZ5HC_get_price(llen + litlen, matches[i].off, mlen - MINMATCH) - llen;
                     }
                     else
                     {
                         litlen = 0;
-                        price = opt[cur2].price + LZ5HC_get_price(litlen, matches[i].off+1, mlen - MINMATCH);
+                        price = opt[cur2].price + LZ5HC_get_price(litlen, matches[i].off, mlen - MINMATCH);
                     }
 
                     LZ5_LOG_PARSER("%d: Found2 pred=%d mlen=%d best_mlen=%d off=%d price=%d litlen=%d price[%d]=%d\n", (int)(inr-base), matches[i].back, mlen, best_mlen, matches[i].off, price, litlen, cur - litlen, opt[cur - litlen].price);
