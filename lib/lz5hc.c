@@ -713,7 +713,7 @@ static int LZ5HC_compress_optimal_price (
     BYTE* op = (BYTE*) dest;
     BYTE* const oend = op + maxOutputSize;
     const int sufficient_len = ctx->params.sufficientLength;
-    const bool faster_get_matches = (ctx->params.sufficientLength % 2) == 0; 
+    const bool faster_get_matches = !ctx->params.fullSearch; 
     
     LZ5HC_optimal_t opt[LZ5_OPT_NUM+4];
     LZ5HC_match_t matches[LZ5_OPT_NUM+1];
