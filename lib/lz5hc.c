@@ -742,7 +742,7 @@ static int LZ5HC_compress_optimal_price (
         if (mlen >= MINMATCH)
         {
             LZ5_LOG_PARSER("%d: start try REP rep=%d mlen=%d\n", (int)((char*)ip-source), rep, mlen);
-            if (mlen > sufficient_len)
+            if (mlen > sufficient_len || mlen >= LZ5_OPT_NUM)
             {
                 best_mlen = mlen; best_off = 0; cur = 0; last_pos = 1;
                 goto encode;
@@ -927,6 +927,7 @@ static int LZ5HC_compress_optimal_price (
 
             LZ5HC_Insert(ctx, inr);
             match_num = LZ5HC_GetAllMatches(ctx, inr, ip, matchlimit, best_mlen, matches);
+            LZ5_LOG_PARSER("%d: LZ5HC_GetAllMatches match_num=%d\n", (int)((char*)inr-source), match_num);
 
             if (match_num > 0 && matches[match_num-1].len > sufficient_len)
             {
