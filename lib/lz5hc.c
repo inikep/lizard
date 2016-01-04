@@ -1627,7 +1627,7 @@ int LZ5_saveDictHC (LZ5_streamHC_t* LZ5_streamHCPtr, char* safeBuffer, int dictS
     LZ5HC_Data_Structure* streamPtr = (LZ5HC_Data_Structure*)LZ5_streamHCPtr;
     int prefixSize = (int)(streamPtr->end - (streamPtr->base + streamPtr->dictLimit));
     if (dictSize > LZ5_DICT_SIZE) dictSize = LZ5_DICT_SIZE;
-    if (dictSize < 4) dictSize = 0;
+  //  if (dictSize < 4) dictSize = 0;
     if (dictSize > prefixSize) dictSize = prefixSize;
     memmove(safeBuffer, streamPtr->end - dictSize, dictSize);
     {

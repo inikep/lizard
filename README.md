@@ -10,6 +10,12 @@ The improvement in compression ratio is caused mainly because of:
 
 **In my experiments there is no open-source bytewise compressor that gives better ratio than lz5hc.**
 
+[LZ4]: https://github.com/Cyan4973/lz4
+
+
+The codewords description
+-------------------------
+
 LZ5 uses different output codewords and is not compatible with LZ4. LZ4 output codewords are 3 byte long (24-bit) and look as follows:
 - LLLL_MMMM OOOOOOOO OOOOOOOO - 16-bit offset, 4-bit match length, 4-bit literal length 
 
@@ -25,7 +31,6 @@ So we can encode values 0-7 (3-bits) for matches (what means length of 3-10 for 
 that 10 bytes. So e.g. 30 is encoded as a flag 7 (match length=10) and a next byte 30-10=20. I tried many different variants (e.g. separate match lenghts and literal lenghts)
 but these codewords were the best. 
 
-[LZ4]: https://github.com/Cyan4973/lz4
 
 Benchmarks
 -------------------------

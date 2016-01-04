@@ -576,7 +576,7 @@ static int local_LZ5_decompress_safe_partial(const char* in, char* out, int inSi
 /* frame functions */
 static int local_LZ5F_compressFrame(const char* in, char* out, int inSize)
 {
-    return (int)LZ5F_compressFrame(out, 2*inSize + 16, in, inSize, NULL);
+    return (int)LZ5F_compressFrame(out, LZ5F_compressFrameBound(inSize, NULL), in, inSize, NULL);
 }
 
 static LZ5F_decompressionContext_t g_dCtx;
@@ -731,7 +731,7 @@ int fullSpeedBench(char** fileNamesTable, int nbFiles)
                         chunkP[0].origSize = (int)benchedSize; nbChunks=1;
                         break;
             case 40: compressionFunction = local_LZ5_saveDict; compressorName = "LZ5_saveDict";
-                        LZ5_loadDict(&LZ5_stream, chunkP[0].origBuffer, chunkP[0].origSize);
+                        if (!LZ5_loadDict(&LZ5_stream, chunkP[0].origBuffer, chunkP[0].origSize)) continue;
                         break;
             case 41: compressionFunction = local_LZ5_saveDictHC; compressorName = "LZ5_saveDictHC";
                         if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC),0))

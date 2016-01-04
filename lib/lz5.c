@@ -743,12 +743,12 @@ int LZ5_loadDict (LZ5_stream_t* LZ5_dict, const char* dictionary, int dictSize)
     if ((dict->initCheck) || (dict->currentOffset > 1 GB))  /* Uninitialized structure, or reuse overflow */
         LZ5_resetStream(LZ5_dict);
 
-    if (dictSize < (int)HASH_UNIT)
+ /*   if (dictSize < (int)HASH_UNIT)
     {
         dict->dictionary = NULL;
         dict->dictSize = 0;
         return 0;
-    }
+    }*/
 
     if ((dictEnd - p) > LZ5_DICT_SIZE) p = dictEnd - LZ5_DICT_SIZE;
     dict->currentOffset += LZ5_DICT_SIZE;
@@ -863,6 +863,8 @@ int LZ5_compress_forceExtDict (LZ5_stream_t* LZ5_dict, const char* source, char*
 int LZ5_saveDict (LZ5_stream_t* LZ5_dict, char* safeBuffer, int dictSize)
 {
     LZ5_stream_t_internal* dict = (LZ5_stream_t_internal*) LZ5_dict;
+    if (!dict->dictionary)
+        return 0;
     const BYTE* previousDictEnd = dict->dictionary + dict->dictSize;
 
     if ((U32)dictSize > LZ5_DICT_SIZE) dictSize = LZ5_DICT_SIZE;   /* useless to define a dictionary > LZ5_DICT_SIZE */
