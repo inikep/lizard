@@ -31,8 +31,8 @@
 # ################################################################
 
 # Version number
-export VERSION=132
-export RELEASE=r$(VERSION)
+export VERSION=1.3.3
+export RELEASE=v$(VERSION)
 
 DESTDIR?=
 PREFIX ?= /usr/local
