@@ -115,6 +115,7 @@ FORCE_INLINE void LZ5HC_Insert (LZ5HC_Data_Structure* ctx, const BYTE* ip)
     {
         U32 h = LZ5HC_hashPtr(base+idx, ctx->params.hashLog, ctx->params.searchLength);
         chainTable[idx & contentMask] = (U32)(idx - HashTable[h]);
+  //      if (chainTable[idx & contentMask] == 1) chainTable[idx & contentMask] = (U32)0x01010101;
         HashTable[h] = idx;
 #if MINMATCH == 3
         HashTable3[LZ5HC_hash3Ptr(base+idx, ctx->params.hashLog3)] = idx;
@@ -437,7 +438,6 @@ FORCE_INLINE int LZ5HC_GetWiderMatch (
         {
             match = base + matchIndex;
 
-       //   if (*(ip + longest) == *(matchPtr + longest))
             if (match < ip && MEM_read32(match) == MEM_read32(ip))
             {
                 int mlt = MINMATCH + MEM_count(ip+MINMATCH, match+MINMATCH, iHighLimit);
@@ -538,8 +538,7 @@ FORCE_INLINE int LZ5HC_GetAllMatches (
         {
             match = base + matchIndex;
 
-            if (*(ip + best_mlen) == *(match + best_mlen))
-            if (match < ip && MEM_read32(match) == MEM_read32(ip))
+            if (match < ip && *(ip + best_mlen) == *(match + best_mlen) && (MEM_read32(match) == MEM_read32(ip)))
             {
                 int mlt = MINMATCH + MEM_count(ip+MINMATCH, match+MINMATCH, iHighLimit);
                 int back = 0;
