@@ -1,3 +1,8 @@
+v1.3.3
+- added: new levels from 11 to 16 (maximum compression ratio)
+- added: a new parser: LZ5HC_optimal_price
+- fixed: buffer-overflow during decompression (thanks to m^2)
+
 r132
 - improved compression ratio
 - added: new parsers: LZ5HC_fast, LZ5HC_price_fast, LZ5HC_lowest_price
