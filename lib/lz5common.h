@@ -289,14 +289,14 @@ typedef struct
 /* *************************************
 *  HC Pre-defined compression levels
 ***************************************/
-#define LZ5HC_MAX_CLEVEL 17
+#define LZ5HC_MAX_CLEVEL 18
 
 static const int g_maxCompressionLevel = LZ5HC_MAX_CLEVEL;
 static const int LZ5HC_compressionLevel_default = 6;
 
 static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL+1] =
 {
-    /* W,  C,  H, H3,  Snum, Se,  Suff, FS, Strategy */
+    /* W,  C,  H, H3,  Snum, SL, SuffL, FS, Strategy */
     {  0,  0,  0,  0,     0,  0,     0,  0, LZ5HC_fast         },  // level 0 - never used
     { 22, 22, 13,  0,     4,  6,     0,  0, LZ5HC_fast         },  // level 1
     { 22, 22, 13,  0,     2,  6,     0,  0, LZ5HC_fast         },  // level 2
@@ -314,7 +314,8 @@ static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL+1] =
     { 22, 22, 23, 16,    32,  4,    64,  0, LZ5HC_optimal_price }, // level 14
     { 22, 22, 23, 16,   128,  4,    64,  0, LZ5HC_optimal_price }, // level 15
     { 22, 22, 23, 16,   512,  4,    64,  0, LZ5HC_optimal_price }, // level 16
-    { 22, 22, 28, 24, 1<<24,  4, 1<<24,  0, LZ5HC_optimal_price }, // level 17
+    { 22, 22, 23, 16,   512,  4,    64,  1, LZ5HC_optimal_price }, // level 17
+    { 22, 22, 28, 24, 1<<10,  4, 1<<10,  1, LZ5HC_optimal_price }, // level 18
 //  { 10, 10, 10,  0,     0,  4,     0,  0, LZ5HC_fast          }, // min values
 //  { 24, 24, 28, 24, 1<<24,  7, 1<<24,  1, LZ5HC_optimal_price }, // max values
 };

@@ -86,7 +86,7 @@ void LZ5_free_mem_HC(LZ5HC_Data_Structure* ctx)
 static void LZ5HC_init (LZ5HC_Data_Structure* ctx, const BYTE* start)
 {
     MEM_INIT((void*)ctx->hashTable, 0, sizeof(U32)*((1 << ctx->params.hashLog) + (1 << ctx->params.hashLog3)));
-    MEM_INIT(ctx->chainTable, 0xFF, sizeof(U32)*(1 << ctx->params.contentLog));
+    MEM_INIT(ctx->chainTable, 0x01, sizeof(U32)*(1 << ctx->params.contentLog));
 
     ctx->nextToUpdate = (1 << ctx->params.windowLog);
     ctx->base = start - (1 << ctx->params.windowLog);
@@ -115,7 +115,7 @@ FORCE_INLINE void LZ5HC_Insert (LZ5HC_Data_Structure* ctx, const BYTE* ip)
     {
         U32 h = LZ5HC_hashPtr(base+idx, ctx->params.hashLog, ctx->params.searchLength);
         chainTable[idx & contentMask] = (U32)(idx - HashTable[h]);
-  //      if (chainTable[idx & contentMask] == 1) chainTable[idx & contentMask] = (U32)0x01010101;
+//        if (chainTable[idx & contentMask] == 1) chainTable[idx & contentMask] = (U32)0x01010101;
         HashTable[h] = idx;
 #if MINMATCH == 3
         HashTable3[LZ5HC_hash3Ptr(base+idx, ctx->params.hashLog3)] = idx;
@@ -503,6 +503,7 @@ FORCE_INLINE int LZ5HC_GetAllMatches (
     const BYTE* match;
     U32   matchIndex;
     int nbAttempts = ctx->params.searchNum;
+ //   bool fullSearch = (ctx->params.fullSearch >= 2);
     int mnum = 0;
 
     if (ip + MINMATCH > iHighLimit) return 0;
@@ -538,7 +539,7 @@ FORCE_INLINE int LZ5HC_GetAllMatches (
         {
             match = base + matchIndex;
 
-            if (match < ip && *(ip + best_mlen) == *(match + best_mlen) && (MEM_read32(match) == MEM_read32(ip)))
+            if (match < ip && (/*fullSearch ||*/ *(ip + best_mlen) == *(match + best_mlen)) && (MEM_read32(match) == MEM_read32(ip)))
             {
                 int mlt = MINMATCH + MEM_count(ip+MINMATCH, match+MINMATCH, iHighLimit);
                 int back = 0;
@@ -712,7 +713,7 @@ static int LZ5HC_compress_optimal_price (
     BYTE* op = (BYTE*) dest;
     BYTE* const oend = op + maxOutputSize;
     const int sufficient_len = ctx->params.sufficientLength;
-    const bool faster_get_matches = !ctx->params.fullSearch; 
+    const bool faster_get_matches = (ctx->params.fullSearch == 0); 
     
     LZ5HC_optimal_t opt[LZ5_OPT_NUM+4];
     LZ5HC_match_t matches[LZ5_OPT_NUM+1];
