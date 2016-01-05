@@ -31,7 +31,7 @@
 # ################################################################
 
 # Version number
-export VERSION=1.3.3
+export VERSION=1.4
 export RELEASE=v$(VERSION)
 
 DESTDIR?=
