@@ -2,13 +2,12 @@ Introduction
 -------------------------
 
 LZ5 is a modification of [LZ4] which gives a better ratio at cost of slower compression and decompression speed. 
+**In my experiments there is no open-source bytewise compressor that gives better ratio than lz5hc.**
 The improvement in compression ratio is caused mainly because of:
 - 22-bit dictionary instead of 16-bit in LZ4
 - using 4 new parsers (including an optimal parser) optimized for a bigger dictionary
 - support for 3-byte long matches (MINMATCH = 3)
 - a special 1-byte codeword for the last occured offset
-
-**In my experiments there is no open-source bytewise compressor that gives better ratio than lz5hc.**
 
 [LZ4]: https://github.com/Cyan4973/lz4
 
@@ -67,6 +66,8 @@ With the compresion ratio is opposite: LZ5 is better than LZ4 but worse than zst
 | lz5hc v1.3.3 level 14       |  4.34 MB/s |   756 MB/s |    46484969 | 44.33 |
 | lz5hc v1.3.3 level 15       |  1.96 MB/s |   760 MB/s |    46227364 | 44.09 |
 | lz5hc v1.3.3 level 16       |  0.81 MB/s |   681 MB/s |    46125742 | 43.99 |
+| lz5hc v1.3.3 level 17       |  0.39 MB/s |   679 MB/s |    46050114 | 43.92 |
+| lz5hc v1.3.3 level 18       |  0.16 MB/s |   541 MB/s |    46008853 | 43.88 |
 | zstd v0.4.1 level 1         |   249 MB/s |   537 MB/s |    51160301 | 48.79 |
 | zstd v0.4.1 level 2         |   183 MB/s |   505 MB/s |    49719335 | 47.42 |
 | zstd v0.4.1 level 5         |    72 MB/s |   461 MB/s |    46389082 | 44.24 |

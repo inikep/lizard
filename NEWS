@@ -1,5 +1,5 @@
 v1.3.3
-- added: new levels from 11 to 16 (maximum compression ratio)
+- added: new levels from 11 to 18 (maximum compression ratio)
 - added: a new parser: LZ5HC_optimal_price
 - fixed: buffer-overflow during decompression (thanks to m^2)
 
