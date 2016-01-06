@@ -181,10 +181,10 @@ static size_t LZ5HC_hashPtr(const void* p, U32 hBits, U32 mls)
 /**************************************
 *  HC Local Macros
 **************************************/
-#define LZ5HC_DEBUG(fmt, args...) ; //printf(fmt, ##args)
+#define LZ5HC_DEBUG(fmt, args...) ;//printf(fmt, ##args)
 #define LZ5_LOG_PARSER(fmt, args...) ;//printf(fmt, ##args)
 #define LZ5_LOG_PRICE(fmt, args...) ;//printf(fmt, ##args)
-#define LZ5_LOG_ENCODE(fmt, args...) ; // if ((char*)ip-source > 5711448) printf(fmt, ##args)
+#define LZ5_LOG_ENCODE(fmt, args...) ;//printf(fmt, ##args)
 
 #define MAX(a,b) ((a)>(b))?(a):(b)
 #define LZ5_OPT_NUM   (1<<12)
@@ -236,7 +236,7 @@ FORCE_INLINE int LZ5HC_more_profitable(uint32_t best_off, uint32_t best_common, 
 *  HC Types
 ***************************************/
 /** from faster to stronger */
-typedef enum { LZ5HC_fast, LZ5HC_price_fast, LZ5HC_lowest_price, LZ5HC_optimal_price } LZ5HC_strategy;
+typedef enum { LZ5HC_fast, LZ5HC_price_fast, LZ5HC_lowest_price, LZ5HC_optimal_price, LZ5HC_optimal_price_bt } LZ5HC_strategy;
 
 typedef struct
 {
@@ -311,11 +311,14 @@ static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL+1] =
     { 22, 22, 23, 16,     8,  4,    12,  0, LZ5HC_optimal_price }, // level 11
     { 22, 22, 23, 16,     8,  4,    64,  0, LZ5HC_optimal_price }, // level 12
     { 22, 22, 23, 16,     8,  4,    64,  1, LZ5HC_optimal_price }, // level 13
-    { 22, 22, 23, 16,    32,  4,    64,  0, LZ5HC_optimal_price }, // level 14
-    { 22, 22, 23, 16,   128,  4,    64,  0, LZ5HC_optimal_price }, // level 15
-    { 22, 22, 23, 16,   512,  4,    64,  0, LZ5HC_optimal_price }, // level 16
-    { 22, 22, 23, 16,   512,  4,    64,  1, LZ5HC_optimal_price }, // level 17
-    { 22, 22, 28, 24, 1<<10,  4, 1<<10,  1, LZ5HC_optimal_price }, // level 18
+    { 22, 23 , 23, 16,     8,  4,    64,  1, LZ5HC_optimal_price_bt }, // level 14
+    { 22, 22, 23, 16,    32,  4,    64,  0, LZ5HC_optimal_price }, // level 15
+    { 22, 22, 23, 16,   128,  4,    64,  1, LZ5HC_optimal_price }, // level 16
+    { 22, 23 , 23, 16,   128,  4,    64,  1, LZ5HC_optimal_price_bt }, // level 17
+//    { 22, 22, 23, 16,   128,  4,    64,  0, LZ5HC_optimal_price }, // level 15
+//    { 22, 22, 23, 16,   512,  4,    64,  0, LZ5HC_optimal_price }, // level 16
+//    { 22, 22, 23, 16,   512,  4,    64,  1, LZ5HC_optimal_price }, // level 17
+//    { 22, 22, 28, 24, 1<<10,  4, 1<<10,  1, LZ5HC_optimal_price }, // level 18
 //  { 10, 10, 10,  0,     0,  4,     0,  0, LZ5HC_fast          }, // min values
 //  { 24, 24, 28, 24, 1<<24,  7, 1<<24,  1, LZ5HC_optimal_price }, // max values
 };
