@@ -99,14 +99,14 @@ static void LZ5HC_init (LZ5HC_Data_Structure* ctx, const BYTE* start)
 
 
 /* Update chains up to ip (excluded) */
-FORCE_INLINE void LZ5HC_Insert3 (LZ5HC_Data_Structure* ctx, const BYTE* ip)
+FORCE_INLINE void LZ5HC_BinTree_Insert (LZ5HC_Data_Structure* ctx, const BYTE* ip, const BYTE* const iLimit)
 {
 #if MINMATCH == 3
     U32* HashTable3  = ctx->hashTable3;
     const BYTE* const base = ctx->base;
     const U32 target = (U32)(ip - base);
     U32 idx = ctx->nextToUpdate;
-
+    
     while(idx < target)
     {
         HashTable3[LZ5HC_hash3Ptr(base+idx, ctx->params.hashLog3)] = idx;
@@ -620,7 +620,6 @@ FORCE_INLINE int LZ5HC_GetAllMatches (
 FORCE_INLINE int LZ5HC_BinTree_GetAllMatches (
     LZ5HC_Data_Structure* ctx,
     const BYTE* const ip,
-    const BYTE* const iLowLimit,
     const BYTE* const iHighLimit,
     int best_mlen,
     LZ5HC_match_t* matches)
@@ -647,6 +646,7 @@ FORCE_INLINE int LZ5HC_BinTree_GetAllMatches (
     U32 h = LZ5HC_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength);
     matchIndex = HashTable[h];
     HashTable[h] = idx;
+    ctx->nextToUpdate++;
     
 #if MINMATCH == 3
     h = LZ5HC_hash3Ptr(ip, ctx->params.hashLog3);
@@ -926,8 +926,8 @@ static int LZ5HC_compress_optimal_price (
             }
             else
             {
-                LZ5HC_Insert3(ctx, ip);
-                match_num = LZ5HC_BinTree_GetAllMatches(ctx, ip, ip, matchlimit, best_mlen, matches);
+                LZ5HC_BinTree_Insert(ctx, ip, matchlimit);
+                match_num = LZ5HC_BinTree_GetAllMatches(ctx, ip, matchlimit, best_mlen, matches);
             }
        }
 
@@ -1094,8 +1094,8 @@ static int LZ5HC_compress_optimal_price (
             }
             else
             {
-                LZ5HC_Insert3(ctx, ip);
-                match_num = LZ5HC_BinTree_GetAllMatches(ctx, inr, ip, matchlimit, best_mlen, matches);
+                LZ5HC_BinTree_Insert(ctx, ip, matchlimit);
+                match_num = LZ5HC_BinTree_GetAllMatches(ctx, inr, matchlimit, best_mlen, matches);
                 LZ5_LOG_PARSER("%d: LZ5HC_BinTree_GetAllMatches match_num=%d\n", (int)((char*)inr-source), match_num);
             }
 
