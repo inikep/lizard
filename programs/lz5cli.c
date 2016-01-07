@@ -161,8 +161,8 @@ static int usage_advanced(void)
     DISPLAY( " -t     : test compressed file integrity\n");
     DISPLAY( " -m     : multiple input files (implies automatic output filenames)\n");
     DISPLAY( " -l     : compress using Legacy format (Linux kernel compression)\n");
-    DISPLAY( " -B#    : Block size [1-7](default : 4)\n");
-    DISPLAY( " -BD    : Block dependency (improve compression ratio)\n");
+    DISPLAY( " -B#    : Block size [1-7] = 64KB, 256KB, 1MB, 4MB, 16MB, 64MB, 256MB (default : 4 = 4MB)\n");
+  //  DISPLAY( " -BD    : Block dependency (improve compression ratio)\n");
     /* DISPLAY( " -BX    : enable block checksum (default:disabled)\n");   *//* Option currently inactive */
     DISPLAY( "--no-frame-crc : disable stream checksum (default:enabled)\n");
     DISPLAY( "--content-size : compressed frame includes original size (default:not present)\n");
@@ -366,7 +366,7 @@ int main(int argc, char** argv)
                         int exitBlockProperties=0;
                         switch(argument[1])
                         {
-                        case 'D': LZ5IO_setBlockMode(LZ5IO_blockLinked); argument++; break;
+                  //      case 'D': LZ5IO_setBlockMode(LZ5IO_blockLinked); argument++; break;
                         case 'X': LZ5IO_setBlockChecksumMode(1); argument ++; break;   /* currently disabled */
                         default : 
                             {

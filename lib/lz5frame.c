@@ -102,6 +102,7 @@ typedef unsigned long long  U64;
 #define LZ5F_MAGICNUMBER 0x184D2205U
 #define LZ5F_BLOCKUNCOMPRESSED_FLAG 0x80000000U
 #define LZ5F_BLOCKSIZEID_DEFAULT LZ5F_max64KB
+#define LZ5F_DICT_SIZE (1 << 22)
 
 static const size_t minFHSize = 7;
 static const size_t maxFHSize = 15;
@@ -429,9 +430,9 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
     if (cctxPtr->prefs.frameInfo.blockSizeID == 0) cctxPtr->prefs.frameInfo.blockSizeID = LZ5F_BLOCKSIZEID_DEFAULT;
     cctxPtr->maxBlockSize = LZ5F_getBlockSize(cctxPtr->prefs.frameInfo.blockSizeID);
 
-    requiredBuffSize = cctxPtr->maxBlockSize + ((cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * 128 KB);
+    requiredBuffSize = cctxPtr->maxBlockSize + ((cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * 2 * LZ5F_DICT_SIZE);
     if (preferencesPtr->autoFlush)
-        requiredBuffSize = (cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * 64 KB;   /* just needs dict */
+        requiredBuffSize = (cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * LZ5F_DICT_SIZE;   /* just needs dict */
 
     if (cctxPtr->maxBufferSize < requiredBuffSize)
     {
@@ -894,7 +895,7 @@ static size_t LZ5F_decodeHeader(LZ5F_dctx_t* dctxPtr, const void* srcVoidPtr, si
     if (contentChecksumFlag) XXH32_reset(&(dctxPtr->xxh), 0);
 
     /* alloc */
-    bufferNeeded = dctxPtr->maxBlockSize + ((dctxPtr->frameInfo.blockMode==LZ5F_blockLinked) * 128 KB);
+    bufferNeeded = dctxPtr->maxBlockSize + ((dctxPtr->frameInfo.blockMode==LZ5F_DICT_SIZE) * 2 * LZ5F_DICT_SIZE);
     if (bufferNeeded > dctxPtr->maxBufferSize)   /* tmp buffers too small */
     {
         FREEMEM(dctxPtr->tmpIn);
