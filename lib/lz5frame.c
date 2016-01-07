@@ -176,11 +176,11 @@ const char* LZ5F_getErrorName(LZ5F_errorCode_t code)
 **************************************/
 static size_t LZ5F_getBlockSize(unsigned blockSizeID)
 {
-    static const size_t blockSizes[4] = { 64 KB, 256 KB, 1 MB, 4 MB };
+    static const size_t blockSizes[7] = { 64 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
 
     if (blockSizeID == 0) blockSizeID = LZ5F_BLOCKSIZEID_DEFAULT;
-    blockSizeID -= 4;
-    if (blockSizeID > 3) return (size_t)-LZ5F_ERROR_maxBlockSize_invalid;
+    blockSizeID -= 1;
+    if (blockSizeID >= 7) return (size_t)-LZ5F_ERROR_maxBlockSize_invalid;
     return blockSizes[blockSizeID];
 }
 

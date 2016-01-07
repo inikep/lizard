@@ -111,7 +111,7 @@
 #define CACHELINE 64
 #define LEGACY_BLOCKSIZE   (8 MB)
 #define MIN_STREAM_BUFSIZE (192 KB)
-#define LZ5IO_BLOCKSIZEID_DEFAULT 7
+#define LZ5IO_BLOCKSIZEID_DEFAULT 4
 
 #define sizeT sizeof(size_t)
 #define maskT (sizeT - 1)
@@ -143,8 +143,8 @@ static int g_blockIndependence = 1;
 static int g_sparseFileSupport = 1;
 static int g_contentSizeFlag = 0;
 
-static const int minBlockSizeID = 4;
-static const int maxBlockSizeID = 10;
+static const int minBlockSizeID = 1;
+static const int maxBlockSizeID = 7;
 
 
 /**************************************
@@ -182,7 +182,7 @@ int LZ5IO_setOverwrite(int yes)
    return g_overwrite;
 }
 
-/* blockSizeID : valid values : 4-5-6-7-8-9-10 */
+/* blockSizeID : valid values : 1-7 */
 int LZ5IO_setBlockSizeID(int bsid)
 {
     static const int blockSizeTable[] = { 64 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
@@ -258,7 +258,7 @@ static unsigned long long LZ5IO_GetFileSize(const char* infilename)
 ** ********************** LZ5 File / Pipe compression ********************* **
 ** ************************************************************************ */
 
-static int LZ5IO_GetBlockSize_FromBlockId (int id) { return (1 << (8 + (2 * id))); }
+static int LZ5IO_GetBlockSize_FromBlockId (int id) { return (1 << (16 + (2 * id))); }
 static int LZ5IO_isSkippableMagicNumber(unsigned int magic) { return (magic & LZ5IO_SKIPPABLEMASK) == LZ5IO_SKIPPABLE0; }
 
 
