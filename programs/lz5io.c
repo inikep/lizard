@@ -144,7 +144,7 @@ static int g_sparseFileSupport = 1;
 static int g_contentSizeFlag = 0;
 
 static const int minBlockSizeID = 4;
-static const int maxBlockSizeID = 7;
+static const int maxBlockSizeID = 10;
 
 
 /**************************************
@@ -182,10 +182,10 @@ int LZ5IO_setOverwrite(int yes)
    return g_overwrite;
 }
 
-/* blockSizeID : valid values : 4-5-6-7 */
+/* blockSizeID : valid values : 4-5-6-7-8-9-10 */
 int LZ5IO_setBlockSizeID(int bsid)
 {
-    static const int blockSizeTable[] = { 64 KB, 256 KB, 1 MB, 4 MB };
+    static const int blockSizeTable[] = { 64 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
     if ((bsid < minBlockSizeID) || (bsid > maxBlockSizeID)) return -1;
     g_blockSizeId = bsid;
     return blockSizeTable[g_blockSizeId-minBlockSizeID];

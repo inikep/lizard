@@ -161,7 +161,7 @@ static int usage_advanced(void)
     DISPLAY( " -t     : test compressed file integrity\n");
     DISPLAY( " -m     : multiple input files (implies automatic output filenames)\n");
     DISPLAY( " -l     : compress using Legacy format (Linux kernel compression)\n");
-    DISPLAY( " -B#    : Block size [4-7](default : 7)\n");
+    DISPLAY( " -B#    : Block size [4-10](default : 7)\n");
     DISPLAY( " -BD    : Block dependency (improve compression ratio)\n");
     /* DISPLAY( " -BX    : enable block checksum (default:disabled)\n");   *//* Option currently inactive */
     DISPLAY( "--no-frame-crc : disable stream checksum (default:enabled)\n");
@@ -366,20 +366,22 @@ int main(int argc, char** argv)
                         int exitBlockProperties=0;
                         switch(argument[1])
                         {
-                        case '4':
-                        case '5':
-                        case '6':
-                        case '7':
-                        {
-                            int B = argument[1] - '0';
-                            blockSize = LZ5IO_setBlockSizeID(B);
-                            BMK_setBlocksize(blockSize);
-                            argument++;
-                            break;
-                        }
                         case 'D': LZ5IO_setBlockMode(LZ5IO_blockLinked); argument++; break;
                         case 'X': LZ5IO_setBlockChecksumMode(1); argument ++; break;   /* currently disabled */
-                        default : exitBlockProperties=1;
+                        default : 
+                            {
+                                int B = atol(argument+1);
+                                if (B >= 4 && B <= 10)
+                                {
+                                    blockSize = LZ5IO_setBlockSizeID(B);
+                                    BMK_setBlocksize(blockSize);
+                                    argument++;
+                                    if (B == 10) argument++;
+                                }
+                                else                                                            
+                                    exitBlockProperties=1;
+                                break;
+                            }
                         }
                         if (exitBlockProperties) break;
                     }

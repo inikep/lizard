@@ -74,7 +74,10 @@ typedef enum {
     LZ5F_max64KB=4,
     LZ5F_max256KB=5,
     LZ5F_max1MB=6,
-    LZ5F_max4MB=7
+    LZ5F_max4MB=7,
+    LZ5F_max16MB=8,
+    LZ5F_max64MB=9,
+    LZ5F_max256MB=10
     LZ5F_OBSOLETE_ENUM(max64KB = LZ5F_max64KB)
     LZ5F_OBSOLETE_ENUM(max256KB = LZ5F_max256KB)
     LZ5F_OBSOLETE_ENUM(max1MB = LZ5F_max1MB)
