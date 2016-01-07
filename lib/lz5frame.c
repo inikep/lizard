@@ -875,7 +875,7 @@ static size_t LZ5F_decodeHeader(LZ5F_dctx_t* dctxPtr, const void* srcVoidPtr, si
     if (blockChecksumFlag != 0) return (size_t)-LZ5F_ERROR_blockChecksum_unsupported; /* Not supported for the time being */
     if (((FLG>>0)&_2BITS) != 0) return (size_t)-LZ5F_ERROR_reservedFlag_set; /* Reserved bits */
     if (((BD>>7)&_1BIT) != 0) return (size_t)-LZ5F_ERROR_reservedFlag_set;   /* Reserved bit */
-    if (blockSizeID < 4) return (size_t)-LZ5F_ERROR_maxBlockSize_invalid;    /* 4-7 only supported values for the time being */
+    if (blockSizeID < 1) return (size_t)-LZ5F_ERROR_maxBlockSize_invalid;    /* 1-7 only supported values for the time being */
     if (((BD>>0)&_4BITS) != 0) return (size_t)-LZ5F_ERROR_reservedFlag_set;  /* Reserved bits */
 
     /* check */

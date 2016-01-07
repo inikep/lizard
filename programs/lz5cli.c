@@ -85,7 +85,7 @@
 #define LZ5CAT "lz5cat"
 #define UNLZ5 "unlz5"
 
-#define LZ5_BLOCKSIZEID_DEFAULT 7
+#define LZ5_BLOCKSIZEID_DEFAULT 4
 
 
 /**************************************
