@@ -133,7 +133,6 @@ static const int LZ5_minLength = (MFLIMIT+1);
 #endif
 
 
-
 /* *************************************
 *  HC Inline functions and Macros
 ***************************************/
@@ -145,23 +144,27 @@ static const int LZ5_minLength = (MFLIMIT+1);
     #define MEM_read24(ptr) (uint32_t)(MEM_read32(ptr)) 
 #endif
 
-static const U32 prime3bytes = 506832829U;
-static U32 LZ5HC_hash3(U32 u, U32 h) { return (u * prime3bytes) << (32-24) >> (32-h) ; }
-static size_t LZ5HC_hash3Ptr(const void* ptr, U32 h) { return LZ5HC_hash3(MEM_read32(ptr), h); }
     
 static const U32 prime4bytes = 2654435761U;
+static const U64 prime5bytes = 889523592379ULL;
+
+#ifdef LZ5HC_INCLUDES
+static const U32 prime3bytes = 506832829U;
+static const U64 prime6bytes = 227718039650203ULL;
+static const U64 prime7bytes = 58295818150454627ULL;
+
+static U32 LZ5HC_hash3(U32 u, U32 h) { return (u * prime3bytes) << (32-24) >> (32-h) ; }
+static size_t LZ5HC_hash3Ptr(const void* ptr, U32 h) { return LZ5HC_hash3(MEM_read32(ptr), h); }
+
 static U32 LZ5HC_hash4(U32 u, U32 h) { return (u * prime4bytes) >> (32-h) ; }
 static size_t LZ5HC_hash4Ptr(const void* ptr, U32 h) { return LZ5HC_hash4(MEM_read32(ptr), h); }
 
-static const U64 prime5bytes = 889523592379ULL;
 static size_t LZ5HC_hash5(U64 u, U32 h) { return (size_t)((u * prime5bytes) << (64-40) >> (64-h)) ; }
 static size_t LZ5HC_hash5Ptr(const void* p, U32 h) { return LZ5HC_hash5(MEM_read64(p), h); }
 
-static const U64 prime6bytes = 227718039650203ULL;
 static size_t LZ5HC_hash6(U64 u, U32 h) { return (size_t)((u * prime6bytes) << (64-48) >> (64-h)) ; }
 static size_t LZ5HC_hash6Ptr(const void* p, U32 h) { return LZ5HC_hash6(MEM_read64(p), h); }
 
-static const U64 prime7bytes = 58295818150454627ULL;
 static size_t LZ5HC_hash7(U64 u, U32 h) { return (size_t)((u * prime7bytes) << (64-56) >> (64-h)) ; }
 static size_t LZ5HC_hash7Ptr(const void* p, U32 h) { return LZ5HC_hash7(MEM_read64(p), h); }
 
@@ -230,6 +233,8 @@ FORCE_INLINE int LZ5HC_more_profitable(uint32_t best_off, uint32_t best_common, 
 	return LZ5_NORMAL_MATCH_COST(common - MINMATCH, (off == last_off) ? 0 : off) + LZ5_NORMAL_LIT_COST(sum - common) <= LZ5_NORMAL_MATCH_COST(best_common - MINMATCH, (best_off == last_off) ? 0 : (best_off)) + LZ5_NORMAL_LIT_COST(sum - best_common);
 }
 
+#endif // LZ5HC_INCLUDES
+
 
 
 /* *************************************
@@ -286,6 +291,8 @@ typedef struct
    	int rep;
 } LZ5HC_optimal_t;
 
+
+
 /* *************************************
 *  HC Pre-defined compression levels
 ***************************************/
@@ -316,7 +323,6 @@ static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL+1] =
 //  { 10, 10, 10,  0,     0,  4,     0,  0, LZ5HC_fast          }, // min values
 //  { 24, 24, 28, 24, 1<<24,  7, 1<<24,  1, LZ5HC_optimal_price }, // max values
 };
-
 
 
 

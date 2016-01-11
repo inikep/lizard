@@ -39,6 +39,7 @@
 /* *************************************
 *  Includes
 ***************************************/
+#define LZ5HC_INCLUDES
 #include "lz5common.h"
 #include "lz5.h"
 #include "lz5hc.h"
@@ -95,6 +96,81 @@ static void LZ5HC_init (LZ5HC_Data_Structure* ctx, const BYTE* start)
     ctx->dictLimit = (1 << ctx->params.windowLog);
     ctx->lowLimit = (1 << ctx->params.windowLog);
     ctx->last_off = 1;
+}
+
+/* Update chains up to ip (excluded) */
+FORCE_INLINE void LZ5HC_BinTree_Insert2 (LZ5HC_Data_Structure* ctx, const BYTE* ip, const BYTE* const iLimit)
+{
+    U32* chainTable = ctx->chainTable;
+    U32* HashTable  = ctx->hashTable;
+#if MINMATCH == 3
+    U32* HashTable3  = ctx->hashTable3;
+#endif 
+    const BYTE* const base = ctx->base;
+    const U32 dictLimit = ctx->dictLimit;
+    const U32 target = (U32)(ip - base);
+    const U32 contentMask = (1 << ctx->params.contentLog) - 1;
+    U32 idx = ctx->nextToUpdate;
+    int nbAttempts;
+    U32 *ptr0, *ptr1;
+    U32 mlen, matchIndex, delta0, delta1;
+        
+    while(idx < target)
+    {
+        U32 h = LZ5HC_hashPtr(base+idx, ctx->params.hashLog, ctx->params.searchLength);
+        matchIndex = HashTable[h];
+        HashTable[h] = idx;
+#if MINMATCH == 3
+        HashTable3[LZ5HC_hash3Ptr(base+idx, ctx->params.hashLog3)] = idx;
+#endif 
+
+        // check rest of matches
+        ptr0 = &chainTable[(idx*2+1) & contentMask];
+        ptr1 = &chainTable[(idx*2) & contentMask];
+        delta0 = delta1 = idx - matchIndex;
+        nbAttempts = ctx->params.searchNum;
+
+        while ((matchIndex >= dictLimit) && (matchIndex < idx) && (idx - matchIndex) < MAX_DISTANCE && nbAttempts)
+        {
+            nbAttempts--;
+
+            mlen = 0;
+            if (MEM_read24(base+matchIndex) == MEM_read24(base+idx))
+            {
+                mlen = MINMATCH + MEM_count(base+idx+MINMATCH, base+matchIndex+MINMATCH, iLimit);
+
+                if (mlen > LZ5_OPT_NUM) break;
+            }
+
+            if (*(base+idx+mlen) < *(base+matchIndex+mlen))
+            {
+                *ptr0 = delta0;
+                ptr0 = &chainTable[(matchIndex*2) & contentMask];
+                if (*ptr0 == (U32)-1) break;
+                delta0 = *ptr0;
+                delta1 += delta0;
+                matchIndex -= delta0;
+            }
+            else
+            {
+                *ptr1 = delta1;
+                ptr1 = &chainTable[(matchIndex*2+1) & contentMask];
+                if (*ptr1 == (U32)-1) break;
+                delta1 = *ptr1;
+                delta0 += delta1;
+                matchIndex -= delta1;
+            }
+        }
+
+        *ptr0 = (U32)-1;
+        *ptr1 = (U32)-1;
+
+    //    LZ5_LOG_MATCH("%d: LZMAX_UPDATE_HASH_BINTREE hash=%d inp=%d,%d,%d,%d (%c%c%c%c)\n", (int)(inp-base), hash, inp[0], inp[1], inp[2], inp[3], inp[0], inp[1], inp[2], inp[3]);
+
+        idx++;
+    }
+
+    ctx->nextToUpdate = target;
 }
 
 
