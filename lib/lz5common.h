@@ -139,9 +139,9 @@ static const int LZ5_minLength = (MFLIMIT+1);
 #include "mem.h" // MEM_read
 
 #if MINMATCH == 3
-    #define MEM_read24(ptr) (uint32_t)(MEM_read32(ptr)<<8) 
+    #define MEM_read24(ptr) (U32)(MEM_read32(ptr)<<8) 
 #else
-    #define MEM_read24(ptr) (uint32_t)(MEM_read32(ptr)) 
+    #define MEM_read24(ptr) (U32)(MEM_read32(ptr)) 
 #endif
 
     
@@ -209,18 +209,18 @@ static size_t LZ5_MATCH_COST(size_t mlen, size_t offset) { return LZ5_LEN_COST(m
 
 
 
-FORCE_INLINE uint32_t LZ5HC_get_price(uint32_t litlen, uint32_t offset, uint32_t mlen)
+FORCE_INLINE U32 LZ5HC_get_price(U32 litlen, U32 offset, U32 mlen)
 {
 	return LZ5_CODEWORD_COST(litlen, offset, mlen);
 }
 
-FORCE_INLINE int LZ5HC_better_price(uint32_t best_off, uint32_t best_common, uint32_t off, uint32_t common, uint32_t last_off)
+FORCE_INLINE int LZ5HC_better_price(U32 best_off, U32 best_common, U32 off, U32 common, U32 last_off)
 {
   return LZ5_NORMAL_MATCH_COST(common - MINMATCH, (off == last_off) ? 0 : off) < LZ5_NORMAL_MATCH_COST(best_common - MINMATCH, (best_off == last_off) ? 0 : best_off) + (LZ5_NORMAL_LIT_COST(common - best_common) );
 }
 
 
-FORCE_INLINE int LZ5HC_more_profitable(uint32_t best_off, uint32_t best_common, uint32_t off, uint32_t common, int literals, uint32_t last_off)
+FORCE_INLINE int LZ5HC_more_profitable(U32 best_off, U32 best_common, U32 off, U32 common, int literals, U32 last_off)
 {
 	int sum;
 	

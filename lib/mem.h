@@ -293,7 +293,7 @@ MEM_STATIC void MEM_writeLEST(void* memPtr, size_t val)
 
 
 
-#define MEM_read24(ptr) (uint32_t)(MEM_read32(ptr)<<8)
+#define MEM_read24(ptr) (U32)(MEM_read32(ptr)<<8)
 
 /* **************************************
 *  Function body to include for inlining
