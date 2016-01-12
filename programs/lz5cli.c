@@ -125,7 +125,6 @@ static char* programName;
 #define EXTENDED_FORMAT
 #define DEFAULT_COMPRESSOR   LZ5IO_compressFilename
 #define DEFAULT_DECOMPRESSOR LZ5IO_decompressFilename
-int LZ5IO_compressFilename_Legacy(const char* input_filename, const char* output_filename, int compressionlevel);   /* hidden function */
 
 
 /*****************************
@@ -160,7 +159,6 @@ static int usage_advanced(void)
     DISPLAY( " -c     : force write to standard output, even if it is the console\n");
     DISPLAY( " -t     : test compressed file integrity\n");
     DISPLAY( " -m     : multiple input files (implies automatic output filenames)\n");
-    DISPLAY( " -l     : compress using Legacy format (Linux kernel compression)\n");
     DISPLAY( " -B#    : Block size [1-7] = 64KB, 256KB, 1MB, 4MB, 16MB, 64MB, 256MB (default : 4 = 4MB)\n");
   //  DISPLAY( " -BD    : Block dependency (improve compression ratio)\n");
     /* DISPLAY( " -BX    : enable block checksum (default:disabled)\n");   *//* Option currently inactive */
@@ -245,7 +243,6 @@ int main(int argc, char** argv)
         cLevel=0,
         decode=0,
         bench=0,
-        legacy_format=0,
         forceStdout=0,
         forceCompress=0,
         main_pause=0,
@@ -334,9 +331,6 @@ int main(int argc, char** argv)
 
                     /* Compression (default) */
                 case 'z': forceCompress = 1; break;
-
-                    /* Use Legacy format (ex : Linux kernel compression) */
-                case 'l': legacy_format = 1; blockSize = 8 MB; break;
 
                     /* Decoding */
                 case 'd': decode=1; break;
@@ -524,12 +518,6 @@ int main(int argc, char** argv)
     else
     {
       /* compression is default action */
-      if (legacy_format)
-      {
-        DISPLAYLEVEL(3, "! Generating compressed LZ5 using Legacy format (deprecated) ! \n");
-        LZ5IO_compressFilename_Legacy(input_filename, output_filename, cLevel);
-      }
-      else
       {
         if (multiple_inputs)
           operationResult = LZ5IO_compressMultipleFilenames(inFileNames, ifnIdx, LZ5_EXTENSION, cLevel);
