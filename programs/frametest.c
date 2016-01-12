@@ -43,6 +43,7 @@
 #include <stdlib.h>     /* malloc, free */
 #include <stdio.h>      /* fprintf */
 #include <string.h>     /* strcmp */
+#include "lz5.h"        // LZ5_VERSION
 #include "lz5frame_static.h"
 #include "xxhash.h"     /* XXH64 */
 
@@ -87,9 +88,6 @@ static void FUZ_writeLE32 (void* dstVoidPtr, U32 value32)
 /**************************************
 *  Constants
 **************************************/
-#ifndef LZ5_VERSION
-#  define LZ5_VERSION ""
-#endif
 
 #define LZ5F_MAGIC_SKIPPABLE_START 0x184D2A50U
 

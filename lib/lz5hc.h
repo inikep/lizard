@@ -43,8 +43,6 @@ extern "C" {
 *****************************/
 #include <stddef.h>   /* size_t */
 
-#define LZ5HC_MAX_CLEVEL 15
-
 
 /**************************************
 *  Block Compression

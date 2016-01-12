@@ -31,8 +31,6 @@
 # datagen : generates synthetic data samples for tests & benchmarks
 # ##########################################################################
 
-RELEASE ?= v1.4
-
 BINDIR  := $(PREFIX)/bin
 MANDIR  := $(PREFIX)/share/man/man1
 LZ5DIR  := ../lib
@@ -41,7 +39,7 @@ DESTDIR  ?=
 PREFIX   ?= /usr/local
 CFLAGS   ?= -O3 -fomit-frame-pointer -fstrict-aliasing -fforce-addr -ffast-math    # can select customized optimized flags such as for example: make CFLAGS="-g"
 WFLAGS   := -std=c99 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wstrict-prototypes -pedantic -Wno-variadic-macros
-CPPFLAGS := -I$(LZ5DIR) -DXXH_NAMESPACE=LZ5_ -DLZ5_VERSION=\"$(RELEASE)\"
+CPPFLAGS := -I$(LZ5DIR) -DXXH_NAMESPACE=LZ5_ 
 FLAGS    := $(CFLAGS) $(WFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
 

@@ -60,7 +60,7 @@
 #  include <sys/time.h>    /* gettimeofday */
 #endif
 
-#include "lz5.h"
+#include "lz5.h"      // LZ5_VERSION
 #include "lz5hc.h"
 #include "lz5frame.h"
 
@@ -99,9 +99,6 @@
 *  Constants
 **************************************/
 #define PROGRAM_DESCRIPTION "LZ5 speed analyzer"
-#ifndef LZ5_VERSION
-#  define LZ5_VERSION ""
-#endif
 #define AUTHOR "Yann Collet"
 #define WELCOME_MESSAGE "*** %s %s %i-bits, by %s (%s) ***\n", PROGRAM_DESCRIPTION, LZ5_VERSION, (int)(sizeof(void*)*8), AUTHOR, __DATE__
 

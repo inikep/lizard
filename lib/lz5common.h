@@ -137,7 +137,7 @@ static const int LZ5_minLength = (MFLIMIT+1);
 *  HC Inline functions and Macros
 ***************************************/
 #include "mem.h" // MEM_read
-#include "lz5hc.h" // MEM_read
+#include "lz5.h" // LZ5HC_MAX_CLEVEL
 
     
 static const U32 prime4bytes = 2654435761U;
