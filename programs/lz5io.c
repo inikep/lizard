@@ -336,11 +336,6 @@ static void LZ5IO_writeLE32 (void* p, unsigned value32)
     dstPtr[3] = (unsigned char)(value32 >> 24);
 }
 
-static int LZ5IO_LZ5_compress(const char* src, char* dst, int srcSize, int dstSize, int cLevel)
-{
-    (void)cLevel;
-    return LZ5_compress_fast(src, dst, srcSize, dstSize, 1);
-}
 
 
 

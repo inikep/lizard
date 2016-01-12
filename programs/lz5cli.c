@@ -52,7 +52,8 @@
 #include <string.h>   /* strcmp, strlen */
 #include "bench.h"    /* BMK_benchFile, BMK_SetNbIterations, BMK_SetBlocksize, BMK_SetPause */
 #include "lz5io.h"    /* LZ5IO_compressFilename, LZ5IO_decompressFilename, LZ5IO_compressMultipleFilenames */
-#include "lz5common.h"
+#include "lz5.h"
+#include "lz5hc.h"    // LZ5HC_MAX_CLEVEL
 
 
 /****************************

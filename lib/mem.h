@@ -292,8 +292,12 @@ MEM_STATIC void MEM_writeLEST(void* memPtr, size_t val)
 }
 
 
+#if MINMATCH == 3
+    #define MEM_read24(ptr) (U32)(MEM_read32(ptr)<<8) 
+#else
+    #define MEM_read24(ptr) (U32)(MEM_read32(ptr)) 
+#endif
 
-#define MEM_read24(ptr) (U32)(MEM_read32(ptr)<<8)
 
 /* **************************************
 *  Function body to include for inlining

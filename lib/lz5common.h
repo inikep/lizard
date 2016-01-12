@@ -137,12 +137,7 @@ static const int LZ5_minLength = (MFLIMIT+1);
 *  HC Inline functions and Macros
 ***************************************/
 #include "mem.h" // MEM_read
-
-#if MINMATCH == 3
-    #define MEM_read24(ptr) (U32)(MEM_read32(ptr)<<8) 
-#else
-    #define MEM_read24(ptr) (U32)(MEM_read32(ptr)) 
-#endif
+#include "lz5hc.h" // MEM_read
 
     
 static const U32 prime4bytes = 2654435761U;
@@ -296,7 +291,6 @@ typedef struct
 /* *************************************
 *  HC Pre-defined compression levels
 ***************************************/
-#define LZ5HC_MAX_CLEVEL 15
 
 static const int g_maxCompressionLevel = LZ5HC_MAX_CLEVEL;
 static const int LZ5HC_compressionLevel_default = 6;
