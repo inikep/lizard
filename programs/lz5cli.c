@@ -369,6 +369,7 @@ int main(int argc, char** argv)
                                 if (B >= 1 && B <= 7)
                                 {
                                     blockSize = LZ5IO_setBlockSizeID(B);
+                                //    printf("LZ5IO_setBlockSizeID %d %d\n", B, blockSize);
                                     BMK_setBlocksize(blockSize);
                                     argument++;
                                 }

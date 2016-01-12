@@ -182,6 +182,8 @@ static size_t LZ5F_getBlockSize(unsigned blockSizeID)
     if (blockSizeID == 0) blockSizeID = LZ5F_BLOCKSIZEID_DEFAULT;
     blockSizeID -= 1;
     if (blockSizeID >= 7) return (size_t)-LZ5F_ERROR_maxBlockSize_invalid;
+
+  //  printf("LZ5F_getBlockSize %d %d\n", blockSizeID+1, (int)blockSizes[blockSizeID]);
     return blockSizes[blockSizeID];
 }
 

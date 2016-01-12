@@ -258,7 +258,7 @@ static unsigned long long LZ5IO_GetFileSize(const char* infilename)
 ** ********************** LZ5 File / Pipe compression ********************* **
 ** ************************************************************************ */
 
-static int LZ5IO_GetBlockSize_FromBlockId (int id) { return (1 << (16 + (2 * id))); }
+static int LZ5IO_GetBlockSize_FromBlockId (int id) { /*printf("LZ5IO_GetBlockSize_FromBlockId %d=%d\n", id, (1 << (14 + (2 * id)))); */ return (1 << (14 + (2 * id))); }
 static int LZ5IO_isSkippableMagicNumber(unsigned int magic) { return (magic & LZ5IO_SKIPPABLEMASK) == LZ5IO_SKIPPABLE0; }
 
 
