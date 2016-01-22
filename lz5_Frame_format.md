@@ -4,6 +4,7 @@ LZ5 Frame Format Description
 ###Notices
 
 Copyright (c) 2013-2015 Yann Collet
+
 Copyright (c) 2016 Przemyslaw Skibinski
 
 Permission is granted to copy and distribute this document 
@@ -17,7 +18,7 @@ Distribution of this document is unlimited.
 
 ###Version
 
-1.0 (22.01.2016)
+1.0 (22-01-2016)
 
 
 Introduction
