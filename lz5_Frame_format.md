@@ -4,6 +4,7 @@ LZ5 Frame Format Description
 ###Notices
 
 Copyright (c) 2013-2015 Yann Collet
+Copyright (c) 2016 Przemyslaw Skibinski
 
 Permission is granted to copy and distribute this document 
 for any  purpose and without charge, 
@@ -16,7 +17,7 @@ Distribution of this document is unlimited.
 
 ###Version
 
-1.5.1 (31/03/2015)
+1.0 (22.01.2016)
 
 
 Introduction
@@ -26,7 +27,7 @@ The purpose of this document is to define a lossless compressed data format,
 that is independent of CPU type, operating system, 
 file system and character set, suitable for 
 File compression, Pipe and streaming compression 
-using the [LZ5 algorithm](http://www.lz5.info).
+using the LZ5 algorithm.
 
 The data can be produced or consumed, 
 even for an arbitrarily long sequentially presented input data stream,
@@ -68,7 +69,7 @@ General Structure of LZ5 Frame format
 __Magic Number__
 
 4 Bytes, Little endian format.
-Value : 0x184D2204
+Value : 0x184D2205 (it was 0x184D2204 for LZ4)
 
 __Frame Descriptor__
 
@@ -149,8 +150,8 @@ Other version numbers will use different flag layouts.
 __Block Independence flag__
 
 If this flag is set to “1”, blocks are independent. 
-If this flag is set to “0”, each block depends on previous ones
-(up to LZ5 window size, which is 64 KB).
+If this flag is set to “0” (CURRENTLY IT'S NOT SUPPORTED), each block depends on previous ones
+(up to LZ5 window size, which is 4 MB).
 In such case, it’s necessary to decode all blocks in sequence.
 
 Block dependency improves compression ratio, especially for small blocks.
@@ -182,10 +183,11 @@ This information is intended to help the decoder allocate memory.
 Size here refers to the original (uncompressed) data size.
 Block Maximum Size is one value among the following table :
 
-|  0  |  1  |  2  |  3  |   4   |   5    |  6   |  7   | 
-| --- | --- | --- | --- | ----- | ------ | ---- | ---- | 
-| N/A | N/A | N/A | N/A | 64 KB | 256 KB | 1 MB | 4 MB | 
+|  0  |   1   |    2   |   3  |   4  |   5   |   6   |   7    | 
+| --- | ----- | ------ | ---- | ---- | ----- | ----- | ------ | 
+| N/A | 64 KB | 256 KB | 1 MB | 4 MB | 16 MB | 64 MB | 256 MB |
 
+    
 The decoder may refuse to allocate block sizes above a (system-specific) size.
 Unused values may be used in a future revision of the spec.
 A decoder conformant to the current version of the spec
@@ -233,7 +235,7 @@ This field uses 4-bytes, format is little-endian.
 
 The highest bit is “1” if data in the block is uncompressed.
 
-The highest bit is “0” if data in the block is compressed by LZ4.
+The highest bit is “0” if data in the block is compressed by LZ5.
 
 All other bits give the size, in bytes, of the following data block
 (the size does not include the block checksum if present).
@@ -279,7 +281,7 @@ For the purpose of facilitating identification,
 it is discouraged to start a flow of concatenated frames with a skippable frame.
 If there is a need to start such a flow with some user data
 encapsulated into a skippable frame,
-it’s recommended to start with a zero-byte LZ4LZ5ame
+it’s recommended to start with a zero-byte LZ5 frame
 followed by a skippable frame.
 This will make it easier for file type identifiers.
 
@@ -302,84 +304,8 @@ __User Data__
 User Data can be anything. Data will just be skipped by the decoder.
 
 
-Legacy frame
-------------
-
-The Legacy frame format was defined into the initial versions of “LZ4LZ5o”.
-Newer compressors should not use this format anymore, as it is too restrictive.
-
-Main characteristics of the legacy format :
-
-- Fixed block size : 8 MB.
-- All blocks must be completely filled, except the last one.
-- All blocks are always compressed, even when compression is detrimental.
-- The last block is detected either because 
-  it is followed by the “EOF” (End of File) mark,
-  or because it is followed by a known Frame Magic Number.
-- No checksum
-- Convention is Little endian
-
-| MagicNb | B.CSize | CData | B.CSize | CData |  (...)  | EndMark |
-| ------- | ------- | ----- | ------- | ----- | ------- | ------- |
-| 4 bytes | 4 bytes | CSize | 4 bytes | CSize | x times |   EOF   |
-
-
-__Magic Number__
-
-4 Bytes, Little endian format.
-Value : 0x184C2102
-
-__Block Compressed Size__
-
-This is the size, in bytes, of the following compressed data block.
-4 Bytes, Little endian format.
-
-__Data__
-
-Where the actual compressed data stands.
-Data is always compressed, even when compression is detrimental.
-
-__EndMark__
-
-End of legacy frame is implicit only.
-It must be followed by a standard EOF (End Of File) signal,
-wether it is a file or a stream.
-
-Alternatively, if the frame is followed by a valid Frame Magic Number,
-it is considered completed.
-It makes legacy frames compatible with frame concatenation.
-
-Any other value will be interpreted as a block size,
-and trigger an error if it does not fit within acceptable range.
-
 
 Version changes
 ---------------
 
-1.5.1 : changed format to MarkDown compatible
-
-1.5 : removed Dictionary ID from specification
-
-1.4.1 : changed wording from “stream” to “frame”
-
-1.4 : added skippable streams, re-added stream checksum
-
-1.3 : modified header checksum
-
-1.2 : reduced choice of “block size”, to postpone decision on “dynamic size of BlockSize Field”.
-
-1.1 : optional fields are now part of the descriptor
-
-1.0 : changed “block size” specification, adding a compressed/uncompressed flag
-
-0.9 : reduced scale of “block maximum size” table
-
-0.8 : removed : high compression flag
-
-0.7 : removed : stream checksum
-
-0.6 : settled : stream size uses 8 bytes, endian convention is little endian
-
-0.5: added copyright notice
-
-0.4 : changed format to Google Doc compatible OpenDocument
+1.0 : based on LZ5 Frame Format Description 1.5.1 (31/03/2015)
