@@ -106,10 +106,8 @@
 #define LZ5IO_MAGICNUMBER   0x184D2205U
 #define LZ5IO_SKIPPABLE0    0x184D2A50U
 #define LZ5IO_SKIPPABLEMASK 0xFFFFFFF0U
-#define LEGACY_MAGICNUMBER  0x184C2102U
 
 #define CACHELINE 64
-#define LEGACY_BLOCKSIZE   (8 MB)
 #define MIN_STREAM_BUFSIZE (192 KB)
 #define LZ5IO_BLOCKSIZEID_DEFAULT 4
 
@@ -652,59 +650,6 @@ static void LZ5IO_fwriteSparseEnd(FILE* file, unsigned storedSkips)
 }
 
 
-static unsigned g_magicRead = 0;
-static unsigned long long LZ5IO_decodeLegacyStream(FILE* finput, FILE* foutput)
-{
-    unsigned long long filesize = 0;
-    char* in_buff;
-    char* out_buff;
-    unsigned storedSkips = 0;
-
-    /* Allocate Memory */
-    in_buff = (char*)malloc(LZ5_compressBound(LEGACY_BLOCKSIZE));
-    out_buff = (char*)malloc(LEGACY_BLOCKSIZE);
-    if (!in_buff || !out_buff) EXM_THROW(51, "Allocation error : not enough memory");
-
-    /* Main Loop */
-    while (1)
-    {
-        int decodeSize;
-        size_t sizeCheck;
-        unsigned int blockSize;
-
-        /* Block Size */
-        sizeCheck = fread(in_buff, 1, 4, finput);
-        if (sizeCheck==0) break;                   /* Nothing to read : file read is completed */
-        blockSize = LZ5IO_readLE32(in_buff);       /* Convert to Little Endian */
-        if (blockSize > LZ5_COMPRESSBOUND(LEGACY_BLOCKSIZE))
-        {   /* Cannot read next block : maybe new stream ? */
-            g_magicRead = blockSize;
-            break;
-        }
-
-        /* Read Block */
-        sizeCheck = fread(in_buff, 1, blockSize, finput);
-        if (sizeCheck!=blockSize) EXM_THROW(52, "Read error : cannot access compressed block !");
-
-        /* Decode Block */
-        decodeSize = LZ5_decompress_safe(in_buff, out_buff, blockSize, LEGACY_BLOCKSIZE);
-        if (decodeSize < 0) EXM_THROW(53, "Decoding Failed ! Corrupted input detected !");
-        filesize += decodeSize;
-
-        /* Write Block */
-        storedSkips = LZ5IO_fwriteSparse(foutput, out_buff, decodeSize, storedSkips);
-    }
-
-    LZ5IO_fwriteSparseEnd(foutput, storedSkips);
-
-    /* Free */
-    free(in_buff);
-    free(out_buff);
-
-    return filesize;
-}
-
-
 
 typedef struct {
     void*  srcBuffer;
@@ -857,9 +802,6 @@ static unsigned long long selectDecoder(dRess_t ress, FILE* finput, FILE* foutpu
     {
     case LZ5IO_MAGICNUMBER:
         return LZ5IO_decompressLZ5F(ress, finput, foutput);
-    case LEGACY_MAGICNUMBER:
-        DISPLAYLEVEL(4, "Detected : Legacy format \n");
-        return LZ5IO_decodeLegacyStream(finput, foutput);
     case LZ5IO_SKIPPABLE0:
         DISPLAYLEVEL(4, "Skipping detected skippable area \n");
         nbReadBytes = fread(MNstore, 1, 4, finput);
