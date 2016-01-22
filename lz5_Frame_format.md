@@ -309,4 +309,4 @@ User Data can be anything. Data will just be skipped by the decoder.
 Version changes
 ---------------
 
-1.0 : based on LZ5 Frame Format Description 1.5.1 (31/03/2015)
+1.0 : based on LZ4 Frame Format Description 1.5.1 (31/03/2015)
