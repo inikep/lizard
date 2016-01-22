@@ -772,6 +772,7 @@ static unsigned long long LZ5IO_passThrough(FILE* finput, FILE* foutput, unsigne
 
 
 #define ENDOFSTREAM ((unsigned long long)-1)
+static unsigned g_magicRead = 0;
 static unsigned long long selectDecoder(dRess_t ress, FILE* finput, FILE* foutput)
 {
     unsigned char MNstore[MAGICNUMBER_SIZE];
