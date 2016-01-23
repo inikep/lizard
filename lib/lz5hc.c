@@ -86,8 +86,11 @@ void LZ5_free_mem_HC(LZ5HC_Data_Structure* ctx)
 
 static void LZ5HC_init (LZ5HC_Data_Structure* ctx, const BYTE* start)
 {
+#if 0
     MEM_INIT((void*)ctx->hashTable, 0, sizeof(U32)*((1 << ctx->params.hashLog) + (1 << ctx->params.hashLog3)));
-    MEM_INIT(ctx->chainTable, 0x01, sizeof(U32)*(1 << ctx->params.contentLog));
+    if (ctx->params.strategy >= LZ5HC_lowest_price)
+        MEM_INIT(ctx->chainTable, 0x01, sizeof(U32)*(1 << ctx->params.contentLog));
+#endif
 
     ctx->nextToUpdate = (1 << ctx->params.windowLog);
     ctx->base = start - (1 << ctx->params.windowLog);
