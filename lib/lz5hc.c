@@ -60,13 +60,13 @@ int LZ5_alloc_mem_HC(LZ5HC_Data_Structure* ctx, int compressionLevel)
 
     ctx->params = LZ5HC_defaultParameters[ctx->compressionLevel];
 
-    ctx->hashTable = (U32*) ALLOCATOR(1, sizeof(U32)*((1 << ctx->params.hashLog3)+(1 << ctx->params.hashLog)));
+    ctx->hashTable = (U32*) malloc(sizeof(U32)*((1 << ctx->params.hashLog3)+(1 << ctx->params.hashLog)));
     if (!ctx->hashTable)
         return 0;
 
     ctx->hashTable3 = ctx->hashTable + (1 << ctx->params.hashLog);
 
-    ctx->chainTable = (U32*) ALLOCATOR(1, sizeof(U32)*(1 << ctx->params.contentLog));
+    ctx->chainTable = (U32*) malloc(sizeof(U32)*(1 << ctx->params.contentLog));
     if (!ctx->chainTable)
     {
         FREEMEM(ctx->hashTable);
