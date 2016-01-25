@@ -314,8 +314,8 @@ static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL+1] =
     { MAXD_LOG, MAXD_LOG+1, 23, 16,     8,  4,    64,  1, LZ5HC_optimal_price_bt }, // level 13
     { MAXD_LOG, MAXD_LOG+1, 23, 16,   128,  4,    64,  1, LZ5HC_optimal_price_bt }, // level 14
     { MAXD_LOG, MAXD_LOG+1, 28, 24, 1<<10,  4, 1<<10,  1, LZ5HC_optimal_price_bt }, // level 15
-//  { 10, 10, 10,  0,     0,  4,     0,  0, LZ5HC_fast          }, // min values
-//  { 24, 24, 28, 24, 1<<24,  7, 1<<24,  1, LZ5HC_optimal_price }, // max values
+//  {       10,         10, 10,  0,     0,  4,     0,  0, LZ5HC_fast          }, // min values
+//  {       24,         24, 28, 24, 1<<24,  7, 1<<24,  2, LZ5HC_optimal_price }, // max values
 };
 
 
