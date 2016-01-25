@@ -1541,12 +1541,15 @@ static int LZ5HC_compress_price_fast (
     while (ip < mflimit)
     {
         HashPos = &HashTable[LZ5HC_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength)];
+#if MINMATCH == 3
         HashPos3 = &HashTable3[LZ5HC_hash3Ptr(ip, ctx->params.hashLog3)];
         ml = LZ5HC_FindMatchFast (ctx, *HashPos, *HashPos3, ip, matchlimit, (&ref));
-        *HashPos =  (U32)(ip - base);
-#if MINMATCH == 3
         *HashPos3 = (U32)(ip - base);
+#else
+        ml = LZ5HC_FindMatchFast (ctx, *HashPos, 0, ip, matchlimit, (&ref));
 #endif 
+        *HashPos =  (U32)(ip - base);
+
         if (!ml) { ip++; continue; }
 
         if ((U32)(ip - ref) == ctx->last_off) { ml2=0; goto _Encode; }

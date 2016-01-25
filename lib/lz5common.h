@@ -73,7 +73,7 @@ extern "C" {
 /**************************************
 *  Common Constants
 **************************************/
-#define MINMATCH 3
+#define MINMATCH 3 // should be 3 or 4
 
 #define WILDCOPYLENGTH 8
 #define LASTLITERALS 5
