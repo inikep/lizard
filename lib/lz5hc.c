@@ -590,26 +590,32 @@ FORCE_INLINE int LZ5HC_GetAllMatches (
 {
     U32* const chainTable = ctx->chainTable;
     U32* const HashTable = ctx->hashTable;
+    U32* const HashTable3 = ctx->hashTable3;
     const BYTE* const base = ctx->base;
     const U32 dictLimit = ctx->dictLimit;
     const BYTE* const lowPrefixPtr = base + dictLimit;
     const U32 maxDistance = (1 << ctx->params.windowLog);
     const U32 lowLimit = (ctx->lowLimit + maxDistance > (U32)(ip-base)) ? ctx->lowLimit : (U32)(ip - base) - (maxDistance - 1);
     const U32 contentMask = (1 << ctx->params.contentLog) - 1;
+    const U32 idx = (U32)(ip - base);
     const BYTE* const dictBase = ctx->dictBase;
     const BYTE* match;
     U32   matchIndex;
     int nbAttempts = ctx->params.searchNum;
  //   bool fullSearch = (ctx->params.fullSearch >= 2);
     int mnum = 0;
-
+    U32* HashPos, *HashPos3;
+        
     if (ip + MINMATCH > iHighLimit) return 0;
 
     /* First Match */
-    matchIndex = HashTable[LZ5HC_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength)];
-
+    HashPos = &HashTable[LZ5HC_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength)];
+    matchIndex = *HashPos;
 #if MINMATCH == 3
-    size_t offset = ip - base - ctx->hashTable3[LZ5HC_hash3Ptr(ip, ctx->params.hashLog3)];
+    HashPos3 = &HashTable3[LZ5HC_hash3Ptr(ip, ctx->params.hashLog3)];
+
+
+    size_t offset = idx - *HashPos3;
     if (offset > 0 && offset < LZ5_SHORT_OFFSET_DISTANCE)
     {
         match = ip - offset;
@@ -627,7 +633,15 @@ FORCE_INLINE int LZ5HC_GetAllMatches (
             mnum++;
         }
     }
+
+    *HashPos3 = idx;
 #endif
+
+
+    chainTable[idx & contentMask] = (U32)(idx - matchIndex);
+    *HashPos =  idx;
+    ctx->nextToUpdate++;
+
 
     while ((matchIndex>=lowLimit) && (nbAttempts))
     {
@@ -717,21 +731,20 @@ FORCE_INLINE int LZ5HC_BinTree_GetAllMatches (
     U32 *ptr0, *ptr1;
     U32 idx, matchIndex, delta0, delta1;
     int mlt = 0;
+    U32* HashPos, *HashPos3;
     
     if (ip + MINMATCH > iHighLimit) return 0;
 
     /* First Match */
     idx = ip - base;
-    U32 h = LZ5HC_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength);
-    matchIndex = HashTable[h];
-    HashTable[h] = idx;
-    ctx->nextToUpdate++;
+    HashPos = &HashTable[LZ5HC_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength)];
+    matchIndex = *HashPos;
+
     
 #if MINMATCH == 3
-    h = LZ5HC_hash3Ptr(ip, ctx->params.hashLog3);
-    size_t offset = idx - ctx->hashTable3[h];
-    ctx->hashTable3[h] = idx;
-    
+    HashPos3 = &ctx->hashTable3[LZ5HC_hash3Ptr(ip, ctx->params.hashLog3)];
+    size_t offset = idx - *HashPos3;
+
     if (offset > 0 && offset < LZ5_SHORT_OFFSET_DISTANCE)
     {
         match = ip - offset;
@@ -745,7 +758,13 @@ FORCE_INLINE int LZ5HC_BinTree_GetAllMatches (
             mnum++;
         }
     }
+
+    *HashPos3 = idx;
 #endif
+    
+
+    *HashPos = idx;
+    ctx->nextToUpdate++;
 
     // check rest of matches
     ptr0 = &chainTable[(idx*2+1) & contentMask];
@@ -1173,7 +1192,7 @@ static int LZ5HC_compress_optimal_price (
             }
             else
             {
-                LZ5HC_BinTree_Insert(ctx, ip, matchlimit);
+                LZ5HC_BinTree_Insert(ctx, inr, matchlimit);
                 match_num = LZ5HC_BinTree_GetAllMatches(ctx, inr, matchlimit, best_mlen, matches);
                 LZ5_LOG_PARSER("%d: LZ5HC_BinTree_GetAllMatches match_num=%d\n", (int)((char*)inr-source), match_num);
             }
