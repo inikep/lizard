@@ -984,8 +984,8 @@ static int LZ5HC_compress_optimal_price (
     limitedOutput_directive limit
     )
 {
-    ctx->inputBuffer = (BYTE*) source;
-    ctx->outputBuffer = (BYTE*) dest;
+    ctx->inputBuffer = (const BYTE*) source;
+    ctx->outputBuffer = (const BYTE*) dest;
     const BYTE* ip = (const BYTE*) source;
     const BYTE* anchor = ip;
     const BYTE* const iend = ip + inputSize;
@@ -1419,8 +1419,8 @@ static int LZ5HC_compress_lowest_price (
     limitedOutput_directive limit
     )
 {
-    ctx->inputBuffer = (BYTE*) source;
-    ctx->outputBuffer = (BYTE*) dest;
+    ctx->inputBuffer = (const BYTE*) source;
+    ctx->outputBuffer = (const BYTE*) dest;
     const BYTE* ip = (const BYTE*) source;
     const BYTE* anchor = ip;
     const BYTE* const iend = ip + inputSize;
@@ -1471,15 +1471,15 @@ _Search:
         {
         int price, best_price;
         U32 off0=0, off1=0;
-        uint8_t *pos, *best_pos;
+        const uint8_t *pos, *best_pos;
 
     //	find the lowest price for encoding ml bytes
-        best_pos = (uint8_t*)ip;
+        best_pos = ip;
         best_price = 1<<30;
-        off0 = (uint8_t*)ip - ref;
+        off0 = ip - ref;
         off1 = start2 - ref2;
 
-        for (pos = (uint8_t*)ip + ml; pos >= start2; pos--)
+        for (pos = ip + ml; pos >= start2; pos--)
         {
             int common0 = pos - ip;
             if (common0 >= MINMATCH)
@@ -1564,8 +1564,8 @@ static int LZ5HC_compress_price_fast (
     limitedOutput_directive limit
     )
 {
-    ctx->inputBuffer = (BYTE*) source;
-    ctx->outputBuffer = (BYTE*) dest;
+    ctx->inputBuffer = (const BYTE*) source;
+    ctx->outputBuffer = (const BYTE*) dest;
     const BYTE* ip = (const BYTE*) source;
     const BYTE* anchor = ip;
     const BYTE* const iend = ip + inputSize;
@@ -1698,8 +1698,8 @@ static int LZ5HC_compress_fast (
     limitedOutput_directive limit
     )
 {
-    ctx->inputBuffer = (BYTE*) source;
-    ctx->outputBuffer = (BYTE*) dest;
+    ctx->inputBuffer = (const BYTE*) source;
+    ctx->outputBuffer = (const BYTE*) dest;
     const BYTE* ip = (const BYTE*) source;
     const BYTE* anchor = ip;
     const BYTE* const iend = ip + inputSize;

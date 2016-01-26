@@ -260,8 +260,8 @@ struct LZ5HC_Data_s
     const BYTE* end;        /* next block here to continue on current prefix */
     const BYTE* base;       /* All index relative to this position */
     const BYTE* dictBase;   /* alternate base for extDict */
-    BYTE* inputBuffer;      /* deprecated */
-    BYTE* outputBuffer;     /* deprecated */
+    const BYTE* inputBuffer;      /* for debugging */
+    const BYTE* outputBuffer;     /* for debugging */
     U32   dictLimit;        /* below that point, need extDict */
     U32   lowLimit;         /* below that point, no more dict */
     U32   nextToUpdate;     /* index from which to continue dictionary update */
