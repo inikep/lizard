@@ -1,3 +1,7 @@
+v1.4
+- improved: levels from 13 to 15 (maximum compression ratio)
+- added: a new parser: LZ5HC_optimal_price_bt
+
 v1.3.3
 - added: new levels from 11 to 18 (maximum compression ratio)
 - added: a new parser: LZ5HC_optimal_price

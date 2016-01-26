@@ -12,25 +12,6 @@ The improvement in compression ratio is caused mainly because of:
 [LZ4]: https://github.com/Cyan4973/lz4
 
 
-The codewords description
--------------------------
-
-LZ5 uses different output codewords and is not compatible with LZ4. LZ4 output codewords are 3 byte long (24-bit) and look as follows:
-- LLLL_MMMM OOOOOOOO OOOOOOOO - 16-bit offset, 4-bit match length, 4-bit literal length 
-
-LZ5 uses 4 types of codewords from 1 to 4 bytes long:
-- [1_OO_LL_MMM] [OOOOOOOO] - 10-bit offset, 3-bit match length, 2-bit literal length
-- [00_LLL_MMM] [OOOOOOOO] [OOOOOOOO] - 16-bit offset, 3-bit match length, 3-bit literal length
-- [010_LL_MMM] [OOOOOOOO] [OOOOOOOO] [OOOOOOOO] - 24-bit offset, 3-bit match length, 2-bit literal length
-- [011_LL_MMM] - last offset, 3-bit match length, 2-bit literal length
-
-1, 00, 010, 011 can be seen as Huffman codes and are selected according to frequences of given codewords for my test files. 
-Match lengths have always 3-bits (MMM) and literal lengths are usually 2-bits (LL) because it gives better ratio than any other division of 5-bits remaining bits. 
-So we can encode values 0-7 (3-bits) for matches (what means length of 3-10 for MINMATCH=3). But 7 is reserved as a flag signaling that a match is equal or longer
-that 10 bytes. So e.g. 30 is encoded as a flag 7 (match length=10) and a next byte 30-10=20. I tried many different variants (e.g. separate match lenghts and literal lenghts)
-but these codewords were the best. 
-
-
 Benchmarks
 -------------------------
 
@@ -49,25 +30,22 @@ With the compresion ratio is opposite: LZ5 is better than LZ4 but worse than zst
 | lz4hc r131 -11              |    20 MB/s |  1969 MB/s |    54751363 | 52.21 |
 | lz4hc r131 -13              |    17 MB/s |  1969 MB/s |    54744790 | 52.21 |
 | lz4hc r131 -15              |    14 MB/s |  2007 MB/s |    54741827 | 52.21 |
-| lz5 v1.3.3                  |   191 MB/s |   892 MB/s |    56183327 | 53.58 |
-| lz5hc v1.3.3 level 1        |   468 MB/s |  1682 MB/s |    68770655 | 65.58 |
-| lz5hc v1.3.3 level 2        |   337 MB/s |  1574 MB/s |    65201626 | 62.18 |
-| lz5hc v1.3.3 level 3        |   232 MB/s |  1330 MB/s |    61423270 | 58.58 |
-| lz5hc v1.3.3 level 4        |   129 MB/s |   894 MB/s |    55011906 | 52.46 |
-| lz5hc v1.3.3 level 5        |    99 MB/s |   840 MB/s |    52790905 | 50.35 |
-| lz5hc v1.3.3 level 6        |    41 MB/s |   894 MB/s |    52561673 | 50.13 |
-| lz5hc v1.3.3 level 7        |    35 MB/s |   875 MB/s |    50947061 | 48.59 |
-| lz5hc v1.3.3 level 8        |    23 MB/s |   812 MB/s |    50049555 | 47.73 |
-| lz5hc v1.3.3 level 9        |    17 MB/s |   727 MB/s |    48718531 | 46.46 |
-| lz5hc v1.3.3 level 10       |    13 MB/s |   728 MB/s |    48109030 | 45.88 |
-| lz5hc v1.3.3 level 11       |  9.18 MB/s |   719 MB/s |    47438817 | 45.24 |
-| lz5hc v1.3.3 level 12       |  7.96 MB/s |   752 MB/s |    47063261 | 44.88 |
-| lz5hc v1.3.3 level 13       |  5.43 MB/s |   762 MB/s |    46718698 | 44.55 |
-| lz5hc v1.3.3 level 14       |  4.34 MB/s |   756 MB/s |    46484969 | 44.33 |
-| lz5hc v1.3.3 level 15       |  1.96 MB/s |   760 MB/s |    46227364 | 44.09 |
-| lz5hc v1.3.3 level 16       |  0.81 MB/s |   681 MB/s |    46125742 | 43.99 |
-| lz5hc v1.3.3 level 17       |  0.39 MB/s |   679 MB/s |    46050114 | 43.92 |
-| lz5hc v1.3.3 level 18       |  0.16 MB/s |   541 MB/s |    46008853 | 43.88 |
+| lz5 v1.4                    |   191 MB/s |   892 MB/s |    56183327 | 53.58 |
+| lz5hc v1.4 level 1          |   468 MB/s |  1682 MB/s |    68770655 | 65.58 |
+| lz5hc v1.4 level 2          |   337 MB/s |  1574 MB/s |    65201626 | 62.18 |
+| lz5hc v1.4 level 3          |   232 MB/s |  1330 MB/s |    61423270 | 58.58 |
+| lz5hc v1.4 level 4          |   129 MB/s |   894 MB/s |    55011906 | 52.46 |
+| lz5hc v1.4 level 5          |    99 MB/s |   840 MB/s |    52790905 | 50.35 |
+| lz5hc v1.4 level 6          |    41 MB/s |   894 MB/s |    52561673 | 50.13 |
+| lz5hc v1.4 level 7          |    35 MB/s |   875 MB/s |    50947061 | 48.59 |
+| lz5hc v1.4 level 8          |    23 MB/s |   812 MB/s |    50049555 | 47.73 |
+| lz5hc v1.4 level 9          |    17 MB/s |   727 MB/s |    48718531 | 46.46 |
+| lz5hc v1.4 level 10         |    13 MB/s |   728 MB/s |    48109030 | 45.88 |
+| lz5hc v1.4 level 11         |  9.18 MB/s |   719 MB/s |    47438817 | 45.24 |
+| lz5hc v1.4 level 12         |  7.96 MB/s |   752 MB/s |    47063261 | 44.88 |
+| lz5hc v1.4 level 13         |  5.38 MB/s |   710 MB/s |    46383307 | 44.23 |
+| lz5hc v1.4 level 14         |  4.12 MB/s |   669 MB/s |    45843096 | 43.72 |
+| lz5hc v1.4 level 15         |  2.16 MB/s |   619 MB/s |    45767126 | 43.65 |
 | zstd v0.4.1 level 1         |   249 MB/s |   537 MB/s |    51160301 | 48.79 |
 | zstd v0.4.1 level 2         |   183 MB/s |   505 MB/s |    49719335 | 47.42 |
 | zstd v0.4.1 level 5         |    72 MB/s |   461 MB/s |    46389082 | 44.24 |
@@ -86,3 +64,17 @@ The ["win81"] input file (100 MB) is a concatanation of carefully selected files
 
 [lzbench]: https://github.com/inikep/lzbench
 ["win81"]: https://docs.google.com/uc?id=0BwX7dtyRLxThRzBwT0xkUy1TMFE&export=download
+
+
+Documentation
+-------------------------
+
+The raw LZ5 block compression format is detailed within [lz5_Block_format].
+
+To compress an arbitrarily long file or data stream, multiple blocks are required.
+Organizing these blocks and providing a common header format to handle their content
+is the purpose of the Frame format, defined into [lz5_Frame_format].
+Interoperable versions of LZ5 must respect this frame format.
+
+[lz5_Block_format]: lz5_Block_format.md
+[lz5_Frame_format]: lz5_Frame_format.md

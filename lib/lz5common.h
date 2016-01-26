@@ -298,17 +298,17 @@ static const int LZ5HC_compressionLevel_default = 6;
 static const LZ5HC_parameters LZ5HC_defaultParameters[LZ5HC_MAX_CLEVEL+1] =
 {
     /* windLog, contentLog,  H, H3,  Snum, SL, SuffL, FS, Strategy */
-    {        0,          0,  0,  0,     0,  0,     0,  0, LZ5HC_fast             },  // level 0 - never used
-    { MAXD_LOG,   MAXD_LOG, 13,  0,     4,  6,     0,  0, LZ5HC_fast             },  // level 1
-    { MAXD_LOG,   MAXD_LOG, 13,  0,     2,  6,     0,  0, LZ5HC_fast             },  // level 2
-    { MAXD_LOG,   MAXD_LOG, 13,  0,     1,  5,     0,  0, LZ5HC_fast             },  // level 3
-    { MAXD_LOG,   MAXD_LOG, 14, 13,     1,  4,     0,  0, LZ5HC_price_fast       },  // level 4
-    { MAXD_LOG,   MAXD_LOG, 17, 13,     1,  4,     0,  0, LZ5HC_price_fast       },  // level 5
-    { MAXD_LOG,   MAXD_LOG, 15, 13,     1,  4,     0,  0, LZ5HC_lowest_price     },  // level 6
-    { MAXD_LOG,   MAXD_LOG, 17, 13,     1,  4,     0,  0, LZ5HC_lowest_price     },  // level 7
-    { MAXD_LOG,   MAXD_LOG, 19, 16,     1,  4,     0,  0, LZ5HC_lowest_price     },  // level 8
-    { MAXD_LOG,   MAXD_LOG, 23, 16,     3,  4,     0,  0, LZ5HC_lowest_price     },  // level 9
-    { MAXD_LOG,   MAXD_LOG, 23, 16,     8,  4,     0,  0, LZ5HC_lowest_price     },  // level 10
+    {        0,          0,  0,  0,     0,  0,     0,  0, LZ5HC_fast             }, // level 0 - never used
+    { MAXD_LOG,   MAXD_LOG, 13,  0,     4,  6,     0,  0, LZ5HC_fast             }, // level 1
+    { MAXD_LOG,   MAXD_LOG, 13,  0,     2,  6,     0,  0, LZ5HC_fast             }, // level 2
+    { MAXD_LOG,   MAXD_LOG, 13,  0,     1,  5,     0,  0, LZ5HC_fast             }, // level 3
+    { MAXD_LOG,   MAXD_LOG, 14, 13,     1,  4,     0,  0, LZ5HC_price_fast       }, // level 4
+    { MAXD_LOG,   MAXD_LOG, 17, 13,     1,  4,     0,  0, LZ5HC_price_fast       }, // level 5
+    { MAXD_LOG,   MAXD_LOG, 15, 13,     1,  4,     0,  0, LZ5HC_lowest_price     }, // level 6
+    { MAXD_LOG,   MAXD_LOG, 17, 13,     1,  4,     0,  0, LZ5HC_lowest_price     }, // level 7
+    { MAXD_LOG,   MAXD_LOG, 19, 16,     1,  4,     0,  0, LZ5HC_lowest_price     }, // level 8
+    { MAXD_LOG,   MAXD_LOG, 23, 16,     3,  4,     0,  0, LZ5HC_lowest_price     }, // level 9
+    { MAXD_LOG,   MAXD_LOG, 23, 16,     8,  4,     0,  0, LZ5HC_lowest_price     }, // level 10
     { MAXD_LOG,   MAXD_LOG, 23, 16,     8,  4,    12,  0, LZ5HC_optimal_price    }, // level 11
     { MAXD_LOG,   MAXD_LOG, 23, 16,     8,  4,    64,  0, LZ5HC_optimal_price    }, // level 12
     { MAXD_LOG, MAXD_LOG+1, 23, 16,     8,  4,    64,  1, LZ5HC_optimal_price_bt }, // level 13
