@@ -46,13 +46,13 @@ With the compresion ratio is opposite: LZ5 is better than LZ4 but worse than zst
 | lz5hc v1.4 level 13         |  5.38 MB/s |   710 MB/s |    46383307 | 44.23 |
 | lz5hc v1.4 level 14         |  4.12 MB/s |   669 MB/s |    45843096 | 43.72 |
 | lz5hc v1.4 level 15         |  2.16 MB/s |   619 MB/s |    45767126 | 43.65 |
-| zstd v0.4.1 level 1         |   249 MB/s |   537 MB/s |    51160301 | 48.79 |
-| zstd v0.4.1 level 2         |   183 MB/s |   505 MB/s |    49719335 | 47.42 |
-| zstd v0.4.1 level 5         |    72 MB/s |   461 MB/s |    46389082 | 44.24 |
-| zstd v0.4.1 level 9         |    17 MB/s |   474 MB/s |    43892280 | 41.86 |
-| zstd v0.4.1 level 13        |    10 MB/s |   487 MB/s |    42321163 | 40.36 |
-| zstd v0.4.1 level 17        |  1.97 MB/s |   476 MB/s |    42009876 | 40.06 |
-| zstd v0.4.1 level 20        |  1.70 MB/s |   459 MB/s |    41880158 | 39.94 |
+| zstd v0.5.0 level 1         |   249 MB/s |   569 MB/s |    51121791 | 48.75 |
+| zstd v0.5.0 level 2         |   177 MB/s |   523 MB/s |    49692088 | 47.39 |
+| zstd v0.5.0 level 5         |    72 MB/s |   491 MB/s |    46373509 | 44.23 |
+| zstd v0.5.0 level 9         |    17 MB/s |   523 MB/s |    43876466 | 41.84 |
+| zstd v0.5.0 level 13        |    10 MB/s |   524 MB/s |    42305338 | 40.35 |
+| zstd v0.5.0 level 17        |  3.21 MB/s |   524 MB/s |    41990713 | 40.05 |
+| zstd v0.5.0 level 20        |  2.76 MB/s |   495 MB/s |    41862877 | 39.92 |
 | brotli 2015-10-29 -1        |    86 MB/s |   208 MB/s |    47882059 | 45.66 |
 | brotli 2015-10-29 -3        |    60 MB/s |   214 MB/s |    47451223 | 45.25 |
 | brotli 2015-10-29 -5        |    17 MB/s |   217 MB/s |    43363897 | 41.36 |
