@@ -106,12 +106,10 @@
 #define LZ5IO_MAGICNUMBER   0x184D2205U
 #define LZ5IO_SKIPPABLE0    0x184D2A50U
 #define LZ5IO_SKIPPABLEMASK 0xFFFFFFF0U
-#define LEGACY_MAGICNUMBER  0x184C2102U
 
 #define CACHELINE 64
-#define LEGACY_BLOCKSIZE   (8 MB)
 #define MIN_STREAM_BUFSIZE (192 KB)
-#define LZ5IO_BLOCKSIZEID_DEFAULT 7
+#define LZ5IO_BLOCKSIZEID_DEFAULT 4
 
 #define sizeT sizeof(size_t)
 #define maskT (sizeT - 1)
@@ -143,7 +141,7 @@ static int g_blockIndependence = 1;
 static int g_sparseFileSupport = 1;
 static int g_contentSizeFlag = 0;
 
-static const int minBlockSizeID = 4;
+static const int minBlockSizeID = 1;
 static const int maxBlockSizeID = 7;
 
 
@@ -182,10 +180,10 @@ int LZ5IO_setOverwrite(int yes)
    return g_overwrite;
 }
 
-/* blockSizeID : valid values : 4-5-6-7 */
+/* blockSizeID : valid values : 1-7 */
 int LZ5IO_setBlockSizeID(int bsid)
 {
-    static const int blockSizeTable[] = { 64 KB, 256 KB, 1 MB, 4 MB };
+    static const int blockSizeTable[] = { 64 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
     if ((bsid < minBlockSizeID) || (bsid > maxBlockSizeID)) return -1;
     g_blockSizeId = bsid;
     return blockSizeTable[g_blockSizeId-minBlockSizeID];
@@ -258,7 +256,7 @@ static unsigned long long LZ5IO_GetFileSize(const char* infilename)
 ** ********************** LZ5 File / Pipe compression ********************* **
 ** ************************************************************************ */
 
-static int LZ5IO_GetBlockSize_FromBlockId (int id) { return (1 << (8 + (2 * id))); }
+static int LZ5IO_GetBlockSize_FromBlockId (int id) { /*printf("LZ5IO_GetBlockSize_FromBlockId %d=%d\n", id, (1 << (14 + (2 * id)))); */ return (1 << (14 + (2 * id))); }
 static int LZ5IO_isSkippableMagicNumber(unsigned int magic) { return (magic & LZ5IO_SKIPPABLEMASK) == LZ5IO_SKIPPABLE0; }
 
 
@@ -336,85 +334,7 @@ static void LZ5IO_writeLE32 (void* p, unsigned value32)
     dstPtr[3] = (unsigned char)(value32 >> 24);
 }
 
-static int LZ5IO_LZ5_compress(const char* src, char* dst, int srcSize, int dstSize, int cLevel)
-{
-    (void)cLevel;
-    return LZ5_compress_fast(src, dst, srcSize, dstSize, 1);
-}
 
-/* LZ5IO_compressFilename_Legacy :
- * This function is intentionally "hidden" (not published in .h)
- * It generates compressed streams using the old 'legacy' format */
-int LZ5IO_compressFilename_Legacy(const char* input_filename, const char* output_filename, int compressionlevel)
-{
-    int (*compressionFunction)(const char* src, char* dst, int srcSize, int dstSize, int cLevel);
-    unsigned long long filesize = 0;
-    unsigned long long compressedfilesize = MAGICNUMBER_SIZE;
-    char* in_buff;
-    char* out_buff;
-    const int outBuffSize = LZ5_compressBound(LEGACY_BLOCKSIZE);
-    FILE* finput;
-    FILE* foutput;
-    clock_t start, end;
-    size_t sizeCheck;
-
-
-    /* Init */
-    start = clock();
-    if (compressionlevel < 3) compressionFunction = LZ5IO_LZ5_compress; else compressionFunction = LZ5_compress_HC;
-
-    if (LZ5IO_getFiles(input_filename, output_filename, &finput, &foutput))
-        EXM_THROW(20, "File error");
-
-    /* Allocate Memory */
-    in_buff = (char*)malloc(LEGACY_BLOCKSIZE);
-    out_buff = (char*)malloc(outBuffSize);
-    if (!in_buff || !out_buff) EXM_THROW(21, "Allocation error : not enough memory");
-
-    /* Write Archive Header */
-    LZ5IO_writeLE32(out_buff, LEGACY_MAGICNUMBER);
-    sizeCheck = fwrite(out_buff, 1, MAGICNUMBER_SIZE, foutput);
-    if (sizeCheck!=MAGICNUMBER_SIZE) EXM_THROW(22, "Write error : cannot write header");
-
-    /* Main Loop */
-    while (1)
-    {
-        unsigned int outSize;
-        /* Read Block */
-        int inSize = (int) fread(in_buff, (size_t)1, (size_t)LEGACY_BLOCKSIZE, finput);
-        if( inSize<=0 ) break;
-        filesize += inSize;
-
-        /* Compress Block */
-        outSize = compressionFunction(in_buff, out_buff+4, inSize, outBuffSize, compressionlevel);
-        compressedfilesize += outSize+4;
-        DISPLAYUPDATE(2, "\rRead : %i MB  ==> %.2f%%   ", (int)(filesize>>20), (double)compressedfilesize/filesize*100);
-
-        /* Write Block */
-        LZ5IO_writeLE32(out_buff, outSize);
-        sizeCheck = fwrite(out_buff, 1, outSize+4, foutput);
-        if (sizeCheck!=(size_t)(outSize+4)) EXM_THROW(23, "Write error : cannot write compressed block");
-    }
-
-    /* Status */
-    end = clock();
-    DISPLAYLEVEL(2, "\r%79s\r", "");
-    filesize += !filesize;   /* avoid divide by zero */
-    DISPLAYLEVEL(2,"Compressed %" PRIu64 " bytes into %" PRIu64 " bytes ==> %.2f%%\n",
-        (unsigned long long) filesize, (unsigned long long) compressedfilesize, (double)compressedfilesize/filesize*100);
-    {
-        double seconds = (double)(end - start)/CLOCKS_PER_SEC;
-        DISPLAYLEVEL(4,"Done in %.2f s ==> %.2f MB/s\n", seconds, (double)filesize / seconds / 1024 / 1024);
-    }
-
-    /* Close & Free */
-    free(in_buff);
-    free(out_buff);
-    fclose(finput);
-    fclose(foutput);
-
-    return 0;
-}
 
 
 /*********************************************
@@ -730,59 +650,6 @@ static void LZ5IO_fwriteSparseEnd(FILE* file, unsigned storedSkips)
 }
 
 
-static unsigned g_magicRead = 0;
-static unsigned long long LZ5IO_decodeLegacyStream(FILE* finput, FILE* foutput)
-{
-    unsigned long long filesize = 0;
-    char* in_buff;
-    char* out_buff;
-    unsigned storedSkips = 0;
-
-    /* Allocate Memory */
-    in_buff = (char*)malloc(LZ5_compressBound(LEGACY_BLOCKSIZE));
-    out_buff = (char*)malloc(LEGACY_BLOCKSIZE);
-    if (!in_buff || !out_buff) EXM_THROW(51, "Allocation error : not enough memory");
-
-    /* Main Loop */
-    while (1)
-    {
-        int decodeSize;
-        size_t sizeCheck;
-        unsigned int blockSize;
-
-        /* Block Size */
-        sizeCheck = fread(in_buff, 1, 4, finput);
-        if (sizeCheck==0) break;                   /* Nothing to read : file read is completed */
-        blockSize = LZ5IO_readLE32(in_buff);       /* Convert to Little Endian */
-        if (blockSize > LZ5_COMPRESSBOUND(LEGACY_BLOCKSIZE))
-        {   /* Cannot read next block : maybe new stream ? */
-            g_magicRead = blockSize;
-            break;
-        }
-
-        /* Read Block */
-        sizeCheck = fread(in_buff, 1, blockSize, finput);
-        if (sizeCheck!=blockSize) EXM_THROW(52, "Read error : cannot access compressed block !");
-
-        /* Decode Block */
-        decodeSize = LZ5_decompress_safe(in_buff, out_buff, blockSize, LEGACY_BLOCKSIZE);
-        if (decodeSize < 0) EXM_THROW(53, "Decoding Failed ! Corrupted input detected !");
-        filesize += decodeSize;
-
-        /* Write Block */
-        storedSkips = LZ5IO_fwriteSparse(foutput, out_buff, decodeSize, storedSkips);
-    }
-
-    LZ5IO_fwriteSparseEnd(foutput, storedSkips);
-
-    /* Free */
-    free(in_buff);
-    free(out_buff);
-
-    return filesize;
-}
-
-
 
 typedef struct {
     void*  srcBuffer;
@@ -905,6 +772,7 @@ static unsigned long long LZ5IO_passThrough(FILE* finput, FILE* foutput, unsigne
 
 
 #define ENDOFSTREAM ((unsigned long long)-1)
+static unsigned g_magicRead = 0;
 static unsigned long long selectDecoder(dRess_t ress, FILE* finput, FILE* foutput)
 {
     unsigned char MNstore[MAGICNUMBER_SIZE];
@@ -935,9 +803,6 @@ static unsigned long long selectDecoder(dRess_t ress, FILE* finput, FILE* foutpu
     {
     case LZ5IO_MAGICNUMBER:
         return LZ5IO_decompressLZ5F(ress, finput, foutput);
-    case LEGACY_MAGICNUMBER:
-        DISPLAYLEVEL(4, "Detected : Legacy format \n");
-        return LZ5IO_decodeLegacyStream(finput, foutput);
     case LZ5IO_SKIPPABLE0:
         DISPLAYLEVEL(4, "Skipping detected skippable area \n");
         nbReadBytes = fread(MNstore, 1, 4, finput);

@@ -102,6 +102,7 @@ typedef unsigned long long  U64;
 #define LZ5F_MAGICNUMBER 0x184D2205U
 #define LZ5F_BLOCKUNCOMPRESSED_FLAG 0x80000000U
 #define LZ5F_BLOCKSIZEID_DEFAULT LZ5F_max64KB
+#define LZ5F_DICT_SIZE (1 << 22)
 
 static const size_t minFHSize = 7;
 static const size_t maxFHSize = 15;
@@ -176,11 +177,13 @@ const char* LZ5F_getErrorName(LZ5F_errorCode_t code)
 **************************************/
 static size_t LZ5F_getBlockSize(unsigned blockSizeID)
 {
-    static const size_t blockSizes[4] = { 64 KB, 256 KB, 1 MB, 4 MB };
+    static const size_t blockSizes[7] = { 64 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
 
     if (blockSizeID == 0) blockSizeID = LZ5F_BLOCKSIZEID_DEFAULT;
-    blockSizeID -= 4;
-    if (blockSizeID > 3) return (size_t)-LZ5F_ERROR_maxBlockSize_invalid;
+    blockSizeID -= 1;
+    if (blockSizeID >= 7) return (size_t)-LZ5F_ERROR_maxBlockSize_invalid;
+
+  //  printf("LZ5F_getBlockSize %d %d\n", blockSizeID+1, (int)blockSizes[blockSizeID]);
     return blockSizes[blockSizeID];
 }
 
@@ -429,9 +432,9 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
     if (cctxPtr->prefs.frameInfo.blockSizeID == 0) cctxPtr->prefs.frameInfo.blockSizeID = LZ5F_BLOCKSIZEID_DEFAULT;
     cctxPtr->maxBlockSize = LZ5F_getBlockSize(cctxPtr->prefs.frameInfo.blockSizeID);
 
-    requiredBuffSize = cctxPtr->maxBlockSize + ((cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * 128 KB);
+    requiredBuffSize = cctxPtr->maxBlockSize + ((cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * 2 * LZ5F_DICT_SIZE);
     if (preferencesPtr->autoFlush)
-        requiredBuffSize = (cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * 64 KB;   /* just needs dict */
+        requiredBuffSize = (cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * LZ5F_DICT_SIZE;   /* just needs dict */
 
     if (cctxPtr->maxBufferSize < requiredBuffSize)
     {
@@ -875,7 +878,7 @@ static size_t LZ5F_decodeHeader(LZ5F_dctx_t* dctxPtr, const void* srcVoidPtr, si
     if (blockChecksumFlag != 0) return (size_t)-LZ5F_ERROR_blockChecksum_unsupported; /* Not supported for the time being */
     if (((FLG>>0)&_2BITS) != 0) return (size_t)-LZ5F_ERROR_reservedFlag_set; /* Reserved bits */
     if (((BD>>7)&_1BIT) != 0) return (size_t)-LZ5F_ERROR_reservedFlag_set;   /* Reserved bit */
-    if (blockSizeID < 4) return (size_t)-LZ5F_ERROR_maxBlockSize_invalid;    /* 4-7 only supported values for the time being */
+    if (blockSizeID < 1) return (size_t)-LZ5F_ERROR_maxBlockSize_invalid;    /* 1-7 only supported values for the time being */
     if (((BD>>0)&_4BITS) != 0) return (size_t)-LZ5F_ERROR_reservedFlag_set;  /* Reserved bits */
 
     /* check */
@@ -894,7 +897,7 @@ static size_t LZ5F_decodeHeader(LZ5F_dctx_t* dctxPtr, const void* srcVoidPtr, si
     if (contentChecksumFlag) XXH32_reset(&(dctxPtr->xxh), 0);
 
     /* alloc */
-    bufferNeeded = dctxPtr->maxBlockSize + ((dctxPtr->frameInfo.blockMode==LZ5F_blockLinked) * 128 KB);
+    bufferNeeded = dctxPtr->maxBlockSize + ((dctxPtr->frameInfo.blockMode==LZ5F_blockLinked) * 2 * LZ5F_DICT_SIZE);
     if (bufferNeeded > dctxPtr->maxBufferSize)   /* tmp buffers too small */
     {
         FREEMEM(dctxPtr->tmpIn);

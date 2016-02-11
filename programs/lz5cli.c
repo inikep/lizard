@@ -43,7 +43,6 @@
 
 #define _POSIX_SOURCE 1        /* for fileno() within <stdio.h> on unix */
 
-
 /****************************
 *  Includes
 *****************************/
@@ -52,7 +51,7 @@
 #include <string.h>   /* strcmp, strlen */
 #include "bench.h"    /* BMK_benchFile, BMK_SetNbIterations, BMK_SetBlocksize, BMK_SetPause */
 #include "lz5io.h"    /* LZ5IO_compressFilename, LZ5IO_decompressFilename, LZ5IO_compressMultipleFilenames */
-#include "lz5common.h"
+#include "lz5.h"      // LZ5_VERSION
 
 
 /****************************
@@ -85,7 +84,7 @@
 #define LZ5CAT "lz5cat"
 #define UNLZ5 "unlz5"
 
-#define LZ5_BLOCKSIZEID_DEFAULT 7
+#define LZ5_BLOCKSIZEID_DEFAULT 4
 
 
 /**************************************
@@ -125,7 +124,6 @@ static char* programName;
 #define EXTENDED_FORMAT
 #define DEFAULT_COMPRESSOR   LZ5IO_compressFilename
 #define DEFAULT_DECOMPRESSOR LZ5IO_decompressFilename
-int LZ5IO_compressFilename_Legacy(const char* input_filename, const char* output_filename, int compressionlevel);   /* hidden function */
 
 
 /*****************************
@@ -160,9 +158,8 @@ static int usage_advanced(void)
     DISPLAY( " -c     : force write to standard output, even if it is the console\n");
     DISPLAY( " -t     : test compressed file integrity\n");
     DISPLAY( " -m     : multiple input files (implies automatic output filenames)\n");
-    DISPLAY( " -l     : compress using Legacy format (Linux kernel compression)\n");
-    DISPLAY( " -B#    : Block size [4-7](default : 7)\n");
-    DISPLAY( " -BD    : Block dependency (improve compression ratio)\n");
+    DISPLAY( " -B#    : Block size [1-7] = 64KB, 256KB, 1MB, 4MB, 16MB, 64MB, 256MB (default : 4 = 4MB)\n");
+  //  DISPLAY( " -BD    : Block dependency (improve compression ratio)\n");
     /* DISPLAY( " -BX    : enable block checksum (default:disabled)\n");   *//* Option currently inactive */
     DISPLAY( "--no-frame-crc : disable stream checksum (default:enabled)\n");
     DISPLAY( "--content-size : compressed frame includes original size (default:not present)\n");
@@ -245,7 +242,6 @@ int main(int argc, char** argv)
         cLevel=0,
         decode=0,
         bench=0,
-        legacy_format=0,
         forceStdout=0,
         forceCompress=0,
         main_pause=0,
@@ -335,9 +331,6 @@ int main(int argc, char** argv)
                     /* Compression (default) */
                 case 'z': forceCompress = 1; break;
 
-                    /* Use Legacy format (ex : Linux kernel compression) */
-                case 'l': legacy_format = 1; blockSize = 8 MB; break;
-
                     /* Decoding */
                 case 'd': decode=1; break;
 
@@ -366,20 +359,22 @@ int main(int argc, char** argv)
                         int exitBlockProperties=0;
                         switch(argument[1])
                         {
-                        case '4':
-                        case '5':
-                        case '6':
-                        case '7':
-                        {
-                            int B = argument[1] - '0';
-                            blockSize = LZ5IO_setBlockSizeID(B);
-                            BMK_setBlocksize(blockSize);
-                            argument++;
-                            break;
-                        }
-                        case 'D': LZ5IO_setBlockMode(LZ5IO_blockLinked); argument++; break;
+                  //      case 'D': LZ5IO_setBlockMode(LZ5IO_blockLinked); argument++; break;
                         case 'X': LZ5IO_setBlockChecksumMode(1); argument ++; break;   /* currently disabled */
-                        default : exitBlockProperties=1;
+                        default : 
+                            {
+                                int B = atol(argument+1);
+                                if (B >= 1 && B <= 7)
+                                {
+                                    blockSize = LZ5IO_setBlockSizeID(B);
+                                //    printf("LZ5IO_setBlockSizeID %d %d\n", B, blockSize);
+                                    BMK_setBlocksize(blockSize);
+                                    argument++;
+                                }
+                                else                                                            
+                                    exitBlockProperties=1;
+                                break;
+                            }
                         }
                         if (exitBlockProperties) break;
                     }
@@ -523,12 +518,6 @@ int main(int argc, char** argv)
     else
     {
       /* compression is default action */
-      if (legacy_format)
-      {
-        DISPLAYLEVEL(3, "! Generating compressed LZ5 using Legacy format (deprecated) ! \n");
-        LZ5IO_compressFilename_Legacy(input_filename, output_filename, cLevel);
-      }
-      else
       {
         if (multiple_inputs)
           operationResult = LZ5IO_compressMultipleFilenames(inFileNames, ifnIdx, LZ5_EXTENSION, cLevel);
