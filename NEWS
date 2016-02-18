@@ -1,7 +1,12 @@
+v1.4.1
+- fixed bug with a backward match extension (level 11 and 12)
+
 v1.4
 - improved: levels from 13 to 15 (maximum compression ratio)
-- added: a new parser: LZ5HC_optimal_price_bt
-
+- added a new parser: LZ5HC_optimal_price_bt
+- updated documentation: lz5_Block_format.md and lz5_Frame_format.md 
+- changed lz5.exe: the "-B" option with block size [1-7] = 64KB, 256KB, 1MB, 4MB, 16MB, 64MB, 256MB (default : 4 = 4MB)
+ 
 v1.3.3
 - added: new levels from 11 to 18 (maximum compression ratio)
 - added: a new parser: LZ5HC_optimal_price
