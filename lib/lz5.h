@@ -65,7 +65,6 @@ int LZ5_versionNumber (void);
  * Memory usage formula : N->2^N Bytes (examples : 10 -> 1KB; 12 -> 4KB ; 16 -> 64KB; 20 -> 1MB; etc.)
  * Increasing memory usage improves compression ratio
  * Reduced memory usage can improve speed, due to cache effect
- * Default value is 14, for 16KB, which nicely fits into Intel x86 L1 cache
  */
 #define LZ5_MEMORY_USAGE 20
 
