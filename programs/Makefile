@@ -102,7 +102,7 @@ clean:
 
 #------------------------------------------------------------------------
 #make install is validated only for Linux, OSX, kFreeBSD and Hurd targets
-ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU))
+ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU MSYS_NT-10.0))
 
 install: lz5 
 	@echo Installing binaries
@@ -134,13 +134,13 @@ test-all: test test32
 test-lz5-sparse: lz5 datagen
 	@echo "\n ---- test sparse file support ----"
 	./datagen -g5M  -P100 > tmpSrc
-	./lz5 -B4D tmpSrc | ./lz5 -dv --sparse > tmpB4
+	./lz5 -B4 tmpSrc | ./lz5 -dv --sparse > tmpB4
 	diff -s tmpSrc tmpB4
-	./lz5 -B5D tmpSrc | ./lz5 -dv --sparse > tmpB5
+	./lz5 -B5 tmpSrc | ./lz5 -dv --sparse > tmpB5
 	diff -s tmpSrc tmpB5
-	./lz5 -B6D tmpSrc | ./lz5 -dv --sparse > tmpB6
+	./lz5 -B6 tmpSrc | ./lz5 -dv --sparse > tmpB6
 	diff -s tmpSrc tmpB6
-	./lz5 -B7D tmpSrc | ./lz5 -dv --sparse > tmpB7
+	./lz5 -B7 tmpSrc | ./lz5 -dv --sparse > tmpB7
 	diff -s tmpSrc tmpB7
 	./lz5 tmpSrc | ./lz5 -dv --no-sparse > tmpNoSparse
 	diff -s tmpSrc tmpNoSparse
@@ -212,12 +212,12 @@ test-lz5-basic: lz5 datagen
 	./lz5 --no-frame-crc < tmpSrc | ./lz5 -d > tmpRes
 	diff -q tmpSrc tmpRes
 	./datagen         | ./lz5        | ./lz5 -t
-	./datagen -g6M -P99 | ./lz5 -9BD | ./lz5 -t
+	./datagen -g6M -P99 | ./lz5 -9B | ./lz5 -t
 	./datagen -g17M   | ./lz5 -9v    | ./lz5 -qt
 	./datagen -g33M   | ./lz5 --no-frame-crc | ./lz5 -t
-	./datagen -g256MB | ./lz5 -vqB4D | ./lz5 -t
-	./datagen -g6GB   | ./lz5 -vqB5D | ./lz5 -qt
-	./datagen -g6GB   | ./lz5 -vq9BD | ./lz5 -qt
+	./datagen -g256MB | ./lz5 -vqB4 | ./lz5 -t
+	./datagen -g6GB   | ./lz5 -vqB5 | ./lz5 -qt
+	./datagen -g6GB   | ./lz5 -vq9B | ./lz5 -qt
 	@rm tmp*
 
 test-lz5: lz5 datagen test-lz5-basic test-lz5-multiple test-lz5-sparse test-lz5-contentSize test-lz5-frame-concatenation
@@ -230,16 +230,16 @@ test-interop-32-64: lz5 lz5_32 datagen
 	./datagen -P10    | ./lz5    -9B4   | ./lz5_32 -t
 	./datagen         | ./lz5_32        | ./lz5    -t
 	./datagen -g1M    | ./lz5    -3B5   | ./lz5_32 -t
-	./datagen -g256MB | ./lz5_32 -vqB4D | ./lz5    -qt
+	./datagen -g256MB | ./lz5_32 -vqB4  | ./lz5    -qt
 	./datagen -g1G -P90 | ./lz5         | ./lz5_32 -t
-	./datagen -g6GB   | ./lz5_32 -vq9BD | ./lz5    -qt
+	./datagen -g6GB   | ./lz5_32 -vq9B  | ./lz5    -qt
 
 test-lz5_32-basic: lz5_32 datagen
 	@echo "\n ---- test lz5_32 32-bits version ----"
 	./datagen -g16KB  | ./lz5_32 -9     | ./lz5_32 -t
 	./datagen         | ./lz5_32        | ./lz5_32 -t
-	./datagen -g256MB | ./lz5_32 -vqB4D | ./lz5_32 -qt
-	./datagen -g6GB   | ./lz5_32 -vqB5D | ./lz5_32 -qt
+	./datagen -g256MB | ./lz5_32 -vqB4  | ./lz5_32 -qt
+	./datagen -g6GB   | ./lz5_32 -vqB5  | ./lz5_32 -qt
 
 test-lz5_32: test-lz5_32-basic test-interop-32-64
 
@@ -265,17 +265,17 @@ test-mem: lz5 datagen fuzzer frametest fullbench
 	@echo "\n ---- valgrind tests : memory analyzer ----"
 	valgrind --leak-check=yes --error-exitcode=1 ./datagen -g50M > $(VOID)
 	./datagen -g16KB > tmp
-	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -9 -BD -f tmp $(VOID)
+	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -9 -B -f tmp $(VOID)
 	./datagen -g16KB -s2 > tmp2
 	./datagen -g16KB -s3 > tmp3
 	valgrind --leak-check=yes --error-exitcode=1 ./lz5 --force --multiple tmp tmp2 tmp3
 	./datagen -g16MB > tmp
-	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -9 -B5D -f tmp tmp2
+	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -9 -B5 -f tmp tmp2
 	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -t tmp2
 	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -bi1 tmp
 	valgrind --leak-check=yes --error-exitcode=1 ./fullbench -i1 tmp tmp2
 	./datagen -g256MB > tmp
-	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -B4D -f -vq tmp $(VOID)
+	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -B4 -f -vq tmp $(VOID)
 	rm tmp*
 	valgrind --leak-check=yes --error-exitcode=1 ./fuzzer -i64 -t1
 	valgrind --leak-check=yes --error-exitcode=1 ./frametest -i256
