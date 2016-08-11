@@ -17,14 +17,12 @@ env:
   - LZ5_TRAVIS_CI_ENV=staticAnalyze
   - LZ5_TRAVIS_CI_ENV=gpptest
   - LZ5_TRAVIS_CI_ENV=armtest
-  - LZ5_TRAVIS_CI_ENV="-C programs test-lz4"
-  - LZ5_TRAVIS_CI_ENV="-C programs test-lz4c"
-  - LZ5_TRAVIS_CI_ENV="-C programs test-lz4c32"
+  - LZ5_TRAVIS_CI_ENV="-C programs test-lz5"
+  - LZ5_TRAVIS_CI_ENV="-C programs test-lz5_32"
   - LZ5_TRAVIS_CI_ENV="-C programs test-fullbench"
   - LZ5_TRAVIS_CI_ENV="-C programs test-fullbench32"
   - LZ5_TRAVIS_CI_ENV="-C programs test-frametest"
   - LZ5_TRAVIS_CI_ENV="-C programs test-frametest32"
-  - LZ5_TRAVIS_CI_ENV="-C programs test-mem"
 
 matrix:
   fast_finish: true

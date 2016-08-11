@@ -500,7 +500,7 @@ FORCE_INLINE int LZ5HC_GetWiderMatch (
     const BYTE* const ip,
     const BYTE* const iLowLimit,
     const BYTE* const iHighLimit,
-    int longest,
+    size_t longest,
     const BYTE** matchpos,
     const BYTE** startpos)
 {
@@ -606,7 +606,7 @@ FORCE_INLINE int LZ5HC_GetWiderMatch (
                     mlt += MEM_count(ip+mlt, base+dictLimit, iHighLimit);
                 while ((ip+back > iLowLimit) && (matchIndex+back > lowLimit) && (ip[back-1] == match[back-1])) back--;
                 mlt -= back;
-                if ((int)mlt > longest) { longest = (int)mlt; *matchpos = base + matchIndex + back; *startpos = ip+back; }
+                if (mlt > longest) { longest = (int)mlt; *matchpos = base + matchIndex + back; *startpos = ip+back; }
             }
         }
         matchIndex -= chainTable[matchIndex & contentMask];
@@ -1009,7 +1009,7 @@ static int LZ5HC_compress_optimal_price (
     const BYTE* const matchlimit = (iend - LASTLITERALS);
     BYTE* op = (BYTE*) dest;
     BYTE* const oend = op + maxOutputSize;
-    const int sufficient_len = ctx->params.sufficientLength;
+    const size_t sufficient_len = ctx->params.sufficientLength;
     const int faster_get_matches = (ctx->params.fullSearch == 0); 
  
 
@@ -1042,7 +1042,7 @@ static int LZ5HC_compress_optimal_price (
             {
                 litlen = 0;
                 price = LZ5HC_get_price(llen, 0, mlen - MINMATCH) - llen;
-                if (mlen > last_pos || price < opt[mlen].price)
+                if (mlen > last_pos || price < (size_t)opt[mlen].price)
                     SET_PRICE(mlen, mlen, 0, litlen, price);
                 mlen--;
             }
@@ -1074,7 +1074,7 @@ static int LZ5HC_compress_optimal_price (
        LZ5_LOG_PARSER("%d: match_num=%d last_pos=%d\n", (int)(ip-source), match_num, last_pos);
        if (!last_pos && !match_num) { ip++; continue; }
 
-       if (match_num && matches[match_num-1].len > sufficient_len)
+       if (match_num && (size_t)matches[match_num-1].len > sufficient_len)
        {
             best_mlen = matches[match_num-1].len;
             best_off = matches[match_num-1].off;
@@ -1086,14 +1086,14 @@ static int LZ5HC_compress_optimal_price (
        // set prices using matches at position = 0
        for (i = 0; i < match_num; i++)
        {
-           mlen = (i>0) ? matches[i-1].len+1 : best_mlen;
+           mlen = (i>0) ? (size_t)matches[i-1].len+1 : best_mlen;
            best_mlen = (matches[i].len < LZ5_OPT_NUM) ? matches[i].len : LZ5_OPT_NUM;
            LZ5_LOG_PARSER("%d: start Found mlen=%d off=%d best_mlen=%d last_pos=%d\n", (int)(ip-source), matches[i].len, matches[i].off, best_mlen, last_pos);
            while (mlen <= best_mlen)
            {
                 litlen = 0;
                 price = LZ5HC_get_price(llen + litlen, matches[i].off, mlen - MINMATCH) - llen;
-                if (mlen > last_pos || price < opt[mlen].price)
+                if (mlen > last_pos || price < (size_t)opt[mlen].price)
                     SET_PRICE(mlen, mlen, matches[i].off, litlen, price);
                 mlen++;
            }
@@ -1135,7 +1135,7 @@ static int LZ5HC_compress_optimal_price (
            best_mlen = 0;
            LZ5_LOG_PARSER("%d: TRY price=%d opt[%d].price=%d\n", (int)(inr-source), price, cur, opt[cur].price);
 
-           if (cur > last_pos || price <= opt[cur].price) // || ((price == opt[cur].price) && (opt[cur-1].mlen == 1) && (cur != litlen)))
+           if (cur > last_pos || price <= (size_t)opt[cur].price) // || ((price == opt[cur].price) && (opt[cur-1].mlen == 1) && (cur != litlen)))
                 SET_PRICE(cur, mlen, best_mlen, litlen, price);
 
            if (cur == last_pos) break;
@@ -1210,7 +1210,7 @@ static int LZ5HC_compress_optimal_price (
 
                 do
                 {
-                    if (cur + mlen > last_pos || price <= opt[cur + mlen].price) // || ((price == opt[cur + mlen].price) && (opt[cur].mlen == 1) && (cur != litlen))) // at equal price prefer REP instead of MATCH
+                    if (cur + mlen > last_pos || price <= (size_t)opt[cur + mlen].price) // || ((price == opt[cur + mlen].price) && (opt[cur].mlen == 1) && (cur != litlen))) // at equal price prefer REP instead of MATCH
                         SET_PRICE(cur + mlen, mlen, 0, litlen, price);
                     mlen--;
                 }
@@ -1243,7 +1243,7 @@ static int LZ5HC_compress_optimal_price (
             }
 
 
-            if (match_num > 0 && matches[match_num-1].len > sufficient_len)
+            if (match_num > 0 && (size_t)matches[match_num-1].len > sufficient_len)
             {
                 cur -= matches[match_num-1].back;
                 best_mlen = matches[match_num-1].len;
@@ -1255,12 +1255,12 @@ static int LZ5HC_compress_optimal_price (
             // set prices using matches at position = cur
             for (i = 0; i < match_num; i++)
             {
-                mlen = (i>0) ? matches[i-1].len+1 : best_mlen;
+                mlen = (i>0) ? (size_t)matches[i-1].len+1 : best_mlen;
                 cur2 = cur - matches[i].back;
-                best_mlen = (cur2 + matches[i].len < LZ5_OPT_NUM) ? matches[i].len : LZ5_OPT_NUM - cur2;
+                best_mlen = (cur2 + matches[i].len < LZ5_OPT_NUM) ? (size_t)matches[i].len : LZ5_OPT_NUM - cur2;
                 LZ5_LOG_PARSER("%d: Found1 cur=%d cur2=%d mlen=%d off=%d best_mlen=%d last_pos=%d\n", (int)(inr-source), cur, cur2, matches[i].len, matches[i].off, best_mlen, last_pos);
 
-                if (mlen < matches[i].back + 1)
+                if (mlen < (size_t)matches[i].back + 1)
                     mlen = matches[i].back + 1; 
 
                 while (mlen <= best_mlen)
@@ -1282,7 +1282,7 @@ static int LZ5HC_compress_optimal_price (
 
                     LZ5_LOG_PARSER("%d: Found2 pred=%d mlen=%d best_mlen=%d off=%d price=%d litlen=%d price[%d]=%d\n", (int)(inr-source), matches[i].back, mlen, best_mlen, matches[i].off, price, litlen, cur - litlen, opt[cur - litlen].price);
     //                if (cur2 + mlen > last_pos || ((matches[i].off != opt[cur2 + mlen].off) && (price < opt[cur2 + mlen].price)))
-                    if (cur2 + mlen > last_pos || price < opt[cur2 + mlen].price)
+                    if (cur2 + mlen > last_pos || price < (size_t)opt[cur2 + mlen].price)
                     {
                         SET_PRICE(cur2 + mlen, mlen, matches[i].off, litlen, price);
                     }
@@ -1307,14 +1307,15 @@ encode: // cur, last_pos, best_mlen, best_off have to be set
 
         opt[0].mlen = 1;
         
-        while (cur >= 0)
+        while (1)
         {
             mlen = opt[cur].mlen;
             offset = opt[cur].off;
             opt[cur].mlen = (int)best_mlen; 
             opt[cur].off = (int)best_off;
             best_mlen = mlen;
-            best_off = offset; 
+            best_off = offset;
+            if (mlen > cur) break;
             cur -= mlen;
         }
           
