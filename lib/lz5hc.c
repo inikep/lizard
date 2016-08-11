@@ -92,12 +92,12 @@ static void LZ5HC_init (LZ5HC_Data_Structure* ctx, const BYTE* start)
         MEM_INIT(ctx->chainTable, 0x01, sizeof(U32)*(1 << ctx->params.contentLog));
 #endif
 
-    ctx->nextToUpdate = ((size_t)1 << ctx->params.windowLog);
+    ctx->nextToUpdate = (U32)((size_t)1 << ctx->params.windowLog);
     ctx->base = start - ((size_t)1 << ctx->params.windowLog);
     ctx->end = start;
     ctx->dictBase = start - ((size_t)1 << ctx->params.windowLog);
-    ctx->dictLimit = ((size_t)1 << ctx->params.windowLog);
-    ctx->lowLimit = ((size_t)1 << ctx->params.windowLog);
+    ctx->dictLimit = (U32)((size_t)1 << ctx->params.windowLog);
+    ctx->lowLimit = (U32)((size_t)1 << ctx->params.windowLog);
     ctx->last_off = 1;
 }
 
@@ -495,7 +495,7 @@ FORCE_INLINE int LZ5HC_FindMatchFastest (LZ5HC_Data_Structure* ctx, U32 matchInd
 }
 
 
-FORCE_INLINE int LZ5HC_GetWiderMatch (
+FORCE_INLINE size_t LZ5HC_GetWiderMatch (
     LZ5HC_Data_Structure* ctx,
     const BYTE* const ip,
     const BYTE* const iLowLimit,
@@ -1025,7 +1025,6 @@ static int LZ5HC_compress_optimal_price (
         memset(opt, 0, sizeof(LZ5HC_optimal_t));
         last_pos = 0;
         llen = ip - anchor;
-        inr = ip;
 
         // check rep
         mlen = MEM_count(ip, ip - ctx->last_off, matchlimit);
@@ -1420,7 +1419,7 @@ _Search:
         if (ip+ml >= mflimit) goto _Encode;
 
         LZ5HC_Insert(ctx, ip);
-        ml2 = LZ5HC_GetWiderMatch(ctx, ip + ml - 2, anchor, matchlimit, 0, &ref2, &start2);
+        ml2 = (int)LZ5HC_GetWiderMatch(ctx, ip + ml - 2, anchor, matchlimit, 0, &ref2, &start2);
         if (ml2 == 0) goto _Encode;
 
         {
@@ -1460,11 +1459,7 @@ _Search:
                 price = (int)LZ5_CODEWORD_COST(start2 - anchor, (off1 == ctx->last_off) ? 0 : off1, ml2 - MINMATCH);
 
                 if (price < best_price)
-                {
-                    best_price = price;
                     best_pos = pos;
-                }
-
                 break;
             }
         }
@@ -1780,16 +1775,16 @@ int LZ5_compress_HC(const char* src, char* dst, int srcSize, int maxDstSize, int
 /* allocation */
 LZ5_streamHC_t* LZ5_createStreamHC(int compressionLevel) 
 { 
-    LZ5HC_Data_Structure* statePtr = (LZ5HC_Data_Structure*)malloc(sizeof(LZ5_streamHC_t));
+    LZ5_streamHC_t* statePtr = (LZ5_streamHC_t*)malloc(sizeof(LZ5_streamHC_t));
     if (!statePtr)
         return NULL;
 
-    if (!LZ5_alloc_mem_HC(statePtr, compressionLevel))
+    if (!LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)statePtr, compressionLevel))
     {
         FREEMEM(statePtr);
         return NULL;
     }
-    return (LZ5_streamHC_t*) statePtr; 
+    return statePtr; 
 }
 
 int LZ5_freeStreamHC (LZ5_streamHC_t* LZ5_streamHCPtr)

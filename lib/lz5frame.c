@@ -338,7 +338,7 @@ size_t LZ5F_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuf
     dstPtr += errorCode;
 
     if (prefs.compressionLevel >= (int)minHClevel)   /* no allocation necessary with lz5 fast */
-        LZ5_freeStreamHC(cctxI.lz5CtxPtr);
+        LZ5_freeStreamHC((LZ5_streamHC_t*)cctxI.lz5CtxPtr);
 
     return (dstPtr - dstStart);
 }
@@ -381,7 +381,7 @@ LZ5F_errorCode_t LZ5F_freeCompressionContext(LZ5F_compressionContext_t LZ5F_comp
         if (cctxPtr->prefs.compressionLevel < minHClevel)
             FREEMEM(cctxPtr->lz5CtxPtr);
         else
-            LZ5_freeStreamHC(cctxPtr->lz5CtxPtr);
+            LZ5_freeStreamHC((LZ5_streamHC_t*)cctxPtr->lz5CtxPtr);
        FREEMEM(cctxPtr->tmpBuff);
        FREEMEM(LZ5F_compressionContext);
     }
@@ -419,7 +419,7 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
             if (cctxPtr->prefs.compressionLevel < minHClevel)
                 FREEMEM(cctxPtr->lz5CtxPtr);
             else
-                LZ5_freeStreamHC(cctxPtr->lz5CtxPtr);
+                LZ5_freeStreamHC((LZ5_streamHC_t*)cctxPtr->lz5CtxPtr);
             if (cctxPtr->prefs.compressionLevel < minHClevel)
                 cctxPtr->lz5CtxPtr = (void*)LZ5_createStream();
             else
