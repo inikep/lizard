@@ -30,6 +30,5 @@ visual/
 *.out
 *.app
 
-# Visual solution files
-*.suo
-*.user
+# Visual Studio files
+projects/VS2010
