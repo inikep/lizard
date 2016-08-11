@@ -14,7 +14,7 @@ extern "C" {
  * Select how default compression functions will allocate memory for their hash table,
  * in memory stack (0:default, fastest), or in memory heap (1:requires malloc()).
  */
-#if _MSC_VER
+#ifdef _MSC_VER
 	#define HEAPMODE 1   /* Default stack size for VC++ is 1 MB and size of LZ5_stream_t exceeds that limit */ 
 #else
 	#define HEAPMODE 0
