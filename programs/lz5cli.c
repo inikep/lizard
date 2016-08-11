@@ -363,7 +363,7 @@ int main(int argc, char** argv)
                         case 'X': LZ5IO_setBlockChecksumMode(1); argument ++; break;   /* currently disabled */
                         default : 
                             {
-                                int B = atol(argument+1);
+                                int B = atoi(argument+1);
                                 if (B >= 1 && B <= 7)
                                 {
                                     blockSize = LZ5IO_setBlockSizeID(B);
