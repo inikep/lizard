@@ -39,9 +39,7 @@
 #  pragma warning(disable : 4127)      /* disable: C4127: conditional expression is constant */
 #endif
 
-/* Add support for %lld in printf */
-#define __STDC_FORMAT_MACROS // now PRIu64 will work
-#include <inttypes.h> 
+#define _POSIX_SOURCE 1          /* enable %llu on Windows */
 
 #define _LARGE_FILES           /* Large file support on 32-bits AIX */
 #define _FILE_OFFSET_BITS 64   /* Large file support on 32-bits unix */
@@ -482,7 +480,7 @@ static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName,
 
     /* Final Status */
     DISPLAYLEVEL(2, "\r%79s\r", "");
-    DISPLAYLEVEL(2, "Compressed %" PRIu64 " bytes into %" PRIu64 " bytes ==> %.2f%%\n",
+    DISPLAYLEVEL(2, "Compressed %llu bytes into %llu bytes ==> %.2f%%\n",
         filesize, compressedfilesize, (double)compressedfilesize/(filesize + !filesize)*100);   /* avoid division by zero */
 
     return 0;
@@ -849,7 +847,7 @@ static int LZ5IO_decompressFile_extRess(dRess_t ress, const char* input_filename
 
     /* Final Status */
     DISPLAYLEVEL(2, "\r%79s\r", "");
-    DISPLAYLEVEL(2, "Successfully decoded %" PRIu64 " bytes \n", filesize);
+    DISPLAYLEVEL(2, "Successfully decoded %llu bytes \n", filesize);
 
     /* Close */
     fclose(finput);
