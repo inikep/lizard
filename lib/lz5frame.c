@@ -298,7 +298,6 @@ size_t LZ5F_compressFrameBound(size_t srcSize, const LZ5F_preferences_t* prefere
 size_t LZ5F_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuffer, size_t srcSize, const LZ5F_preferences_t* preferencesPtr)
 {
     LZ5F_cctx_t cctxI;
-    LZ5_stream_t lz5ctx;
     LZ5F_preferences_t prefs;
     LZ5F_compressOptions_t options;
     LZ5F_errorCode_t errorCode;
@@ -318,12 +317,6 @@ size_t LZ5F_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuf
         memset(&prefs, 0, sizeof(prefs));
     if (prefs.frameInfo.contentSize != 0)
         prefs.frameInfo.contentSize = (U64)srcSize;   /* auto-correct content size if selected (!=0) */
-
-    if (prefs.compressionLevel < (int)minHClevel)
-    {
-        cctxI.lz5CtxPtr = &lz5ctx;
-        cctxI.lz5CtxLevel = 0;
-    }
 
     prefs.frameInfo.blockSizeID = LZ5F_optimalBSID(prefs.frameInfo.blockSizeID, srcSize);
     prefs.autoFlush = 1;
@@ -347,8 +340,7 @@ size_t LZ5F_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuf
     if (LZ5F_isError(errorCode)) return errorCode;
     dstPtr += errorCode;
 
-    if (prefs.compressionLevel >= (int)minHClevel)   /* no allocation necessary with lz5 fast */
-        LZ5F_freeStream(&cctxI);
+    LZ5F_freeStream(&cctxI);
 
     return (dstPtr - dstStart);
 }
@@ -427,11 +419,11 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
         {
             LZ5F_freeStream(cctxPtr);
 
-            if (cctxPtr->prefs.compressionLevel < minHClevel)
+            cctxPtr->lz5CtxLevel = tableID;
+            if (cctxPtr->lz5CtxLevel == 1)
                 cctxPtr->lz5CtxPtr = (void*)LZ5_createStream();
             else
                 cctxPtr->lz5CtxPtr = (void*)LZ5_createStreamHC(cctxPtr->prefs.compressionLevel);
-            cctxPtr->lz5CtxLevel = tableID;
         }
     }
 

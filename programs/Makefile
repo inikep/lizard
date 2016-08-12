@@ -40,7 +40,7 @@ PREFIX   ?= /usr/local
 CFLAGS   ?= -O3 -fomit-frame-pointer -fstrict-aliasing -fforce-addr -ffast-math    # can select customized optimized flags such as for example: make CFLAGS="-g"
 CFLAGS   += -std=c99 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -pedantic -Wno-variadic-macros
 CPPFLAGS := -I$(LZ5DIR) -DXXH_NAMESPACE=LZ5_ 
-FLAGS    := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+FLAGS    := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(MOREFLAGS)
 
 
 # Define *.exe as extension for Windows systems
