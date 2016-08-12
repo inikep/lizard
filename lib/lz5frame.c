@@ -317,7 +317,7 @@ size_t LZ5F_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuf
 
     prefs.frameInfo.blockSizeID = LZ5F_optimalBSID(prefs.frameInfo.blockSizeID, srcSize);
     prefs.autoFlush = 1;
-    if (srcSize <= LZ5F_getBlockSize(prefs.frameInfo.blockSizeID))
+//    if (srcSize <= LZ5F_getBlockSize(prefs.frameInfo.blockSizeID))
         prefs.frameInfo.blockMode = LZ5F_blockIndependent;   /* no need for linked blocks */
 
     options.stableSrc = 1;
@@ -379,7 +379,7 @@ LZ5F_errorCode_t LZ5F_freeCompressionContext(LZ5F_compressionContext_t LZ5F_comp
     if (cctxPtr != NULL)   /* null pointers can be safely provided to this function, like free() */
     {
         if (cctxPtr->prefs.compressionLevel < minHClevel)
-            FREEMEM(cctxPtr->lz5CtxPtr);
+            LZ5_freeStream((LZ5_stream_t*)cctxPtr->lz5CtxPtr);
         else
             LZ5_freeStreamHC((LZ5_streamHC_t*)cctxPtr->lz5CtxPtr);
        FREEMEM(cctxPtr->tmpBuff);
@@ -410,16 +410,19 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
     memset(&prefNull, 0, sizeof(prefNull));
     if (preferencesPtr == NULL) preferencesPtr = &prefNull;
     cctxPtr->prefs = *preferencesPtr;
+    cctxPtr->prefs.frameInfo.blockMode = LZ5F_blockIndependent;
 
     /* ctx Management */
     {
-        U32 tableID = (cctxPtr->prefs.compressionLevel < minHClevel) ? 1 : 2;  /* 0:nothing ; 1:LZ5 table ; 2:HC tables */
-        if (cctxPtr->lz5CtxLevel < tableID)
+        U32 tableID = (cctxPtr->prefs.compressionLevel < minHClevel) ? 1 : 2;  /* 0:nothing ; 1:LZ5_createStream ; 2:LZ5_createStreamHC */
+      //  printf("BEFORE lz5CtxLevel=%d tableID=%d compressionLevel=%d minHClevel=%d\n", (int)cctxPtr->lz5CtxLevel, (int)tableID, (int)cctxPtr->prefs.compressionLevel, minHClevel);
+        if (cctxPtr->lz5CtxLevel != tableID)
         {
-            if (cctxPtr->prefs.compressionLevel < minHClevel)
-                FREEMEM(cctxPtr->lz5CtxPtr);
-            else
+            if (cctxPtr->lz5CtxLevel == 1)
+                LZ5_freeStream((LZ5_stream_t*)cctxPtr->lz5CtxPtr);
+            else if (cctxPtr->lz5CtxLevel == 2)
                 LZ5_freeStreamHC((LZ5_streamHC_t*)cctxPtr->lz5CtxPtr);
+
             if (cctxPtr->prefs.compressionLevel < minHClevel)
                 cctxPtr->lz5CtxPtr = (void*)LZ5_createStream();
             else
