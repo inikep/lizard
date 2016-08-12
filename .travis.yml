@@ -23,6 +23,7 @@ env:
   - LZ5_TRAVIS_CI_ENV="-C programs test-fullbench32"
   - LZ5_TRAVIS_CI_ENV="-C programs test-frametest"
   - LZ5_TRAVIS_CI_ENV="-C programs test-frametest32"
+  - LZ5_TRAVIS_CI_ENV="-C programs test-mem"
 
 matrix:
   fast_finish: true

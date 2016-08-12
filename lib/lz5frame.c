@@ -257,6 +257,16 @@ static LZ5F_blockSizeID_t LZ5F_optimalBSID(const LZ5F_blockSizeID_t requestedBSI
 }
 
 
+void LZ5F_freeStream(LZ5F_cctx_t* cctxPtr)
+{
+    if (cctxPtr->lz5CtxLevel == 1)
+        LZ5_freeStream((LZ5_stream_t*)cctxPtr->lz5CtxPtr);
+    else if (cctxPtr->lz5CtxLevel == 2)
+        LZ5_freeStreamHC((LZ5_streamHC_t*)cctxPtr->lz5CtxPtr);
+    cctxPtr->lz5CtxLevel = 0;
+}
+
+
 size_t LZ5F_compressFrameBound(size_t srcSize, const LZ5F_preferences_t* preferencesPtr)
 {
     LZ5F_preferences_t prefs;
@@ -312,7 +322,7 @@ size_t LZ5F_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuf
     if (prefs.compressionLevel < (int)minHClevel)
     {
         cctxI.lz5CtxPtr = &lz5ctx;
-        cctxI.lz5CtxLevel = 1;
+        cctxI.lz5CtxLevel = 0;
     }
 
     prefs.frameInfo.blockSizeID = LZ5F_optimalBSID(prefs.frameInfo.blockSizeID, srcSize);
@@ -338,7 +348,7 @@ size_t LZ5F_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuf
     dstPtr += errorCode;
 
     if (prefs.compressionLevel >= (int)minHClevel)   /* no allocation necessary with lz5 fast */
-        LZ5_freeStreamHC((LZ5_streamHC_t*)cctxI.lz5CtxPtr);
+        LZ5F_freeStream(&cctxI);
 
     return (dstPtr - dstStart);
 }
@@ -378,12 +388,9 @@ LZ5F_errorCode_t LZ5F_freeCompressionContext(LZ5F_compressionContext_t LZ5F_comp
 
     if (cctxPtr != NULL)   /* null pointers can be safely provided to this function, like free() */
     {
-        if (cctxPtr->prefs.compressionLevel < minHClevel)
-            LZ5_freeStream((LZ5_stream_t*)cctxPtr->lz5CtxPtr);
-        else
-            LZ5_freeStreamHC((LZ5_streamHC_t*)cctxPtr->lz5CtxPtr);
-       FREEMEM(cctxPtr->tmpBuff);
-       FREEMEM(LZ5F_compressionContext);
+        LZ5F_freeStream(cctxPtr);
+        FREEMEM(cctxPtr->tmpBuff);
+        FREEMEM(LZ5F_compressionContext);
     }
 
     return LZ5F_OK_NoError;
@@ -418,10 +425,7 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
       //  printf("BEFORE lz5CtxLevel=%d tableID=%d compressionLevel=%d minHClevel=%d\n", (int)cctxPtr->lz5CtxLevel, (int)tableID, (int)cctxPtr->prefs.compressionLevel, minHClevel);
         if (cctxPtr->lz5CtxLevel != tableID)
         {
-            if (cctxPtr->lz5CtxLevel == 1)
-                LZ5_freeStream((LZ5_stream_t*)cctxPtr->lz5CtxPtr);
-            else if (cctxPtr->lz5CtxLevel == 2)
-                LZ5_freeStreamHC((LZ5_streamHC_t*)cctxPtr->lz5CtxPtr);
+            LZ5F_freeStream(cctxPtr);
 
             if (cctxPtr->prefs.compressionLevel < minHClevel)
                 cctxPtr->lz5CtxPtr = (void*)LZ5_createStream();

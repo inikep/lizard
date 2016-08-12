@@ -125,9 +125,9 @@ uninstall:
 	rm -f $(DESTDIR)$(MANDIR)/unlz5.1
 	@echo lz5 programs successfully uninstalled
 
-test: test-lz5 test-frametest test-fullbench test-fuzzer test-mem
+test: test-lz5 test-frametest test-fullbench test-mem
 
-test32: test-lz5_32 test-frametest32 test-fullbench32 test-fuzzer32 test-mem32
+test32: test-lz5_32 test-frametest32 test-fullbench32 test-mem32
 
 test-all: test test32
 
@@ -261,7 +261,7 @@ test-frametest: frametest
 test-frametest32: frametest32
 	./frametest32 $(FUZZER_TIME)
 
-test-mem: lz5 datagen fuzzer frametest fullbench
+test-mem: lz5 datagen frametest fullbench
 	@echo "\n ---- valgrind tests : memory analyzer ----"
 	valgrind --leak-check=yes --error-exitcode=1 ./datagen -g50M > $(VOID)
 	./datagen -g16KB > tmp
@@ -277,7 +277,6 @@ test-mem: lz5 datagen fuzzer frametest fullbench
 	./datagen -g256MB > tmp
 	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -B4 -f -vq tmp $(VOID)
 	rm tmp*
-	valgrind --leak-check=yes --error-exitcode=1 ./fuzzer -i64 -t1
 	valgrind --leak-check=yes --error-exitcode=1 ./frametest -i256
 
 test-mem32: lz5_32 datagen

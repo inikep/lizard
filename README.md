@@ -9,6 +9,17 @@ The improvement in compression ratio is caused mainly because of:
 - support for 3-byte long matches (MINMATCH = 3)
 - a special 1-byte codeword for the last occured offset
 
+|Branch      |Status   |
+|------------|---------|
+|master      | [![Build Status][travisMasterBadge]][travisLink] [![Build status][AppveyorMasterBadge]][AppveyorLink]  |
+|dev         | [![Build Status][travisDevBadge]][travisLink]    [![Build status][AppveyorDevBadge]][AppveyorLink]     |
+
+[travisMasterBadge]: https://travis-ci.org/inikep/lz5.svg?branch=master "Continuous Integration test suite"
+[travisDevBadge]: https://travis-ci.org/inikep/lz5.svg?branch=dev "Continuous Integration test suite"
+[travisLink]: https://travis-ci.org/inikep/lz5
+[AppveyorMasterBadge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/master?svg=true "Visual test suite"
+[AppveyorDevBadge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/dev?svg=true "Visual test suite"
+[AppveyorLink]: https://ci.appveyor.com/project/inikep/lz5
 [LZ4]: https://github.com/Cyan4973/lz4
 
 
