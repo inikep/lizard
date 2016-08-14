@@ -79,10 +79,11 @@ int LZ5_alloc_mem_HC(LZ5HC_Data_Structure* ctx, int compressionLevel)
 
 void LZ5_free_mem_HC(LZ5HC_Data_Structure* ctx)
 {
+    if (!ctx) return;
     if (ctx->chainTable) FREEMEM(ctx->chainTable);
     if (ctx->hashTable) FREEMEM(ctx->hashTable);    
+    ctx->base = NULL;
 }
-
 
 static void LZ5HC_init (LZ5HC_Data_Structure* ctx, const BYTE* start)
 {
@@ -1754,7 +1755,7 @@ int LZ5_compress_HC(const char* src, char* dst, int srcSize, int maxDstSize, int
 
     int cSize = 0;
     
-    if (!LZ5_alloc_mem_HC(statePtr, compressionLevel))
+    if (!statePtr || !LZ5_alloc_mem_HC(statePtr, compressionLevel))
         return 0;
         
     cSize = LZ5_compress_HC_extStateHC(statePtr, src, dst, srcSize, maxDstSize);
