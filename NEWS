@@ -1,5 +1,6 @@
 v1.4.2
 - introduced compatibility with Visual C++
+- fixed bug with reusing a context in LZ5F_compressBegin and LZ5_compress_HC_continue
 
 v1.4.1
 - fixed bug with a backward match extension (level 11 and 12)

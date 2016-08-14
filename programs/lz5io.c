@@ -39,8 +39,6 @@
 #  pragma warning(disable : 4127)      /* disable: C4127: conditional expression is constant */
 #endif
 
-#define _POSIX_SOURCE 1          /* enable %llu on Windows */
-
 #define _LARGE_FILES           /* Large file support on 32-bits AIX */
 #define _FILE_OFFSET_BITS 64   /* Large file support on 32-bits unix */
 
