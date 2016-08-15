@@ -81,7 +81,7 @@ test:
 	$(MAKE) -C $(PRGDIR) test
 
 gpptest: clean
-	$(MAKE) all CC=g++ CFLAGS="-O3" FFLAGS="" WFLAGS="-Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -pedantic -Werror"
+	$(MAKE) all CC=g++ CFLAGS="-O3" FFLAGS="" WFLAGS="-Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -pedantic -Wno-variadic-macros -Werror"
 
 clangtest: clean
 	$(MAKE) all CC=clang MOREFLAGS="-Werror -Wconversion -Wno-sign-conversion"
