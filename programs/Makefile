@@ -92,7 +92,7 @@ datagen : datagen.o datagencli.c
 	$(CC) $(FLAGS) $< -c -o $@
 
 clean:
-	@$(MAKE) -C $(LZ5DIR) $@ > $(VOID)
+	@$(MAKE) -C $(LZ5DIR) $@
 	@rm -f core *.o *.test tmp* \
         lz5$(EXT) lz5_32$(EXT) \
         fullbench$(EXT) fullbench32$(EXT) \
