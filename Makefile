@@ -77,14 +77,8 @@ uninstall:
 	@$(MAKE) -C $(LZ5DIR) $@
 	@$(MAKE) -C $(PRGDIR) $@
 
-travis-install:
-	sudo $(MAKE) install
-
 test:
 	$(MAKE) -C $(PRGDIR) test
-
-cmake:
-	@cd cmake_unofficial; cmake CMakeLists.txt; $(MAKE)
 
 gpptest: clean
 	$(MAKE) all CC=g++ CFLAGS="-O3 -I../lib -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
@@ -101,9 +95,6 @@ staticAnalyze: clean
 armtest: clean
 	CFLAGS="-O3 -Werror" $(MAKE) -C $(LZ5DIR) all CC=arm-linux-gnueabi-gcc
 	CFLAGS="-O3 -Werror" $(MAKE) -C $(PRGDIR) bins CC=arm-linux-gnueabi-gcc
-
-versionsTest: clean
-	$(MAKE) -C versionsTest
 
 examples:
 	$(MAKE) -C $(LZ5DIR)

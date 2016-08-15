@@ -1,29 +1,76 @@
 language: c
-compiler: gcc
-script: make $LZ5_TRAVIS_CI_ENV
-before_install:
-  - sudo apt-get update  -qq
-  - sudo apt-get install -qq gcc-arm-linux-gnueabi
-  - sudo apt-get install -qq clang
-  - sudo apt-get install -qq g++-multilib
-  - sudo apt-get install -qq gcc-multilib
-  - sudo apt-get install -qq valgrind
-  - sudo apt-get install -qq python3
-
-env:
-  - LZ5_TRAVIS_CI_ENV=travis-install
-  - LZ5_TRAVIS_CI_ENV=clangtest
-  - LZ5_TRAVIS_CI_ENV=sanitize
-  - LZ5_TRAVIS_CI_ENV=staticAnalyze
-  - LZ5_TRAVIS_CI_ENV=gpptest
-  - LZ5_TRAVIS_CI_ENV=armtest
-  - LZ5_TRAVIS_CI_ENV="-C programs test-lz5"
-  - LZ5_TRAVIS_CI_ENV="-C programs test-lz5_32"
-  - LZ5_TRAVIS_CI_ENV="-C programs test-fullbench"
-  - LZ5_TRAVIS_CI_ENV="-C programs test-fullbench32"
-  - LZ5_TRAVIS_CI_ENV="-C programs test-frametest"
-  - LZ5_TRAVIS_CI_ENV="-C programs test-frametest32"
-  - LZ5_TRAVIS_CI_ENV="-C programs MOREFLAGS=-DLZ5_RESET_MEM test-mem"
-
 matrix:
   fast_finish: true
+  include:
+    # Container-based Ubuntu 12.04 LTS Server Edition 64 bit (doesn't support 32-bit includes)
+    - os: linux
+      sudo: false
+      env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM="install PREFIX=~/install_test_dir"
+    - os: linux
+      sudo: false
+      env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM=clangtest
+    - os: linux
+      sudo: false
+      env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM=gpptest
+    - os: linux
+      sudo: false
+      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM="-C programs test-lz5"
+    - os: linux
+      sudo: false
+      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM="-C programs test-fullbench"
+    - os: linux
+      sudo: false
+      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM="-C programs test-frametest"
+    # Standard Ubuntu 12.04 LTS Server Edition 64 bit
+    - os: linux
+      sudo: required
+      addons:
+        apt:
+          packages:
+            - gcc-arm-linux-gnueabi
+            - libc6-dev-armel-cross
+            - linux-libc-dev-armel-cross
+      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM=armtest
+    - os: linux
+      sudo: required
+      addons:
+        apt:
+          packages:
+            - libc6-dev-i386
+            - gcc-multilib
+      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM="-C programs test-lz5_32"
+    - os: linux
+      sudo: required
+      addons:
+        apt:
+          packages:
+            - libc6-dev-i386
+            - gcc-multilib
+      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM="-C programs test-fullbench32"
+    - os: linux
+      sudo: required
+      addons:
+        apt:
+          packages:
+            - libc6-dev-i386
+            - gcc-multilib
+      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM="-C programs test-frametest32"
+    - os: linux
+      sudo: required
+      addons:
+        apt:
+          packages:
+            - valgrind
+      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM="-C programs test-mem"
+      #env: PLATFORM="Ubuntu 12.04" MAKE_PARAM="-C programs test-mem MOREFLAGS=-DLZ5_RESET_MEM"
+    - os: linux
+      sudo: required
+      addons:
+        apt:
+          packages:
+            - valgrind
+      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM=sanitize
+
+script:
+  - echo $MAKE_PARAM
+  - sh -c "make $MAKE_PARAM"

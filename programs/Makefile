@@ -255,6 +255,10 @@ test-fuzzer: fuzzer
 test-fuzzer32: fuzzer32
 	./fuzzer32 $(FUZZER_TIME)
 
+test-frametest-gdb: frametest
+	echo >gdb_cmd run $(FUZZER_TIME) && echo >>gdb_cmd bt
+	gdb --batch --command ./gdb_cmd ./frametest
+
 test-frametest: frametest
 	./frametest $(FUZZER_TIME)
 

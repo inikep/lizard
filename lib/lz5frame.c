@@ -320,7 +320,7 @@ size_t LZ5F_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuf
 
     prefs.frameInfo.blockSizeID = LZ5F_optimalBSID(prefs.frameInfo.blockSizeID, srcSize);
     prefs.autoFlush = 1;
-//    if (srcSize <= LZ5F_getBlockSize(prefs.frameInfo.blockSizeID))
+    if (srcSize <= LZ5F_getBlockSize(prefs.frameInfo.blockSizeID))
         prefs.frameInfo.blockMode = LZ5F_blockIndependent;   /* no need for linked blocks */
 
     options.stableSrc = 1;
