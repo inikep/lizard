@@ -106,7 +106,7 @@ LZ5_decompress_safe() :
 *  Advanced Functions
 **************************************/
 #define LZ5_MAX_INPUT_SIZE        0x7E000000   /* 2 113 929 216 bytes */
-#define LZ5_COMPRESSBOUND(isize)  ((unsigned)(isize) > (unsigned)LZ5_MAX_INPUT_SIZE ? 0 : (isize) + ((isize)/128) + 16)
+#define LZ5_COMPRESSBOUND(isize)  ((unsigned)(isize) > (unsigned)LZ5_MAX_INPUT_SIZE ? 0 : (isize) + ((isize)/64) + 16)
 
 /*
 LZ5_compressBound() :
