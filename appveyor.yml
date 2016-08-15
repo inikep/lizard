@@ -45,11 +45,14 @@ build_script:
       ECHO *** Building %COMPILER% %PLATFORM% &&
       ECHO *** &&
       make -v &&
-      cc -v &&
+      if [%PLATFORM%]==[clang] (
+        clang -v
+      ) ELSE (
+        cc -v
+      ) &&
       ECHO make -%MAKE_PARAMS%- &&
       make %MAKE_PARAMS%
-    )
-  - if [%COMPILER%]==[visual] (
+    ) ELSE (
       ECHO *** &&
       ECHO *** Building Visual Studio 2010 %PLATFORM%\%CONFIGURATION% &&
       ECHO *** &&

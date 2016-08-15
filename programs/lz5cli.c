@@ -506,7 +506,7 @@ int main(int argc, char** argv)
       if (multiple_inputs)
         operationResult = LZ5IO_decompressMultipleFilenames(inFileNames, ifnIdx, LZ5_EXTENSION);
       else
-        DEFAULT_DECOMPRESSOR(input_filename, output_filename);
+        operationResult = DEFAULT_DECOMPRESSOR(input_filename, output_filename);
     }
     else
     {
@@ -515,7 +515,7 @@ int main(int argc, char** argv)
         if (multiple_inputs)
           operationResult = LZ5IO_compressMultipleFilenames(inFileNames, ifnIdx, LZ5_EXTENSION, cLevel);
         else
-          DEFAULT_COMPRESSOR(input_filename, output_filename, cLevel);
+          operationResult = DEFAULT_COMPRESSOR(input_filename, output_filename, cLevel);
       }
     }
 

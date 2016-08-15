@@ -5,28 +5,28 @@ matrix:
     # Container-based 12.04 LTS Server Edition 64 bit (doesn't support 32-bit includes)
     - os: linux
       sudo: false
-      env: Ubu="12.04cont" MAKE_PARAM="install PREFIX=~/install_test_dir"
+      env: Ubu="12.04cont" PARAMS="install PREFIX=~/install_test_dir" CC=cc
     - os: linux
       sudo: false
-      env: Ubu="12.04cont" MAKE_PARAM=clangtest
+      env: Ubu="12.04cont" PARAMS=clangtest CC=clang
     - os: linux
       sudo: false
-      env: Ubu="12.04cont" MAKE_PARAM=gpptest
+      env: Ubu="12.04cont" PARAMS=gpptest CC=cc
     - os: linux
       sudo: false
-      env: Ubu="12.04cont" MAKE_PARAM='-C programs test-lz5'
+      env: Ubu="12.04cont" PARAMS='-C programs test-lz5' CC=cc
     - os: linux
       sudo: false
-      env: Ubu="12.04cont" MAKE_PARAM='-C programs test-lz5 CFLAGS="-O3 -std=gnu90"'
+      env: Ubu="12.04cont" PARAMS='-C programs test-lz5 CFLAGS="-O3 -std=gnu90"' CC=cc
     - os: linux
       sudo: false
-      env: Ubu="12.04cont" MAKE_PARAM='-C programs test-lz5 CFLAGS="-O3 -std=c99"'
+      env: Ubu="12.04cont" PARAMS='-C programs test-lz5 CFLAGS="-O3 -std=c99"' CC=cc
     - os: linux
       sudo: false
-      env: Ubu="12.04cont" MAKE_PARAM='-C programs test-fullbench'
+      env: Ubu="12.04cont" PARAMS='-C programs test-fullbench' CC=cc
     - os: linux
       sudo: false
-      env: Ubu="12.04cont" MAKE_PARAM='-C programs test-frametest'
+      env: Ubu="12.04cont" PARAMS='-C programs test-frametest' CC=cc
     # 14.04 LTS Server Edition 64 bit
     - dist: trusty
       sudo: required
@@ -34,7 +34,7 @@ matrix:
         apt:
           packages:
             - clang
-      env: Ubu="14.04" MAKE_PARAM=staticAnalyze
+      env: Ubu="14.04" PARAMS=staticAnalyze CC=clang
     - dist: trusty
       sudo: required
       addons:
@@ -43,10 +43,10 @@ matrix:
             - gcc-arm-linux-gnueabi
             - libc6-dev-armel-cross
             - linux-libc-dev-armel-cross
-      env: Ubu="14.04" MAKE_PARAM=armtest
+      env: Ubu="14.04" PARAMS=armtest
     - dist: trusty
       sudo: required
-      env: Ubu="14.04" MAKE_PARAM='-C programs test-lz5'
+      env: Ubu="14.04" PARAMS='-C programs test-lz5' CC=cc
     - dist: trusty
       sudo: required
       addons:
@@ -54,7 +54,7 @@ matrix:
           packages:
             - libc6-dev-i386
             - gcc-multilib
-      env: Ubu="14.04" MAKE_PARAM='-C programs test-lz5_32'
+      env: Ubu="14.04" PARAMS='-C programs test-lz5_32' CC=cc
     - dist: trusty
       sudo: required
       addons:
@@ -63,7 +63,17 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - gcc-5
-      env: Ubu="14.04" MAKE_PARAM='-C programs test-lz5 CC=gcc-5'
+      env: Ubu="14.04" PARAMS='-C programs test-lz5 CC=gcc-5' CC=gcc-5
+    - dist: trusty
+      sudo: required
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-5
+            - gcc-5-multilib
+      env: Ubu="14.04" PARAMS='-C programs test-lz5_32 CC=gcc-5' CC=gcc-5
     - dist: trusty
       sudo: required
       addons:
@@ -72,7 +82,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - gcc-6
-      env: Ubu="14.04" MAKE_PARAM='-C programs test-lz5 CC=gcc-6'
+      env: Ubu="14.04" PARAMS='-C programs test-lz5 CC=gcc-6' CC=gcc-6
     - dist: trusty
       sudo: required
       addons:
@@ -82,7 +92,7 @@ matrix:
             - llvm-toolchain-precise-3.8
           packages:
             - clang-3.8
-      env: Ubu="14.04" MAKE_PARAM='-C programs test-lz5 CC=clang-3.8'
+      env: Ubu="14.04" PARAMS='-C programs test-lz5 CC=clang-3.8' CC=clang-3.8
     - dist: trusty
       sudo: required
       addons:
@@ -90,7 +100,7 @@ matrix:
           packages:
             - libc6-dev-i386
             - gcc-multilib
-      env: Ubu="14.04" MAKE_PARAM='-C programs test-fullbench32'
+      env: Ubu="14.04" PARAMS='-C programs test-fullbench32' CC=cc
     - dist: trusty
       sudo: required
       addons:
@@ -98,25 +108,26 @@ matrix:
           packages:
             - libc6-dev-i386
             - gcc-multilib
-      env: Ubu="14.04" MAKE_PARAM='-C programs test-frametest32'
+      env: Ubu="14.04" PARAMS='-C programs test-frametest32' CC=cc
     - dist: trusty
       sudo: required
       addons:
         apt:
           packages:
             - valgrind
-      env: Ubu="14.04" MAKE_PARAM='-C programs test-mem MOREFLAGS=-DLZ5_RESET_MEM'
+      env: Ubu="14.04" PARAMS='-C programs test-mem MOREFLAGS=-DLZ5_RESET_MEM' CC=cc
     - dist: trusty
       sudo: required
       addons:
         apt:
           packages:
             - valgrind
-      env: Ubu="14.04" MAKE_PARAM=sanitize
+      env: Ubu="14.04" PARAMS=sanitize
     # OS X Mavericks
     - os: osx
-      env: Ubu="OS X Mavericks" MAKE_PARAM='-C programs test-lz5 CC=clang MOREFLAGS="-Werror -Wconversion -Wno-sign-conversion"'
+      env: Ubu="OS X Mavericks" PARAMS='-C programs test-lz5 CC=clang MOREFLAGS="-Werror -Wconversion -Wno-sign-conversion"' CC=clang
 
 script:
-  - echo $MAKE_PARAM
-  - sh -c "make $MAKE_PARAM"
+  - echo $PARAMS
+  - $CC -v
+  - sh -c "make $PARAMS"

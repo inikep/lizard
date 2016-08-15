@@ -81,7 +81,7 @@ test:
 	$(MAKE) -C $(PRGDIR) test
 
 gpptest: clean
-	$(MAKE) all CC=g++ CFLAGS="-O3" FFLAGS="" MOREFLAGS="-Werror"
+	$(MAKE) all CC=g++ CFLAGS="-O3" FFLAGS="" WFLAGS="-Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -pedantic -Werror"
 
 clangtest: clean
 	$(MAKE) all CC=clang MOREFLAGS="-Werror -Wconversion -Wno-sign-conversion"
@@ -90,7 +90,7 @@ sanitize: clean
 	$(MAKE) test CC=clang MOREFLAGS="-g -fsanitize=undefined -DLZ5_RESET_MEM" FUZZER_TIME="-T1mn" NB_LOOPS=-i1
 
 staticAnalyze: clean
-	CFLAGS=-g scan-build --status-bugs -v $(MAKE) all
+	MOREFLAGS="-g" scan-build --status-bugs -v $(MAKE) all
 
 armtest: clean
 	$(MAKE) -C $(LZ5DIR) all CC=arm-linux-gnueabi-gcc MOREFLAGS="-Werror"
