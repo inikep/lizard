@@ -14,9 +14,6 @@ matrix:
       env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM=gpptest
     - os: linux
       sudo: false
-      env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM=staticAnalyze
-    - os: linux
-      sudo: false
       env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM="-C programs test-lz5"
     - os: linux
       sudo: false
@@ -25,6 +22,9 @@ matrix:
       sudo: false
       env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM="-C programs test-frametest"
     # Standard Ubuntu 12.04 LTS Server Edition 64 bit
+    - os: linux
+      sudo: required
+      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM=staticAnalyze
     - os: linux
       sudo: required
       addons:
