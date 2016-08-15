@@ -14,13 +14,16 @@ matrix:
       env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM=gpptest
     - os: linux
       sudo: false
-      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM="-C programs test-lz5"
+      env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM=staticAnalyze
     - os: linux
       sudo: false
-      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM="-C programs test-fullbench"
+      env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM="-C programs test-lz5"
     - os: linux
       sudo: false
-      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM="-C programs test-frametest"
+      env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM="-C programs test-fullbench"
+    - os: linux
+      sudo: false
+      env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM="-C programs test-frametest"
     # Standard Ubuntu 12.04 LTS Server Edition 64 bit
     - os: linux
       sudo: required
@@ -61,8 +64,7 @@ matrix:
         apt:
           packages:
             - valgrind
-      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM="-C programs test-mem"
-      #env: PLATFORM="Ubuntu 12.04" MAKE_PARAM="-C programs test-mem MOREFLAGS=-DLZ5_RESET_MEM"
+      env: PLATFORM="Ubuntu 12.04" MAKE_PARAM="-C programs test-mem MOREFLAGS=-DLZ5_RESET_MEM"
     - os: linux
       sudo: required
       addons:

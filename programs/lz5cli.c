@@ -41,8 +41,6 @@
 #  pragma warning(disable : 4127)      /* disable: C4127: conditional expression is constant */
 #endif
 
-#define _POSIX_SOURCE 1        /* for fileno() within <stdio.h> on unix */
-
 /****************************
 *  Includes
 *****************************/
@@ -54,24 +52,20 @@
 #include "lz5.h"      // LZ5_VERSION
 
 
-/****************************
+/*-************************************
 *  OS-specific Includes
-*****************************/
-#if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(_WIN32)
+**************************************/
+#if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(_WIN32) || defined(__CYGWIN__)
 #  include <io.h>       /* _isatty */
-#  if defined(__DJGPP__)
-#    include <unistd.h>
-#    define _isatty isatty
-#    define _fileno fileno
-#  endif
-#  ifdef __MINGW32__
-   int _fileno(FILE *stream);   /* MINGW somehow forgets to include this prototype into <stdio.h> */
-#  endif
 #  define IS_CONSOLE(stdStream) _isatty(_fileno(stdStream))
 #else
-#  include <unistd.h>   /* isatty */
-#  define IS_CONSOLE(stdStream) isatty(fileno(stdStream))
-#endif
+#  if defined(_POSIX_C_SOURCE) || defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE)
+#    include <unistd.h>   /* isatty */
+#    define IS_CONSOLE(stdStream) isatty(fileno(stdStream))
+#  else
+#    define IS_CONSOLE(stdStream) 0
+#  endif
+#endif 
 
 
 /*****************************
