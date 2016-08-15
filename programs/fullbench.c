@@ -573,7 +573,7 @@ int fullSpeedBench(char** fileNamesTable, int nbFiles)
   errorCode = LZ5F_createDecompressionContext(&g_dCtx, LZ5F_VERSION);
   if (LZ5F_isError(errorCode)) { DISPLAY("dctx allocation issue \n"); return 10; }
 
-  LZ5_streamHCPtr = LZ5_createStreamHC(LZ5HC_MAX_CLEVEL);
+  LZ5_streamHCPtr = LZ5_createStreamHC(0);
   if (!LZ5_streamHCPtr) { DISPLAY("LZ5_streamHCPtr allocation issue \n"); return 10; }
 
   /* Loop for each fileName */
@@ -716,9 +716,6 @@ int fullSpeedBench(char** fileNamesTable, int nbFiles)
             default :
                 continue;   /* unknown ID : just skip */
             }
-
-            if (ratio > 100. && (cAlgNb == 13 || cAlgNb == 15))
-                continue;
 
             for (loopNb = 1; loopNb <= g_nbIterations; loopNb++)
             {
