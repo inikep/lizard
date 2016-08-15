@@ -18,6 +18,25 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\lib\lz5.h" />
+    <ClInclude Include="..\..\..\lib\lz5common.h" />
+    <ClInclude Include="..\..\..\lib\lz5frame.h" />
+    <ClInclude Include="..\..\..\lib\lz5frame_static.h" />
+    <ClInclude Include="..\..\..\lib\lz5hc.h" />
+    <ClInclude Include="..\..\..\lib\xxhash.h" />
+    <ClInclude Include="..\..\..\programs\bench.h" />
+    <ClInclude Include="..\..\..\programs\lz5io.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\lib\lz5.c" />
+    <ClCompile Include="..\..\..\lib\lz5frame.c" />
+    <ClCompile Include="..\..\..\lib\lz5hc.c" />
+    <ClCompile Include="..\..\..\lib\xxhash.c" />
+    <ClCompile Include="..\..\..\programs\bench.c" />
+    <ClCompile Include="..\..\..\programs\lz5cli.c" />
+    <ClCompile Include="..\..\..\programs\lz5io.c" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E30329AC-0057-4FE0-8FDA-7F650D398C4C}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -124,6 +143,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>false</TreatWarningAsError>
       <EnablePREfast>false</EnablePREfast>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -143,6 +163,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>false</TreatWarningAsError>
       <EnablePREfast>false</EnablePREfast>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -151,25 +172,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\lib\lz5.h" />
-    <ClInclude Include="..\..\..\lib\lz5common.h" />
-    <ClInclude Include="..\..\..\lib\lz5frame.h" />
-    <ClInclude Include="..\..\..\lib\lz5frame_static.h" />
-    <ClInclude Include="..\..\..\lib\lz5hc.h" />
-    <ClInclude Include="..\..\..\lib\xxhash.h" />
-    <ClInclude Include="..\..\..\programs\bench.h" />
-    <ClInclude Include="..\..\..\programs\lz5io.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\lib\lz5.c" />
-    <ClCompile Include="..\..\..\lib\lz5frame.c" />
-    <ClCompile Include="..\..\..\lib\lz5hc.c" />
-    <ClCompile Include="..\..\..\lib\xxhash.c" />
-    <ClCompile Include="..\..\..\programs\bench.c" />
-    <ClCompile Include="..\..\..\programs\lz5cli.c" />
-    <ClCompile Include="..\..\..\programs\lz5io.c" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

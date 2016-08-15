@@ -20,7 +20,7 @@ environment:
     MAKE_PARAMS: "lz5programs"
     PLATFORM: "mingw32"
   - COMPILER: "gcc"
-    MAKE_PARAMS: 'lz5programs CC=clang MOREFLAGS="--target=x86_64-w64-mingw32 -Werror -Wconversion -Wno-sign-conversion'
+    MAKE_PARAMS: 'lz5programs CC=clang MOREFLAGS="--target=x86_64-w64-mingw32 -Werror -Wconversion -Wno-sign-conversion"'
     PLATFORM: "clang"
 
 install:

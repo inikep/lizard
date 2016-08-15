@@ -24,6 +24,10 @@ matrix:
     # Standard Ubuntu 12.04 LTS Server Edition 64 bit
     - os: linux
       sudo: required
+      addons:
+        apt:
+          packages:
+            - clang
       env: PLATFORM="Ubuntu 12.04" MAKE_PARAM=staticAnalyze
     - os: linux
       sudo: required
