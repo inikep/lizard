@@ -36,20 +36,19 @@ install:
     )
 
 build_script:
-  - ECHO Building %COMPILER% %PLATFORM% %CONFIGURATION%
   - if [%PLATFORM%]==[mingw32] SET PATH=%PATH_MINGW32%;%PATH_ORIGINAL% 
   - if [%PLATFORM%]==[mingw64] SET PATH=%PATH_MINGW64%;%PATH_ORIGINAL% 
   - if [%PLATFORM%]==[clang] SET PATH=%PATH_MINGW64%;%PATH_ORIGINAL% 
+  - ECHO *** &&
+      ECHO Building %COMPILER% %PLATFORM% %CONFIGURATION% &&
+      ECHO ***
   - if [%COMPILER%]==[gcc] (
-      ECHO *** &&
-      ECHO *** Building %COMPILER% %PLATFORM% &&
-      ECHO *** &&
+      echo ----- &&
+      if [%PLATFORM%]==[clang] (clang -v) &&
+      if not [%PLATFORM%]==[clang] (gcc -v) &&
+      echo ----- &&
       make -v &&
-      if [%PLATFORM%]==[clang] (
-        clang -v
-      ) ELSE (
-        cc -v
-      ) &&
+      echo ----- &&
       ECHO make -%MAKE_PARAMS%- &&
       make %MAKE_PARAMS%
     ) ELSE (
