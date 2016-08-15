@@ -17,6 +17,18 @@ matrix:
       env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM="-C programs test-lz5"
     - os: linux
       sudo: false
+      env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM="-C programs test-lz5 MOREFLAGS=-std=c99"
+    - os: linux
+      sudo: false
+      env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM="-C programs test-lz5 MOREFLAGS=-std=gnu99"
+    - os: linux
+      sudo: false
+      env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM="-C programs test-lz5 MOREFLAGS=-std=c11"
+    - os: linux
+      sudo: false
+      env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM="-C programs test-lz5 MOREFLAGS=-std=gnu11"
+    - os: linux
+      sudo: false
       env: PLATFORM="Ubuntu 12.04 container" MAKE_PARAM="-C programs test-fullbench"
     - os: linux
       sudo: false
@@ -76,6 +88,50 @@ matrix:
           packages:
             - valgrind
       env: PLATFORM="Ubuntu 12.04" MAKE_PARAM=sanitize
+    # Ubuntu 14.04 LTS Server Edition 64 bit
+    - dist: trusty
+      sudo: required
+      env: PLATFORM="Ubuntu 14.04" MAKE_PARAM="-C programs test-lz5"
+    - dist: trusty
+      sudo: required
+      addons:
+        apt:
+          packages:
+            - libc6-dev-i386
+            - gcc-multilib
+      env: PLATFORM="Ubuntu 14.04" MAKE_PARAM="-C programs test-lz5_32"
+    - dist: trusty
+      sudo: required
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+      env: PLATFORM="Ubuntu 14.04" MAKE_PARAM="-C programs test-lz5 CC=gcc-5"
+    - dist: trusty
+      sudo: required
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+      env: PLATFORM="Ubuntu 14.04" MAKE_PARAM="-C programs test-lz5 CC=gcc-6"
+    - dist: trusty
+      sudo: required
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.8
+          packages:
+            - clang-3.8
+      env: PLATFORM="Ubuntu 14.04" MAKE_PARAM="-C programs test-lz5 CC=clang-3.8"
+    # OS X Mavericks
+    - os: osx
+      compiler: gcc
+      env: PLATFORM="OS X Mavericks" MAKE_PARAM="-C programs test-lz5 CC=clang"
 
 script:
   - echo $MAKE_PARAM

@@ -71,7 +71,7 @@ build_script:
 
 test_script:
   - ECHO *** &&
-      ECHO Testing %CC_COMPILER% %PLATFORM% %CONFIGURATION% &&
+      ECHO Testing %COMPILER% %PLATFORM% %CONFIGURATION% &&
       ECHO ***
   - if not [%COMPILER%]==[unknown] (
       CD programs &&
@@ -79,5 +79,6 @@ test_script:
       lz5 -i1b lz5.exe && 
       lz5 -i1b5 lz5.exe &&
       lz5 -i1b10 lz5.exe &&
-      lz5 -i1b15 lz5.exe
-    )
+      lz5 -i1b15 lz5.exe &&
+      fullbench.exe -i1 fullbench.exe
+)
