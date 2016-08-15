@@ -717,6 +717,9 @@ int fullSpeedBench(char** fileNamesTable, int nbFiles)
                 continue;   /* unknown ID : just skip */
             }
 
+            if (ratio > 100. && (cAlgNb == 13 || cAlgNb == 15))
+                continue;
+
             for (loopNb = 1; loopNb <= g_nbIterations; loopNb++)
             {
                 double averageTime;
@@ -735,7 +738,7 @@ int fullSpeedBench(char** fileNamesTable, int nbFiles)
                     for (chunkNb=0; chunkNb<nbChunks; chunkNb++)
                     {
                         chunkP[chunkNb].compressedSize = compressionFunction(chunkP[chunkNb].origBuffer, chunkP[chunkNb].compressedBuffer, chunkP[chunkNb].origSize);
-                        if (chunkP[chunkNb].compressedSize==0) DISPLAY("ERROR ! %s() = 0 !! \n", compressorName), exit(1);
+                        if (chunkP[chunkNb].compressedSize==0) DISPLAY("ERROR: %s() = 0, probably uncompressible data, ratio=%f\n", compressorName, ratio), exit(1);
                     }
                     nb_loops++;
                 }
