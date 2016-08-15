@@ -19,12 +19,14 @@ environment:
   - COMPILER: "gcc"
     MAKE_PARAMS: "lz5programs"
     PLATFORM: "mingw32"
+  - COMPILER: "gcc"
+    MAKE_PARAMS: 'lz5programs CC=clang MOREFLAGS="--target=x86_64-w64-mingw32 -Werror -Wconversion -Wno-sign-conversion'
+    PLATFORM: "clang"
 
 install:
   - ECHO Installing %COMPILER% %PLATFORM% %CONFIGURATION%
   - if [%COMPILER%]==[gcc] SET PATH_ORIGINAL=%PATH%
   - if [%COMPILER%]==[gcc] (
-      SET "CLANG_PARAMS=lz5programs CC=clang MOREFLAGS="--target=x86_64-w64-mingw32 -Werror -Wconversion -Wno-sign-conversion"" &&
       SET "PATH_MINGW32=c:\MinGW\bin;c:\MinGW\usr\bin" &&
       SET "PATH_MINGW64=c:\msys64\mingw64\bin;c:\msys64\usr\bin" &&
       COPY C:\MinGW\bin\mingw32-make.exe C:\MinGW\bin\make.exe &&
@@ -37,21 +39,14 @@ build_script:
   - ECHO Building %COMPILER% %PLATFORM% %CONFIGURATION%
   - if [%PLATFORM%]==[mingw32] SET PATH=%PATH_MINGW32%;%PATH_ORIGINAL% 
   - if [%PLATFORM%]==[mingw64] SET PATH=%PATH_MINGW64%;%PATH_ORIGINAL% 
-  - if [%PLATFORM%]==[mingw64] (
-      make clean &&
-      ECHO *** &&
-      ECHO *** Building clang &&
-      ECHO *** &&
-      ECHO make %CLANG_PARAMS% &&
-      make %CLANG_PARAMS%
-    )
+  - if [%PLATFORM%]==[clang] SET PATH=%PATH_MINGW64%;%PATH_ORIGINAL% 
   - if [%COMPILER%]==[gcc] (
       ECHO *** &&
-      ECHO *** Building %PLATFORM% &&
+      ECHO *** Building %COMPILER% %PLATFORM% &&
       ECHO *** &&
       make -v &&
       cc -v &&
-      ECHO make %MAKE_PARAMS% &&
+      ECHO make -%MAKE_PARAMS%- &&
       make %MAKE_PARAMS%
     )
   - if [%COMPILER%]==[visual] (

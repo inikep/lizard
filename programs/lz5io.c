@@ -62,7 +62,7 @@
 *  OS-specific Includes
 ******************************/
 #if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(_WIN32)
-#  if defined(_POSIX_C_SOURCE) || defined(_POSIX_SOURCE)
+#  if defined(_POSIX_C_SOURCE) || defined(_POSIX_SOURCE) || defined(_MSC_VER)
 #    include <fcntl.h>   /* _O_BINARY */
 #    include <io.h>      /* _setmode, _fileno, _get_osfhandle */
 #    include <windows.h> /* DeviceIoControl, HANDLE, FSCTL_SET_SPARSE */
