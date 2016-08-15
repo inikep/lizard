@@ -81,20 +81,20 @@ test:
 	$(MAKE) -C $(PRGDIR) test
 
 gpptest: clean
-	$(MAKE) all CC=g++ CFLAGS="-O3 -I../lib -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
+	$(MAKE) all CC=g++ CFLAGS="-O3" FFLAGS="" MOREFLAGS="-Werror"
 
 clangtest: clean
-	CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) all CC=clang
+	$(MAKE) all CC=clang MOREFLAGS="-Werror -Wconversion -Wno-sign-conversion"
 
 sanitize: clean
-	CFLAGS="-O3 -g -fsanitize=undefined" $(MAKE) test CC=clang FUZZER_TIME="-T1mn" NB_LOOPS=-i1 MOREFLAGS="-DLZ5_RESET_MEM"
+	$(MAKE) test CC=clang MOREFLAGS="-g -fsanitize=undefined -DLZ5_RESET_MEM" FUZZER_TIME="-T1mn" NB_LOOPS=-i1
 
 staticAnalyze: clean
 	CFLAGS=-g scan-build --status-bugs -v $(MAKE) all
 
 armtest: clean
-	CFLAGS="-O3 -Werror" $(MAKE) -C $(LZ5DIR) all CC=arm-linux-gnueabi-gcc
-	CFLAGS="-O3 -Werror" $(MAKE) -C $(PRGDIR) bins CC=arm-linux-gnueabi-gcc
+	$(MAKE) -C $(LZ5DIR) all CC=arm-linux-gnueabi-gcc MOREFLAGS="-Werror"
+	$(MAKE) -C $(PRGDIR) bins CC=arm-linux-gnueabi-gcc MOREFLAGS="-Werror"
 
 examples:
 	$(MAKE) -C $(LZ5DIR)
