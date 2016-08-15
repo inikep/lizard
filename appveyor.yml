@@ -81,4 +81,4 @@ test_script:
       lz5 -i1b10 lz5.exe &&
       lz5 -i1b15 lz5.exe &&
       fullbench.exe -i1 fullbench.exe
-)
+    )

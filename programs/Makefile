@@ -37,10 +37,10 @@ LZ5DIR  := ../lib
 
 DESTDIR  ?=
 PREFIX   ?= /usr/local
-CFLAGS   ?= -O3 -fomit-frame-pointer -fstrict-aliasing -fforce-addr -ffast-math    # can select customized optimized flags such as for example: make CFLAGS="-g"
-CFLAGS   += -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -pedantic -Wno-variadic-macros
+CFLAGS   ?= -O3 -std=gnu99 -fomit-frame-pointer -fstrict-aliasing -fforce-addr -ffast-math    # can select customized optimized flags such as for example: make CFLAGS="-g"
+WFLAGS   ?= -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -pedantic -Wno-variadic-macros
 CPPFLAGS := -I$(LZ5DIR) -DXXH_NAMESPACE=LZ5_ 
-FLAGS    := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(MOREFLAGS)
+FLAGS    := $(CFLAGS) $(CPPFLAGS) $(WFLAGS) $(LDFLAGS) $(MOREFLAGS)
 
 
 # Define *.exe as extension for Windows systems
