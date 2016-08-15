@@ -42,10 +42,9 @@ build_script:
   - ECHO *** &&
       ECHO Building %COMPILER% %PLATFORM% %CONFIGURATION% &&
       ECHO ***
+  - if [%PLATFORM%]==[clang] (clang -v)
+  - if [%COMPILER%]==[gcc] (gcc -v)
   - if [%COMPILER%]==[gcc] (
-      echo ----- &&
-      if [%PLATFORM%]==[clang] (clang -v) &&
-      if not [%PLATFORM%]==[clang] (gcc -v) &&
       echo ----- &&
       make -v &&
       echo ----- &&

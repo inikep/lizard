@@ -465,71 +465,41 @@ static int local_LZ5_compress_forceDict(const char* in, char* out, int inSize)
 
 
 /* HC compression functions */
-LZ5_streamHC_t LZ5_streamHC;
+LZ5_streamHC_t* LZ5_streamHCPtr;
 static void local_LZ5_resetStreamHC(void)
 {
-    LZ5_resetStreamHC(&LZ5_streamHC);
+    LZ5_resetStreamHC(LZ5_streamHCPtr);
 }
 
 static int local_LZ5_saveDictHC(const char* in, char* out, int inSize)
 {
     (void)in;
-    return LZ5_saveDictHC(&LZ5_streamHC, out, inSize);
+    return LZ5_saveDictHC(LZ5_streamHCPtr, out, inSize);
 }
 
 static int local_LZ5_compressHC_withStateHC(const char* in, char* out, int inSize)
 {
-    int res = 0;
-    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC),0))
-    {
-        res = LZ5_compressHC_withStateHC(&LZ5_streamHC, in, out, inSize);
-        LZ5_free_mem_HC((LZ5HC_Data_Structure*)&LZ5_streamHC);
-    }
-    return res;
+    return LZ5_compressHC_withStateHC(LZ5_streamHCPtr, in, out, inSize);
 }
 
 static int local_LZ5_compressHC_limitedOutput_withStateHC(const char* in, char* out, int inSize)
 {
-    int res = 0;
-    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC),0))
-    {
-        res = LZ5_compressHC_limitedOutput_withStateHC(&LZ5_streamHC, in, out, inSize, LZ5_compressBound(inSize)-1);
-        LZ5_free_mem_HC((LZ5HC_Data_Structure*)&LZ5_streamHC);
-    }
-    return res;
+    return LZ5_compressHC_limitedOutput_withStateHC(LZ5_streamHCPtr, in, out, inSize, LZ5_compressBound(inSize)-1);
 }
 
 static int local_LZ5_compressHC_limitedOutput(const char* in, char* out, int inSize)
 {
-    int res = 0;
-    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC),0))
-    {
-        res = LZ5_compressHC_limitedOutput(in, out, inSize, LZ5_compressBound(inSize)-1);
-        LZ5_free_mem_HC((LZ5HC_Data_Structure*)&LZ5_streamHC);
-    }
-    return res;
+    return LZ5_compressHC_limitedOutput(in, out, inSize, LZ5_compressBound(inSize)-1);
 }
 
 static int local_LZ5_compressHC_continue(const char* in, char* out, int inSize)
 {
-    int res = 0;
-    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC),0))
-    {
-        res = LZ5_compressHC_continue(&LZ5_streamHC, in, out, inSize);
-        LZ5_free_mem_HC((LZ5HC_Data_Structure*)&LZ5_streamHC);
-    }
-    return res;
+    return LZ5_compressHC_continue(LZ5_streamHCPtr, in, out, inSize);
 }
 
 static int local_LZ5_compressHC_limitedOutput_continue(const char* in, char* out, int inSize)
 {
-    int res = 0;
-    if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC),0))
-    {
-        res = LZ5_compressHC_limitedOutput_continue(&LZ5_streamHC, in, out, inSize, LZ5_compressBound(inSize)-1);
-        LZ5_free_mem_HC((LZ5HC_Data_Structure*)&LZ5_streamHC);
-    }
-    return res;
+    return LZ5_compressHC_limitedOutput_continue(LZ5_streamHCPtr, in, out, inSize, LZ5_compressBound(inSize)-1);
 }
 
 
@@ -602,6 +572,9 @@ int fullSpeedBench(char** fileNamesTable, int nbFiles)
   /* Init */
   errorCode = LZ5F_createDecompressionContext(&g_dCtx, LZ5F_VERSION);
   if (LZ5F_isError(errorCode)) { DISPLAY("dctx allocation issue \n"); return 10; }
+
+  LZ5_streamHCPtr = LZ5_createStreamHC(LZ5HC_MAX_CLEVEL);
+  if (!LZ5_streamHCPtr) { DISPLAY("LZ5_streamHCPtr allocation issue \n"); return 10; }
 
   /* Loop for each fileName */
   while (fileIdx<nbFiles)
@@ -731,11 +704,7 @@ int fullSpeedBench(char** fileNamesTable, int nbFiles)
                         if (!LZ5_loadDict(&LZ5_stream, chunkP[0].origBuffer, chunkP[0].origSize)) continue;
                         break;
             case 41: compressionFunction = local_LZ5_saveDictHC; compressorName = "LZ5_saveDictHC";
-                        if (LZ5_alloc_mem_HC((LZ5HC_Data_Structure*)(&LZ5_streamHC),0))
-                        {
-                            LZ5_loadDictHC(&LZ5_streamHC, chunkP[0].origBuffer, chunkP[0].origSize);
-                            LZ5_free_mem_HC((LZ5HC_Data_Structure*)&LZ5_streamHC);
-                        }
+                        if (!LZ5_loadDictHC(LZ5_streamHCPtr, chunkP[0].origBuffer, chunkP[0].origSize)) continue;
                         break;
             case 60: DISPLAY("Obsolete compression functions : \n"); continue;
             case 61: compressionFunction = LZ5_compress; compressorName = "LZ5_compress"; break;
@@ -892,6 +861,7 @@ int fullSpeedBench(char** fileNamesTable, int nbFiles)
   }
 
   LZ5F_freeDecompressionContext(g_dCtx);
+  LZ5_freeStreamHC(LZ5_streamHCPtr);
   if (g_pause) { printf("press enter...\n"); (void)getchar(); }
 
   return 0;
