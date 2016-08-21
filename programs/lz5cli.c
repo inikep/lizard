@@ -228,11 +228,23 @@ static void waitEnter(void)
     (void)getchar();
 }
 
+/*! readU32FromChar() :
+    @return : unsigned integer value reach from input in `char` format
+    Will also modify `*stringPtr`, advancing it to position where it stopped reading.
+    Note : this function can overflow if result > MAX_UINT */
+static unsigned readU32FromChar(const char** stringPtr)
+{
+    unsigned result = 0;
+    while ((**stringPtr >='0') && (**stringPtr <='9'))
+        result *= 10, result += **stringPtr - '0', (*stringPtr)++ ;
+    return result;
+}
 
 int main(int argc, char** argv)
 {
     int i,
         cLevel=0,
+        cLevelLast=0,
         decode=0,
         bench=0,
         forceStdout=0,
@@ -261,7 +273,7 @@ int main(int argc, char** argv)
     /* command switches */
     for(i=1; i<argc; i++)
     {
-        char* argument = argv[i];
+        const char* argument = argv[i];
 
         if(!argument) continue;   /* Protection if argument empty */
 
@@ -301,15 +313,9 @@ int main(int argc, char** argv)
             {
                 argument ++;
 
-                if ((*argument>='0') && (*argument<='9'))
-                {
-                    cLevel = 0;
-                    while ((*argument >= '0') && (*argument <= '9'))
-                    {
-                        cLevel *= 10;
-                        cLevel += *argument - '0';
-                        argument++;
-                    }
+                /* compression Level */
+                if ((*argument>='0') && (*argument<='9')) {
+                    cLevel = readU32FromChar(&argument);
                     argument--;
                     continue;
                 }
@@ -377,6 +383,12 @@ int main(int argc, char** argv)
                 case 'b': bench=1; multiple_inputs=1;
                     if (inFileNames == NULL)
                         inFileNames = (const char**) malloc(argc * sizeof(char*));
+                    break;
+
+                case 'e':
+                    argument ++;
+                    cLevelLast = readU32FromChar(&argument);
+                    argument --;
                     break;
 
                     /* Treat non-option args as input files.  See https://code.google.com/p/lz5/issues/detail?id=151 */
@@ -447,7 +459,7 @@ int main(int argc, char** argv)
     /* Check if benchmark is selected */
     if (bench)
     {
-        int bmkResult = BMK_benchFiles(inFileNames, ifnIdx, cLevel);
+        int bmkResult = BMK_benchLevels(inFileNames, ifnIdx, cLevel, cLevelLast);
         free((void*)inFileNames);
         return bmkResult;
     }

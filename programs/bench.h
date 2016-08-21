@@ -25,6 +25,7 @@
 
 /* Main function */
 int BMK_benchFiles(const char** fileNamesTable, int nbFiles, int cLevel);
+int BMK_benchLevels(const char** fileNamesTable, int nbFiles, int cLevel, int cLevelLast);
 
 /* Set Parameters */
 void BMK_setBlocksize(int bsize);

@@ -106,7 +106,6 @@ static int LZ5_compress_local(const char* src, char* dst, int srcSize, int dstSi
 #define GB *(1U<<30)
 
 #define MAX_MEM             (2 GB - 64 MB)
-#define DEFAULT_CHUNKSIZE   (4 MB)
 
 
 /**************************************
@@ -137,7 +136,7 @@ struct compressionParameters
 /**************************************
 *  Benchmark Parameters
 ***************************************/
-static int chunkSize = DEFAULT_CHUNKSIZE;
+static int chunkSize = 0;
 static int nbIterations = NBLOOPS;
 static int BMK_pause = 0;
 
@@ -253,7 +252,7 @@ int BMK_benchFiles(const char** fileNamesTable, int nbFiles, int cLevel)
 
 
   /* Init */
-  if (cLevel <= 3) cfunctionId = 0; else cfunctionId = 1;
+  if (cLevel < 1) cfunctionId = 0; else cfunctionId = 1;
   switch (cfunctionId)
   {
 #ifdef COMPRESSOR0
@@ -297,6 +296,7 @@ int BMK_benchFiles(const char** fileNamesTable, int nbFiles, int cLevel)
       }
 
       /* Alloc */
+      if (chunkSize == 0) chunkSize = benchedSize;
       chunkP = (struct chunkParameters*) malloc(((benchedSize / (size_t)chunkSize)+1) * sizeof(struct chunkParameters));
       orig_buff = (char*)malloc((size_t)benchedSize);
       nbChunks = (int) ((int)benchedSize / chunkSize) + 1;
@@ -412,9 +412,9 @@ int BMK_benchFiles(const char** fileNamesTable, int nbFiles, int cLevel)
         if (crcOrig==crcCheck)
         {
             if (ratio<100.)
-                DISPLAY("%-16.16s : %9i -> %9i (%5.2f%%),%7.1f MB/s ,%7.1f MB/s \n", inFileName, (int)benchedSize, (int)cSize, ratio, (double)benchedSize / fastestC / 1000., (double)benchedSize / fastestD / 1000.);
+                DISPLAY("-%d %-16.16s : %9i -> %9i (%5.2f%%),%7.1f MB/s ,%7.1f MB/s \n", cLevel, inFileName, (int)benchedSize, (int)cSize, ratio, (double)benchedSize / fastestC / 1000., (double)benchedSize / fastestD / 1000.);
             else
-                DISPLAY("%-16.16s : %9i -> %9i (%5.1f%%),%7.1f MB/s ,%7.1f MB/s  \n", inFileName, (int)benchedSize, (int)cSize, ratio, (double)benchedSize / fastestC / 1000., (double)benchedSize / fastestD / 1000.);
+                DISPLAY("-%d %-16.16s : %9i -> %9i (%5.1f%%),%7.1f MB/s ,%7.1f MB/s  \n", cLevel, inFileName, (int)benchedSize, (int)cSize, ratio, (double)benchedSize / fastestC / 1000., (double)benchedSize / fastestD / 1000.);
         }
         totals += benchedSize;
         totalz += cSize;
@@ -435,5 +435,21 @@ int BMK_benchFiles(const char** fileNamesTable, int nbFiles, int cLevel)
   return 0;
 }
 
+int BMK_benchLevels(const char** fileNamesTable, int nbFiles, int cLevel, int cLevelLast)
+{
+    int i, res = 0;
+    
+    if (cLevel > LZ5HC_MAX_CLEVEL) cLevel = LZ5HC_MAX_CLEVEL;
+    if (cLevelLast > LZ5HC_MAX_CLEVEL) cLevelLast = LZ5HC_MAX_CLEVEL;
+    if (cLevelLast < cLevel) cLevelLast = cLevel;
+
+    printf("Benchamrking levels from %d to %d\n", cLevel, cLevelLast);
+    for (i=cLevel; i<=cLevelLast; i++) {
+        res = BMK_benchFiles(fileNamesTable, nbFiles, i);
+        if (res != 0) break;
+    }
+    
+    return res;
+}
 
 
