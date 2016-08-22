@@ -47,9 +47,31 @@
 #include <stdint.h>
 
 
-/**************************************
-*  HC Compression
-**************************************/
+
+FORCE_INLINE size_t LZ5HC_get_price(size_t litlen, size_t offset, size_t mlen)
+{
+	return LZ5_CODEWORD_COST(litlen, offset, mlen);
+}
+
+
+FORCE_INLINE size_t LZ5HC_better_price(size_t best_off, size_t best_common, size_t off, size_t common, size_t last_off)
+{
+  return LZ5_NORMAL_MATCH_COST(common - MINMATCH, (off == last_off) ? 0 : off) < LZ5_NORMAL_MATCH_COST(best_common - MINMATCH, (best_off == last_off) ? 0 : best_off) + (LZ5_NORMAL_LIT_COST(common - best_common) );
+}
+
+
+FORCE_INLINE size_t LZ5HC_more_profitable(size_t best_off, size_t best_common, size_t off, size_t common, size_t literals, size_t last_off)
+{
+	size_t sum;
+	
+	if (literals > 0)
+		sum = MAX(common + literals, best_common);
+	else
+		sum = MAX(common, best_common - literals);
+	
+//	return LZ5_CODEWORD_COST(sum - common, (off == last_off) ? 0 : (off), common - MINMATCH) <= LZ5_CODEWORD_COST(sum - best_common, (best_off == last_off) ? 0 : (best_off), best_common - MINMATCH);
+	return LZ5_NORMAL_MATCH_COST(common - MINMATCH, (off == last_off) ? 0 : off) + LZ5_NORMAL_LIT_COST(sum - common) <= LZ5_NORMAL_MATCH_COST(best_common - MINMATCH, (best_off == last_off) ? 0 : (best_off)) + LZ5_NORMAL_LIT_COST(sum - best_common);
+}
 
 
 int LZ5_alloc_mem_HC(LZ5HC_Data_Structure* ctx, int compressionLevel)
@@ -1815,7 +1837,7 @@ int LZ5_freeStreamHC (LZ5_streamHC_t* LZ5_streamHCPtr)
 /* initialization */
 void LZ5_resetStreamHC (LZ5_streamHC_t* LZ5_streamHCPtr)
 {
-    LZ5_STATIC_ASSERT(sizeof(LZ5HC_Data_Structure) <= sizeof(LZ5_streamHC_t));   /* if compilation fails here, LZ5_STREAMHCSIZE must be increased */
+    MEM_STATIC_ASSERT(sizeof(LZ5HC_Data_Structure) <= sizeof(LZ5_streamHC_t));   /* if compilation fails here, LZ5_STREAMHCSIZE must be increased */
     ((LZ5HC_Data_Structure*)LZ5_streamHCPtr)->base = NULL;
 }
 
