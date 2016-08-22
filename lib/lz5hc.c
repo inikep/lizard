@@ -39,10 +39,10 @@
 /* *************************************
 *  Includes
 ***************************************/
-#define LZ5HC_INCLUDES
-#include "lz5common.h"
+#include "lz5_common.h"
 #include "lz5.h"
 #include "lz5hc.h"
+#include "lz5hc_common.h"
 #include <stdio.h>
 #include <stdint.h>
 

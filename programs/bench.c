@@ -106,6 +106,7 @@ static int LZ5_compress_local(const char* src, char* dst, int srcSize, int dstSi
 #define GB *(1U<<30)
 
 #define MAX_MEM             (2 GB - 64 MB)
+#define DEFAULT_CHUNKSIZE   (4 MB)
 
 
 /**************************************
@@ -136,7 +137,8 @@ struct compressionParameters
 /**************************************
 *  Benchmark Parameters
 ***************************************/
-static int chunkSize = 0;
+volatile const int minHClevel;
+static int chunkSize = DEFAULT_CHUNKSIZE;
 static int nbIterations = NBLOOPS;
 static int BMK_pause = 0;
 
@@ -252,7 +254,7 @@ int BMK_benchFiles(const char** fileNamesTable, int nbFiles, int cLevel)
 
 
   /* Init */
-  if (cLevel < 1) cfunctionId = 0; else cfunctionId = 1;
+  if (cLevel < minHClevel) cfunctionId = 0; else cfunctionId = 1;
   switch (cfunctionId)
   {
 #ifdef COMPRESSOR0

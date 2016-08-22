@@ -38,8 +38,9 @@
 /**************************************
 *  Includes
 **************************************/
-#include "lz5common.h"
+#include "lz5_common.h"
 #include "lz5.h"
+#include "mem.h"  // MEM_read32
 #include <stdio.h>
 
 
