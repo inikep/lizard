@@ -45,12 +45,14 @@ static size_t LZ5_MATCH_COST(size_t mlen, size_t offset) { return LZ5_LEN_COST(m
 *  HC Inline functions and Macros
 ***************************************/
 
-static const U32 prime3bytes = 506832829U;
 static const U64 prime6bytes = 227718039650203ULL;
 static const U64 prime7bytes = 58295818150454627ULL;
 
+#if MINMATCH == 3
+static const U32 prime3bytes = 506832829U;
 static U32 LZ5HC_hash3(U32 u, U32 h) { return (u * prime3bytes) << (32-24) >> (32-h) ; }
 static size_t LZ5HC_hash3Ptr(const void* ptr, U32 h) { return LZ5HC_hash3(MEM_read32(ptr), h); }
+#endif
 
 static U32 LZ5HC_hash4(U32 u, U32 h) { return (u * prime4bytes) >> (32-h) ; }
 static size_t LZ5HC_hash4Ptr(const void* ptr, U32 h) { return LZ5HC_hash4(MEM_read32(ptr), h); }
