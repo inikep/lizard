@@ -107,7 +107,7 @@ typedef unsigned long long  U64;
 static const size_t minFHSize = 7;
 static const size_t maxFHSize = 15;
 static const size_t BHSize = 4;
-volatile const int    minHClevel = 1;
+static const int    minHClevel = 1;
 
 
 /**************************************

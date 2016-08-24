@@ -137,7 +137,7 @@ struct compressionParameters
 /**************************************
 *  Benchmark Parameters
 ***************************************/
-volatile const int minHClevel;
+static const int minHClevel = 1;
 static size_t chunkSize = DEFAULT_CHUNKSIZE;
 static int nbIterations = NBLOOPS;
 static int BMK_pause = 0;
