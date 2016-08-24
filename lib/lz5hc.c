@@ -1101,7 +1101,7 @@ static int LZ5HC_compress_optimal_price (
         }
 
  
-       best_mlen = (last_pos) ? last_pos : MINMATCH;
+       best_mlen = (last_pos) ? last_pos : (MINMATCH-1);
 
        if (faster_get_matches && last_pos)
            match_num = 0;
@@ -1275,7 +1275,7 @@ static int LZ5HC_compress_optimal_price (
             }
 
 
-            best_mlen = (best_mlen > MINMATCH) ? best_mlen : MINMATCH;      
+            best_mlen = (best_mlen > MINMATCH) ? best_mlen : (MINMATCH-1);
 
             if (ctx->params.strategy == LZ5HC_optimal_price)
             {

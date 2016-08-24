@@ -138,7 +138,7 @@ struct compressionParameters
 *  Benchmark Parameters
 ***************************************/
 volatile const int minHClevel;
-static int chunkSize = DEFAULT_CHUNKSIZE;
+static size_t chunkSize = DEFAULT_CHUNKSIZE;
 static int nbIterations = NBLOOPS;
 static int BMK_pause = 0;
 
@@ -302,7 +302,7 @@ int BMK_benchFiles(const char** fileNamesTable, int nbFiles, int cLevel)
       chunkP = (struct chunkParameters*) malloc(((benchedSize / (size_t)chunkSize)+1) * sizeof(struct chunkParameters));
       orig_buff = (char*)malloc((size_t)benchedSize);
       nbChunks = (int) ((int)benchedSize / chunkSize) + 1;
-      maxCompressedChunkSize = LZ5_compressBound(chunkSize);
+      maxCompressedChunkSize = LZ5_compressBound((int)chunkSize);
       compressedBuffSize = nbChunks * maxCompressedChunkSize;
       compressedBuffer = (char*)malloc((size_t)compressedBuffSize);
 
@@ -326,7 +326,7 @@ int BMK_benchFiles(const char** fileNamesTable, int nbFiles, int cLevel)
           {
               chunkP[i].id = i;
               chunkP[i].origBuffer = in; in += chunkSize;
-              if ((int)remaining > chunkSize) { chunkP[i].origSize = chunkSize; remaining -= chunkSize; } else { chunkP[i].origSize = (int)remaining; remaining = 0; }
+              if (remaining > chunkSize) { chunkP[i].origSize = (int)chunkSize; remaining -= chunkSize; } else { chunkP[i].origSize = (int)remaining; remaining = 0; }
               chunkP[i].compressedBuffer = out; out += maxCompressedChunkSize;
               chunkP[i].compressedSize = 0;
           }
