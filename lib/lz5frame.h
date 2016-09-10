@@ -29,7 +29,6 @@
 
    You can contact the author at :
    - LZ5 source repository : https://github.com/inikep/lz5
-   - LZ5 public forum : https://groups.google.com/forum/#!forum/lz5c
 */
 
 /* LZ5F is a stand-alone API to create LZ5-compressed frames
@@ -44,13 +43,13 @@
 extern "C" {
 #endif
 
-/**************************************
+/*-************************************
 *  Includes
 **************************************/
 #include <stddef.h>   /* size_t */
 
 
-/**************************************
+/*-************************************
 *  Error management
 **************************************/
 typedef size_t LZ5F_errorCode_t;
@@ -59,7 +58,7 @@ unsigned    LZ5F_isError(LZ5F_errorCode_t code);
 const char* LZ5F_getErrorName(LZ5F_errorCode_t code);   /* return error code string; useful for debugging */
 
 
-/**************************************
+/*-************************************
 *  Frame compression types
 **************************************/
 //#define LZ5F_DISABLE_OBSOLETE_ENUMS
@@ -78,10 +77,6 @@ typedef enum {
     LZ5F_max16MB=5,
     LZ5F_max64MB=6,
     LZ5F_max256MB=7
-    LZ5F_OBSOLETE_ENUM(max64KB = LZ5F_max64KB)
-    LZ5F_OBSOLETE_ENUM(max256KB = LZ5F_max256KB)
-    LZ5F_OBSOLETE_ENUM(max1MB = LZ5F_max1MB)
-    LZ5F_OBSOLETE_ENUM(max4MB = LZ5F_max4MB)
 } LZ5F_blockSizeID_t;
 
 typedef enum {
@@ -128,13 +123,12 @@ typedef struct {
 } LZ5F_preferences_t;
 
 
-/***********************************
+/*-*********************************
 *  Simple compression function
 ***********************************/
 size_t LZ5F_compressFrameBound(size_t srcSize, const LZ5F_preferences_t* preferencesPtr);
 
-size_t LZ5F_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuffer, size_t srcSize, const LZ5F_preferences_t* preferencesPtr);
-/* LZ5F_compressFrame()
+/*!LZ5F_compressFrame() :
  * Compress an entire srcBuffer into a valid LZ5 frame, as defined by specification v1.5.1
  * The most important rule is that dstBuffer MUST be large enough (dstMaxSize) to ensure compression completion even in worst case.
  * You can get the minimum value of dstMaxSize by using LZ5F_compressFrameBound()
@@ -143,12 +137,13 @@ size_t LZ5F_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuf
  * The result of the function is the number of bytes written into dstBuffer.
  * The function outputs an error code if it fails (can be tested using LZ5F_isError())
  */
+size_t LZ5F_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuffer, size_t srcSize, const LZ5F_preferences_t* preferencesPtr);
 
 
 
-/**********************************
+/*-***********************************
 *  Advanced compression functions
-**********************************/
+*************************************/
 typedef struct LZ5F_cctx_s* LZ5F_compressionContext_t;   /* must be aligned on 8-bytes */
 
 typedef struct {
@@ -225,7 +220,7 @@ size_t LZ5F_compressEnd(LZ5F_compressionContext_t cctx, void* dstBuffer, size_t 
  */
 
 
-/***********************************
+/*-*********************************
 *  Decompression functions
 ***********************************/
 
@@ -239,11 +234,8 @@ typedef struct {
 
 /* Resource management */
 
-LZ5F_errorCode_t LZ5F_createDecompressionContext(LZ5F_decompressionContext_t* dctxPtr, unsigned version);
-LZ5F_errorCode_t LZ5F_freeDecompressionContext(LZ5F_decompressionContext_t dctx);
-/* LZ5F_createDecompressionContext() :
- * The first thing to do is to create an LZ5F_decompressionContext_t object, which will be used in all decompression operations.
- * This is achieved using LZ5F_createDecompressionContext().
+/*!LZ5F_createDecompressionContext() :
+ * Create an LZ5F_decompressionContext_t object, which will be used to track all decompression operations.
  * The version provided MUST be LZ5F_VERSION. It is intended to track potential breaking differences between different versions.
  * The function will provide a pointer to a fully allocated and initialized LZ5F_decompressionContext_t object.
  * The result is an errorCode, which can be tested using LZ5F_isError().
@@ -251,17 +243,16 @@ LZ5F_errorCode_t LZ5F_freeDecompressionContext(LZ5F_decompressionContext_t dctx)
  * The result of LZ5F_freeDecompressionContext() is indicative of the current state of decompressionContext when being released.
  * That is, it should be == 0 if decompression has been completed fully and correctly.
  */
+LZ5F_errorCode_t LZ5F_createDecompressionContext(LZ5F_decompressionContext_t* dctxPtr, unsigned version);
+LZ5F_errorCode_t LZ5F_freeDecompressionContext(LZ5F_decompressionContext_t dctx);
 
 
-/* Decompression */
+/*======   Decompression   ======*/
 
-size_t LZ5F_getFrameInfo(LZ5F_decompressionContext_t dctx,
-                         LZ5F_frameInfo_t* frameInfoPtr,
-                         const void* srcBuffer, size_t* srcSizePtr);
-/* LZ5F_getFrameInfo()
+/*!LZ5F_getFrameInfo() :
  * This function decodes frame header information (such as max blockSize, frame checksum, etc.).
  * Its usage is optional. The objective is to extract frame header information, typically for allocation purposes.
- * A header size is variable and can be from 7 to 15 bytes. It's also possible to input more bytes than that. 
+ * A header size is variable and can be from 7 to 15 bytes. It's also possible to input more bytes than that.
  * The number of bytes read from srcBuffer will be updated within *srcSizePtr (necessarily <= original value).
  * (note that LZ5F_getFrameInfo() can also be used anytime *after* starting decompression, in this case 0 input byte is enough)
  * Frame header info is *copied into* an already allocated LZ5F_frameInfo_t structure.
@@ -270,12 +261,11 @@ size_t LZ5F_getFrameInfo(LZ5F_decompressionContext_t dctx,
  *                        (typically, when there is not enough src bytes to fully decode the frame header)
  * Decompression is expected to resume from where it stopped (srcBuffer + *srcSizePtr)
  */
+size_t LZ5F_getFrameInfo(LZ5F_decompressionContext_t dctx,
+                         LZ5F_frameInfo_t* frameInfoPtr,
+                         const void* srcBuffer, size_t* srcSizePtr);
 
-size_t LZ5F_decompress(LZ5F_decompressionContext_t dctx,
-                       void* dstBuffer, size_t* dstSizePtr,
-                       const void* srcBuffer, size_t* srcSizePtr,
-                       const LZ5F_decompressOptions_t* dOptPtr);
-/* LZ5F_decompress()
+/*!LZ5F_decompress() :
  * Call this function repetitively to regenerate data compressed within srcBuffer.
  * The function will attempt to decode *srcSizePtr bytes from srcBuffer, into dstBuffer of maximum size *dstSizePtr.
  *
@@ -287,18 +277,23 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t dctx,
  * LZ5F_decompress() must be called again, starting from where it stopped (srcBuffer + *srcSizePtr)
  * The function will check this condition, and refuse to continue if it is not respected.
  *
- * dstBuffer is supposed to be flushed between each call to the function, since its content will be overwritten.
- * dst arguments can be changed at will with each consecutive call to the function.
+ * `dstBuffer` is expected to be flushed between each call to the function, its content will be overwritten.
+ * `dst` arguments can be changed at will at each consecutive call to the function.
  *
- * The function result is an hint of how many srcSize bytes LZ5F_decompress() expects for next call.
+ * The function result is an hint of how many `srcSize` bytes LZ5F_decompress() expects for next call.
  * Schematically, it's the size of the current (or remaining) compressed block + header of next block.
  * Respecting the hint provides some boost to performance, since it does skip intermediate buffers.
- * This is just a hint, you can always provide any srcSize you want.
+ * This is just a hint though, it's always possible to provide any srcSize.
  * When a frame is fully decoded, the function result will be 0 (no more data expected).
  * If decompression failed, function result is an error code, which can be tested using LZ5F_isError().
  *
  * After a frame is fully decoded, dctx can be used again to decompress another frame.
  */
+size_t LZ5F_decompress(LZ5F_decompressionContext_t dctx,
+                       void* dstBuffer, size_t* dstSizePtr,
+                       const void* srcBuffer, size_t* srcSizePtr,
+                       const LZ5F_decompressOptions_t* dOptPtr);
+
 
 
 #if defined (__cplusplus)

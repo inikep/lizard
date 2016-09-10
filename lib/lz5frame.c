@@ -1,6 +1,6 @@
 /*
 LZ5 auto-framing library
-Copyright (C) 2011-2015, Yann Collet.
+Copyright (C) 2011-2016, Yann Collet.
 
 BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
 
@@ -28,8 +28,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 You can contact the author at :
+- LZ5 homepage : http://github.com/inikep/lz5
 - LZ5 source repository : https://github.com/inikep/lz5
-- LZ5 public forum : https://groups.google.com/forum/#!forum/lz5c
 */
 
 /* LZ5F is a stand-alone API to create LZ5-compressed Frames
@@ -38,7 +38,7 @@ You can contact the author at :
 * */
 
 
-/**************************************
+/*-************************************
 *  Compiler Options
 **************************************/
 #ifdef _MSC_VER    /* Visual Studio */
@@ -46,151 +46,23 @@ You can contact the author at :
 #endif
 
 
-/**************************************
-*  Memory routines
-**************************************/
-#include <stdlib.h>   /* malloc, calloc, free */
-#define ALLOCATOR(s)   calloc(1,s)
-#define FREEMEM        free
-#include <string.h>   /* memset, memcpy, memmove */
-#include <stdio.h>
-#define MEM_INIT       memset
 
-
-/**************************************
+/*-************************************
 *  Includes
 **************************************/
 #include "lz5frame_static.h"
 #include "lz5.h"
-#include "lz5hc.h"
+#include "lz5_decompress.h"
+#include "lz5_common.h"
+#define XXH_STATIC_LINKING_ONLY
 #include "xxhash.h"
 
 
-/**************************************
-*  Basic Types
-**************************************/
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)   /* C99 */
-# include <stdint.h>
-typedef  uint8_t BYTE;
-typedef uint16_t U16;
-typedef uint32_t U32;
-typedef  int32_t S32;
-typedef uint64_t U64;
-#else
-typedef unsigned char       BYTE;
-typedef unsigned short      U16;
-typedef unsigned int        U32;
-typedef   signed int        S32;
-typedef unsigned long long  U64;
-#endif
-
-
-/**************************************
-*  Constants
-**************************************/
-#define KB *(1<<10)
-#define MB *(1<<20)
-#define GB *(1<<30)
-
-#define _1BIT  0x01
-#define _2BITS 0x03
-#define _3BITS 0x07
-#define _4BITS 0x0F
-#define _8BITS 0xFF
-
-#define LZ5F_MAGIC_SKIPPABLE_START 0x184D2A50U
-#define LZ5F_MAGICNUMBER 0x184D2205U
-#define LZ5F_BLOCKUNCOMPRESSED_FLAG 0x80000000U
-#define LZ5F_BLOCKSIZEID_DEFAULT LZ5F_max64KB
-#define LZ5F_DICT_SIZE (1 << 22)
-
-static const size_t minFHSize = 7;
-static const size_t maxFHSize = 15;
-static const size_t BHSize = 4;
-static const int    minHClevel = 1;
-
-
-/**************************************
-*  Structures and local types
-**************************************/
-typedef struct LZ5F_cctx_s
-{
-    LZ5F_preferences_t prefs;
-    U32    version;
-    U32    cStage;
-    size_t maxBlockSize;
-    size_t maxBufferSize;
-    BYTE*  tmpBuff;
-    BYTE*  tmpIn;
-    size_t tmpInSize;
-    U64    totalInSize;
-    XXH32_state_t xxh;
-    void*  lz5CtxPtr;
-    U32    lz5CtxLevel;     /* 0: unallocated;  1: LZ5_stream_t;  3: LZ5_streamHC_t */
-} LZ5F_cctx_t;
-
-typedef struct LZ5F_dctx_s
-{
-    LZ5F_frameInfo_t frameInfo;
-    U32    version;
-    U32    dStage;
-    U64    frameRemainingSize;
-    size_t maxBlockSize;
-    size_t maxBufferSize;
-    const BYTE* srcExpect;
-    BYTE*  tmpIn;
-    size_t tmpInSize;
-    size_t tmpInTarget;
-    BYTE*  tmpOutBuffer;
-    const BYTE*  dict;
-    size_t dictSize;
-    BYTE*  tmpOut;
-    size_t tmpOutSize;
-    size_t tmpOutStart;
-    XXH32_state_t xxh;
-    BYTE   header[16];
-} LZ5F_dctx_t;
-
-
-/**************************************
-*  Error management
-**************************************/
-#define LZ5F_GENERATE_STRING(STRING) #STRING,
-static const char* LZ5F_errorStrings[] = { LZ5F_LIST_ERRORS(LZ5F_GENERATE_STRING) };
-
-
-unsigned LZ5F_isError(LZ5F_errorCode_t code)
-{
-    return (code > (LZ5F_errorCode_t)(-LZ5F_ERROR_maxCode));
-}
-
-const char* LZ5F_getErrorName(LZ5F_errorCode_t code)
-{
-    static const char* codeError = "Unspecified error code";
-    if (LZ5F_isError(code)) return LZ5F_errorStrings[-(int)(code)];
-    return codeError;
-}
-
-
-/**************************************
-*  Private functions
-**************************************/
-static size_t LZ5F_getBlockSize(unsigned blockSizeID)
-{
-    static const size_t blockSizes[7] = { 64 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
-
-    if (blockSizeID == 0) blockSizeID = LZ5F_BLOCKSIZEID_DEFAULT;
-    blockSizeID -= 1;
-    if (blockSizeID >= 7) return (size_t)-LZ5F_ERROR_maxBlockSize_invalid;
-
-  //  printf("LZ5F_getBlockSize %d %d\n", blockSizeID+1, (int)blockSizes[blockSizeID]);
-    return blockSizes[blockSizeID];
-}
-
 
 /* unoptimized version; solves endianess & alignment issues */
-static U32 LZ5F_readLE32 (const BYTE* srcPtr)
+static U32 LZ5F_readLE32 (const void* src)
 {
+    const BYTE* const srcPtr = (const BYTE*)src;
     U32 value32 = srcPtr[0];
     value32 += (srcPtr[1]<<8);
     value32 += (srcPtr[2]<<16);
@@ -232,6 +104,103 @@ static void LZ5F_writeLE64 (BYTE* dstPtr, U64 value64)
 }
 
 
+/*-************************************
+*  Constants
+**************************************/
+#define _1BIT  0x01
+#define _2BITS 0x03
+#define _3BITS 0x07
+#define _4BITS 0x0F
+#define _8BITS 0xFF
+
+#define LZ5F_MAGIC_SKIPPABLE_START 0x184D2A50U
+#define LZ5F_MAGICNUMBER 0x184D2205U
+#define LZ5F_BLOCKUNCOMPRESSED_FLAG 0x80000000U
+#define LZ5F_BLOCKSIZEID_DEFAULT LZ5F_max64KB
+
+static const size_t minFHSize = 7;
+static const size_t maxFHSize = 15;
+static const size_t BHSize = 4;
+
+
+/*-************************************
+*  Structures and local types
+**************************************/
+typedef struct LZ5F_cctx_s
+{
+    LZ5F_preferences_t prefs;
+    U32    version;
+    U32    cStage;
+    size_t maxBlockSize;
+    size_t maxBufferSize;
+    BYTE*  tmpBuff;
+    BYTE*  tmpIn;
+    size_t tmpInSize;
+    U64    totalInSize;
+    XXH32_state_t xxh;
+    LZ5_stream_t* lz5CtxPtr;
+    U32    lz5CtxLevel;     /* 0: unallocated;  1: LZ5_stream_t;  */
+} LZ5F_cctx_t;
+
+typedef struct LZ5F_dctx_s
+{
+    LZ5F_frameInfo_t frameInfo;
+    U32    version;
+    U32    dStage;
+    U64    frameRemainingSize;
+    size_t maxBlockSize;
+    size_t maxBufferSize;
+    const BYTE* srcExpect;
+    BYTE*  tmpIn;
+    size_t tmpInSize;
+    size_t tmpInTarget;
+    BYTE*  tmpOutBuffer;
+    const BYTE*  dict;
+    size_t dictSize;
+    BYTE*  tmpOut;
+    size_t tmpOutSize;
+    size_t tmpOutStart;
+    XXH32_state_t xxh;
+    BYTE   header[16];
+} LZ5F_dctx_t;
+
+
+/*-************************************
+*  Error management
+**************************************/
+#define LZ5F_GENERATE_STRING(STRING) #STRING,
+static const char* LZ5F_errorStrings[] = { LZ5F_LIST_ERRORS(LZ5F_GENERATE_STRING) };
+
+
+unsigned LZ5F_isError(LZ5F_errorCode_t code)
+{
+    return (code > (LZ5F_errorCode_t)(-LZ5F_ERROR_maxCode));
+}
+
+const char* LZ5F_getErrorName(LZ5F_errorCode_t code)
+{
+    static const char* codeError = "Unspecified error code";
+    if (LZ5F_isError(code)) return LZ5F_errorStrings[-(int)(code)];
+    return codeError;
+}
+
+
+/*-************************************
+*  Private functions
+**************************************/
+static size_t LZ5F_getBlockSize(unsigned blockSizeID)
+{
+    static const size_t blockSizes[7] = { 64 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
+
+    if (blockSizeID == 0) blockSizeID = LZ5F_BLOCKSIZEID_DEFAULT;
+    blockSizeID -= 1;
+    if (blockSizeID >= 7) return (size_t)-LZ5F_ERROR_maxBlockSize_invalid;
+//    printf("blockSizeID=%d\n", (int)blockSizeID);
+
+    return blockSizes[blockSizeID];
+}
+
+
 static BYTE LZ5F_headerChecksum (const void* header, size_t length)
 {
     U32 xxh = XXH32(header, length, 0);
@@ -239,13 +208,15 @@ static BYTE LZ5F_headerChecksum (const void* header, size_t length)
 }
 
 
-/**************************************
+/*-************************************
 *  Simple compression functions
 **************************************/
 static LZ5F_blockSizeID_t LZ5F_optimalBSID(const LZ5F_blockSizeID_t requestedBSID, const size_t srcSize)
 {
     LZ5F_blockSizeID_t proposedBSID = LZ5F_max64KB;
     size_t maxBlockSize = 64 KB;
+ //   printf("1requestedBSID=%d\n", (int)requestedBSID);
+
     while (requestedBSID > proposedBSID)
     {
         if (srcSize <= maxBlockSize)
@@ -253,17 +224,8 @@ static LZ5F_blockSizeID_t LZ5F_optimalBSID(const LZ5F_blockSizeID_t requestedBSI
         proposedBSID = (LZ5F_blockSizeID_t)((int)proposedBSID + 1);
         maxBlockSize <<= 2;
     }
+  //  printf("2requestedBSID=%d\n", (int)requestedBSID);
     return requestedBSID;
-}
-
-
-void LZ5F_freeStream(LZ5F_cctx_t* cctxPtr)
-{
-    if (cctxPtr->lz5CtxLevel == 1)
-        LZ5_freeStream((LZ5_stream_t*)cctxPtr->lz5CtxPtr);
-    else if (cctxPtr->lz5CtxLevel == 2)
-        LZ5_freeStreamHC((LZ5_streamHC_t*)cctxPtr->lz5CtxPtr);
-    cctxPtr->lz5CtxLevel = 0;
 }
 
 
@@ -286,7 +248,8 @@ size_t LZ5F_compressFrameBound(size_t srcSize, const LZ5F_preferences_t* prefere
 }
 
 
-/* LZ5F_compressFrame()
+
+/*! LZ5F_compressFrame() :
 * Compress an entire srcBuffer into a valid LZ5 frame, as defined by specification v1.5.0, in a single step.
 * The most important rule is that dstBuffer MUST be large enough (dstMaxSize) to ensure compression completion even in worst case.
 * You can get the minimum value of dstMaxSize by using LZ5F_compressFrameBound()
@@ -340,13 +303,13 @@ size_t LZ5F_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuf
     if (LZ5F_isError(errorCode)) return errorCode;
     dstPtr += errorCode;
 
-    LZ5F_freeStream(&cctxI);
+    LZ5_freeStream(cctxI.lz5CtxPtr);
 
     return (dstPtr - dstStart);
 }
 
 
-/***********************************
+/*-*********************************
 *  Advanced compression functions
 ***********************************/
 
@@ -362,7 +325,7 @@ LZ5F_errorCode_t LZ5F_createCompressionContext(LZ5F_compressionContext_t* LZ5F_c
 {
     LZ5F_cctx_t* cctxPtr;
 
-    cctxPtr = (LZ5F_cctx_t*)ALLOCATOR(sizeof(LZ5F_cctx_t));
+    cctxPtr = (LZ5F_cctx_t*)ALLOCATOR(1, sizeof(LZ5F_cctx_t));
     if (cctxPtr==NULL) return (LZ5F_errorCode_t)(-LZ5F_ERROR_allocation_failed);
 
     cctxPtr->version = version;
@@ -378,18 +341,17 @@ LZ5F_errorCode_t LZ5F_freeCompressionContext(LZ5F_compressionContext_t LZ5F_comp
 {
     LZ5F_cctx_t* cctxPtr = (LZ5F_cctx_t*)LZ5F_compressionContext;
 
-    if (cctxPtr != NULL)   /* null pointers can be safely provided to this function, like free() */
-    {
-        LZ5F_freeStream(cctxPtr);
-        FREEMEM(cctxPtr->tmpBuff);
-        FREEMEM(LZ5F_compressionContext);
+    if (cctxPtr != NULL) {  /* null pointers can be safely provided to this function, like free() */
+       LZ5_freeStream(cctxPtr->lz5CtxPtr);
+       FREEMEM(cctxPtr->tmpBuff);
+       FREEMEM(LZ5F_compressionContext);
     }
 
     return LZ5F_OK_NoError;
 }
 
 
-/* LZ5F_compressBegin() :
+/*! LZ5F_compressBegin() :
 * will write the frame header into dstBuffer.
 * dstBuffer must be large enough to accommodate a header (dstMaxSize). Maximum header size is LZ5F_MAXHEADERFRAME_SIZE bytes.
 * The result of the function is the number of bytes written into dstBuffer for the header
@@ -409,46 +371,32 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
     memset(&prefNull, 0, sizeof(prefNull));
     if (preferencesPtr == NULL) preferencesPtr = &prefNull;
     cctxPtr->prefs = *preferencesPtr;
-    cctxPtr->prefs.frameInfo.blockMode = LZ5F_blockIndependent;
 
     /* ctx Management */
-    {
-        U32 tableID = (cctxPtr->prefs.compressionLevel < minHClevel) ? 1 : 2;  /* 0:nothing ; 1:LZ5_createStream ; 2:LZ5_createStreamHC */
-      //  printf("BEFORE lz5CtxLevel=%d tableID=%d compressionLevel=%d minHClevel=%d\n", (int)cctxPtr->lz5CtxLevel, (int)tableID, (int)cctxPtr->prefs.compressionLevel, minHClevel);
-        if (cctxPtr->lz5CtxLevel != tableID)
-        {
-            LZ5F_freeStream(cctxPtr);
-
-            cctxPtr->lz5CtxLevel = tableID;
-            if (cctxPtr->lz5CtxLevel == 1)
-                cctxPtr->lz5CtxPtr = (void*)LZ5_createStream();
-            else
-                cctxPtr->lz5CtxPtr = (void*)LZ5_createStreamHC(cctxPtr->prefs.compressionLevel);
-        }
+    if (cctxPtr->lz5CtxLevel == 0) {
+        cctxPtr->lz5CtxPtr = LZ5_createStream(cctxPtr->prefs.compressionLevel);
+        cctxPtr->lz5CtxLevel = 1;
     }
 
     /* Buffer Management */
     if (cctxPtr->prefs.frameInfo.blockSizeID == 0) cctxPtr->prefs.frameInfo.blockSizeID = LZ5F_BLOCKSIZEID_DEFAULT;
     cctxPtr->maxBlockSize = LZ5F_getBlockSize(cctxPtr->prefs.frameInfo.blockSizeID);
 
-    requiredBuffSize = cctxPtr->maxBlockSize + ((cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * 2 * LZ5F_DICT_SIZE);
+    requiredBuffSize = cctxPtr->maxBlockSize + ((cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * 2 * LZ5_DICT_SIZE);
     if (preferencesPtr->autoFlush)
-        requiredBuffSize = (cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * LZ5F_DICT_SIZE;   /* just needs dict */
+        requiredBuffSize = (cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * LZ5_DICT_SIZE;   /* just needs dict */
 
-    if (cctxPtr->maxBufferSize < requiredBuffSize)
-    {
+    if (cctxPtr->maxBufferSize < requiredBuffSize) {
         cctxPtr->maxBufferSize = requiredBuffSize;
         FREEMEM(cctxPtr->tmpBuff);
-        cctxPtr->tmpBuff = (BYTE*)ALLOCATOR(requiredBuffSize);
+        cctxPtr->tmpBuff = (BYTE*)ALLOCATOR(1, requiredBuffSize);
         if (cctxPtr->tmpBuff == NULL) return (size_t)-LZ5F_ERROR_allocation_failed;
     }
     cctxPtr->tmpIn = cctxPtr->tmpBuff;
     cctxPtr->tmpInSize = 0;
     XXH32_reset(&(cctxPtr->xxh), 0);
-    if (cctxPtr->prefs.compressionLevel < minHClevel)
-        LZ5_resetStream((LZ5_stream_t*)(cctxPtr->lz5CtxPtr));
-    else
-        LZ5_resetStreamHC((LZ5_streamHC_t*)(cctxPtr->lz5CtxPtr));
+    cctxPtr->lz5CtxPtr = LZ5_resetStream((LZ5_stream_t*)(cctxPtr->lz5CtxPtr), cctxPtr->prefs.compressionLevel);
+    if (!cctxPtr->lz5CtxPtr) return (size_t)-LZ5F_ERROR_allocation_failed;
 
     /* Magic Number */
     LZ5F_writeLE32(dstPtr, LZ5F_MAGICNUMBER);
@@ -463,8 +411,7 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
     /* BD Byte */
     *dstPtr++ = (BYTE)((cctxPtr->prefs.frameInfo.blockSizeID & _3BITS) << 4);
     /* Optional Frame content size field */
-    if (cctxPtr->prefs.frameInfo.contentSize)
-    {
+    if (cctxPtr->prefs.frameInfo.contentSize) {
         LZ5F_writeLE64(dstPtr, cctxPtr->prefs.frameInfo.contentSize);
         dstPtr += 8;
         cctxPtr->totalInSize = 0;
@@ -488,8 +435,7 @@ size_t LZ5F_compressBound(size_t srcSize, const LZ5F_preferences_t* preferencesP
     LZ5F_preferences_t prefsNull;
     memset(&prefsNull, 0, sizeof(prefsNull));
     prefsNull.frameInfo.contentChecksumFlag = LZ5F_contentChecksumEnabled;   /* worst case */
-    {
-        const LZ5F_preferences_t* prefsPtr = (preferencesPtr==NULL) ? &prefsNull : preferencesPtr;
+    {   const LZ5F_preferences_t* prefsPtr = (preferencesPtr==NULL) ? &prefsNull : preferencesPtr;
         LZ5F_blockSizeID_t bid = prefsPtr->frameInfo.blockSizeID;
         size_t blockSize = LZ5F_getBlockSize(bid);
         unsigned nbBlocks = (unsigned)(srcSize / blockSize) + 1;
@@ -502,17 +448,16 @@ size_t LZ5F_compressBound(size_t srcSize, const LZ5F_preferences_t* preferencesP
 }
 
 
-typedef int (*compressFunc_t)(void* ctx, const char* src, char* dst, int srcSize, int dstSize);
+typedef int (*compressFunc_t)(void* ctx, const char* src, char* dst, int srcSize, int dstSize, int level);
 
-static size_t LZ5F_compressBlock(void* dst, const void* src, size_t srcSize, compressFunc_t compress, void* lz5ctx)
+static size_t LZ5F_compressBlock(void* dst, const void* src, size_t srcSize, compressFunc_t compress, void* lz5ctx, int level)
 {
     /* compress one block */
     BYTE* cSizePtr = (BYTE*)dst;
     U32 cSize;
-    cSize = (U32)compress(lz5ctx, (const char*)src, (char*)(cSizePtr+4), (int)(srcSize), (int)(srcSize-1));
+    cSize = (U32)compress(lz5ctx, (const char*)src, (char*)(cSizePtr+4), (int)(srcSize), (int)(srcSize-1), level);
     LZ5F_writeLE32(cSizePtr, cSize);
-    if (cSize == 0)   /* compression failed */
-    {
+    if (cSize == 0) {  /* compression failed */
         cSize = (U32)srcSize;
         LZ5F_writeLE32(cSizePtr, cSize + LZ5F_BLOCKUNCOMPRESSED_FLAG);
         memcpy(cSizePtr+4, src, srcSize);
@@ -521,42 +466,27 @@ static size_t LZ5F_compressBlock(void* dst, const void* src, size_t srcSize, com
 }
 
 
-static int LZ5F_localLZ5_compress_limitedOutput_withState(void* ctx, const char* src, char* dst, int srcSize, int dstSize)
+
+static int LZ5F_localLZ5_compress_continue(void* ctx, const char* src, char* dst, int srcSize, int dstSize, int level)
 {
-    return LZ5_compress_limitedOutput_withState(ctx, src, dst, srcSize, dstSize);
+    (void) level;
+    return LZ5_compress_continue((LZ5_stream_t*)ctx, src, dst, srcSize, dstSize);
 }
 
-static int LZ5F_localLZ5_compress_limitedOutput_continue(void* ctx, const char* src, char* dst, int srcSize, int dstSize)
+static compressFunc_t LZ5F_selectCompression(LZ5F_blockMode_t blockMode)
 {
-    return LZ5_compress_limitedOutput_continue((LZ5_stream_t*)ctx, src, dst, srcSize, dstSize);
-}
-
-static int LZ5F_localLZ5_compressHC_limitedOutput_continue(void* ctx, const char* src, char* dst, int srcSize, int dstSize)
-{
-    return LZ5_compress_HC_continue((LZ5_streamHC_t*)ctx, src, dst, srcSize, dstSize);
-}
-
-static compressFunc_t LZ5F_selectCompression(LZ5F_blockMode_t blockMode, int level)
-{
-    if (level < minHClevel)
-    {
-        if (blockMode == LZ5F_blockIndependent) return LZ5F_localLZ5_compress_limitedOutput_withState;
-        return LZ5F_localLZ5_compress_limitedOutput_continue;
-    }
-    if (blockMode == LZ5F_blockIndependent) return LZ5_compress_HC_extStateHC;
-    return LZ5F_localLZ5_compressHC_limitedOutput_continue;
+    if (blockMode == LZ5F_blockIndependent) return LZ5_compress_extState;
+    return LZ5F_localLZ5_compress_continue;
 }
 
 static int LZ5F_localSaveDict(LZ5F_cctx_t* cctxPtr)
 {
-    if (cctxPtr->prefs.compressionLevel < minHClevel)
-        return LZ5_saveDict ((LZ5_stream_t*)(cctxPtr->lz5CtxPtr), (char*)(cctxPtr->tmpBuff), 64 KB);
-    return LZ5_saveDictHC ((LZ5_streamHC_t*)(cctxPtr->lz5CtxPtr), (char*)(cctxPtr->tmpBuff), 64 KB);
+    return LZ5_saveDict ((LZ5_stream_t*)(cctxPtr->lz5CtxPtr), (char*)(cctxPtr->tmpBuff), LZ5_DICT_SIZE);
 }
 
 typedef enum { notDone, fromTmpBuffer, fromSrcBuffer } LZ5F_lastBlockStatus;
 
-/* LZ5F_compressUpdate()
+/*! LZ5F_compressUpdate() :
 * LZ5F_compressUpdate() can be called repetitively to compress as much data as necessary.
 * The most important rule is that dstBuffer MUST be large enough (dstMaxSize) to ensure compression completion even in worst case.
 * If this condition is not respected, LZ5F_compress() will fail (result is an errorCode)
@@ -584,59 +514,49 @@ size_t LZ5F_compressUpdate(LZ5F_compressionContext_t compressionContext, void* d
     if (compressOptionsPtr == NULL) compressOptionsPtr = &cOptionsNull;
 
     /* select compression function */
-    compress = LZ5F_selectCompression(cctxPtr->prefs.frameInfo.blockMode, cctxPtr->prefs.compressionLevel);
+    compress = LZ5F_selectCompression(cctxPtr->prefs.frameInfo.blockMode);
 
     /* complete tmp buffer */
-    if (cctxPtr->tmpInSize > 0)   /* some data already within tmp buffer */
-    {
+    if (cctxPtr->tmpInSize > 0) {   /* some data already within tmp buffer */
         size_t sizeToCopy = blockSize - cctxPtr->tmpInSize;
-        if (sizeToCopy > srcSize)
-        {
+        if (sizeToCopy > srcSize) {
             /* add src to tmpIn buffer */
             memcpy(cctxPtr->tmpIn + cctxPtr->tmpInSize, srcBuffer, srcSize);
             srcPtr = srcEnd;
             cctxPtr->tmpInSize += srcSize;
             /* still needs some CRC */
-        }
-        else
-        {
+        } else {
             /* complete tmpIn block and then compress it */
             lastBlockCompressed = fromTmpBuffer;
             memcpy(cctxPtr->tmpIn + cctxPtr->tmpInSize, srcBuffer, sizeToCopy);
             srcPtr += sizeToCopy;
 
-            dstPtr += LZ5F_compressBlock(dstPtr, cctxPtr->tmpIn, blockSize, compress, cctxPtr->lz5CtxPtr);
+            dstPtr += LZ5F_compressBlock(dstPtr, cctxPtr->tmpIn, blockSize, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel);
 
             if (cctxPtr->prefs.frameInfo.blockMode==LZ5F_blockLinked) cctxPtr->tmpIn += blockSize;
             cctxPtr->tmpInSize = 0;
         }
     }
 
-    while ((size_t)(srcEnd - srcPtr) >= blockSize)
-    {
+    while ((size_t)(srcEnd - srcPtr) >= blockSize) {
         /* compress full block */
         lastBlockCompressed = fromSrcBuffer;
-        dstPtr += LZ5F_compressBlock(dstPtr, srcPtr, blockSize, compress, cctxPtr->lz5CtxPtr);
+        dstPtr += LZ5F_compressBlock(dstPtr, srcPtr, blockSize, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel);
         srcPtr += blockSize;
     }
 
-    if ((cctxPtr->prefs.autoFlush) && (srcPtr < srcEnd))
-    {
+    if ((cctxPtr->prefs.autoFlush) && (srcPtr < srcEnd)) {
         /* compress remaining input < blockSize */
         lastBlockCompressed = fromSrcBuffer;
-        dstPtr += LZ5F_compressBlock(dstPtr, srcPtr, srcEnd - srcPtr, compress, cctxPtr->lz5CtxPtr);
+        dstPtr += LZ5F_compressBlock(dstPtr, srcPtr, srcEnd - srcPtr, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel);
         srcPtr  = srcEnd;
     }
 
     /* preserve dictionary if necessary */
-    if ((cctxPtr->prefs.frameInfo.blockMode==LZ5F_blockLinked) && (lastBlockCompressed==fromSrcBuffer))
-    {
-        if (compressOptionsPtr->stableSrc)
-        {
+    if ((cctxPtr->prefs.frameInfo.blockMode==LZ5F_blockLinked) && (lastBlockCompressed==fromSrcBuffer)) {
+        if (compressOptionsPtr->stableSrc) {
             cctxPtr->tmpIn = cctxPtr->tmpBuff;
-        }
-        else
-        {
+        } else {
             int realDictSize = LZ5F_localSaveDict(cctxPtr);
             if (realDictSize==0) return (size_t)-LZ5F_ERROR_GENERIC;
             cctxPtr->tmpIn = cctxPtr->tmpBuff + realDictSize;
@@ -652,8 +572,7 @@ size_t LZ5F_compressUpdate(LZ5F_compressionContext_t compressionContext, void* d
     }
 
     /* some input data left, necessarily < blockSize */
-    if (srcPtr < srcEnd)
-    {
+    if (srcPtr < srcEnd) {
         /* fill tmp buffer */
         size_t sizeToCopy = srcEnd - srcPtr;
         memcpy(cctxPtr->tmpIn, srcPtr, sizeToCopy);
@@ -668,7 +587,7 @@ size_t LZ5F_compressUpdate(LZ5F_compressionContext_t compressionContext, void* d
 }
 
 
-/* LZ5F_flush()
+/*! LZ5F_flush() :
 * Should you need to create compressed data immediately, without waiting for a block to be filled,
 * you can call LZ5_flush(), which will immediately compress any remaining data stored within compressionContext.
 * The result of the function is the number of bytes written into dstBuffer
@@ -690,16 +609,15 @@ size_t LZ5F_flush(LZ5F_compressionContext_t compressionContext, void* dstBuffer,
     (void)compressOptionsPtr;   /* not yet useful */
 
     /* select compression function */
-    compress = LZ5F_selectCompression(cctxPtr->prefs.frameInfo.blockMode, cctxPtr->prefs.compressionLevel);
+    compress = LZ5F_selectCompression(cctxPtr->prefs.frameInfo.blockMode);
 
     /* compress tmp buffer */
-    dstPtr += LZ5F_compressBlock(dstPtr, cctxPtr->tmpIn, cctxPtr->tmpInSize, compress, cctxPtr->lz5CtxPtr);
+    dstPtr += LZ5F_compressBlock(dstPtr, cctxPtr->tmpIn, cctxPtr->tmpInSize, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel);
     if (cctxPtr->prefs.frameInfo.blockMode==LZ5F_blockLinked) cctxPtr->tmpIn += cctxPtr->tmpInSize;
     cctxPtr->tmpInSize = 0;
 
     /* keep tmpIn within limits */
-    if ((cctxPtr->tmpIn + cctxPtr->maxBlockSize) > (cctxPtr->tmpBuff + cctxPtr->maxBufferSize))   /* necessarily LZ5F_blockLinked */
-    {
+    if ((cctxPtr->tmpIn + cctxPtr->maxBlockSize) > (cctxPtr->tmpBuff + cctxPtr->maxBufferSize)) {  /* necessarily LZ5F_blockLinked */
         int realDictSize = LZ5F_localSaveDict(cctxPtr);
         cctxPtr->tmpIn = cctxPtr->tmpBuff + realDictSize;
     }
@@ -708,7 +626,7 @@ size_t LZ5F_flush(LZ5F_compressionContext_t compressionContext, void* dstBuffer,
 }
 
 
-/* LZ5F_compressEnd()
+/*! LZ5F_compressEnd() :
 * When you want to properly finish the compressed frame, just call LZ5F_compressEnd().
 * It will flush whatever data remained within compressionContext (like LZ5_flush())
 * but also properly finalize the frame, with an endMark and a checksum.
@@ -731,17 +649,16 @@ size_t LZ5F_compressEnd(LZ5F_compressionContext_t compressionContext, void* dstB
     LZ5F_writeLE32(dstPtr, 0);
     dstPtr+=4;   /* endMark */
 
-    if (cctxPtr->prefs.frameInfo.contentChecksumFlag == LZ5F_contentChecksumEnabled)
-    {
+    if (cctxPtr->prefs.frameInfo.contentChecksumFlag == LZ5F_contentChecksumEnabled) {
         U32 xxh = XXH32_digest(&(cctxPtr->xxh));
         LZ5F_writeLE32(dstPtr, xxh);
         dstPtr+=4;   /* content Checksum */
     }
 
     cctxPtr->cStage = 0;   /* state is now re-usable (with identical preferences) */
+    cctxPtr->maxBufferSize = 0;  /* reuse HC context */
 
-    if (cctxPtr->prefs.frameInfo.contentSize)
-    {
+    if (cctxPtr->prefs.frameInfo.contentSize) {
         if (cctxPtr->prefs.frameInfo.contentSize != cctxPtr->totalInSize)
             return (size_t)-LZ5F_ERROR_frameSize_wrong;
     }
@@ -750,24 +667,21 @@ size_t LZ5F_compressEnd(LZ5F_compressionContext_t compressionContext, void* dstB
 }
 
 
-/**********************************
-*  Decompression functions
-**********************************/
+/*-***************************************************
+*   Frame Decompression
+*****************************************************/
 
 /* Resource management */
 
-/* LZ5F_createDecompressionContext() :
-* The first thing to do is to create a decompressionContext object, which will be used in all decompression operations.
-* This is achieved using LZ5F_createDecompressionContext().
-* The function will provide a pointer to a fully allocated and initialized LZ5F_decompressionContext object.
-* If the result LZ5F_errorCode_t is not zero, there was an error during context creation.
-* Object can release its memory using LZ5F_freeDecompressionContext();
+/*! LZ5F_createDecompressionContext() :
+*   Create a decompressionContext object, which will track all decompression operations.
+*   Provides a pointer to a fully allocated and initialized LZ5F_decompressionContext object.
+*   Object can later be released using LZ5F_freeDecompressionContext().
+*   @return : if != 0, there was an error during context creation.
 */
 LZ5F_errorCode_t LZ5F_createDecompressionContext(LZ5F_decompressionContext_t* LZ5F_decompressionContextPtr, unsigned versionNumber)
 {
-    LZ5F_dctx_t* dctxPtr;
-
-    dctxPtr = (LZ5F_dctx_t*)ALLOCATOR(sizeof(LZ5F_dctx_t));
+    LZ5F_dctx_t* const dctxPtr = (LZ5F_dctx_t*)ALLOCATOR(1, sizeof(LZ5F_dctx_t));
     if (dctxPtr==NULL) return (LZ5F_errorCode_t)-LZ5F_ERROR_GENERIC;
 
     dctxPtr->version = versionNumber;
@@ -778,9 +692,8 @@ LZ5F_errorCode_t LZ5F_createDecompressionContext(LZ5F_decompressionContext_t* LZ
 LZ5F_errorCode_t LZ5F_freeDecompressionContext(LZ5F_decompressionContext_t LZ5F_decompressionContext)
 {
     LZ5F_errorCode_t result = LZ5F_OK_NoError;
-    LZ5F_dctx_t* dctxPtr = (LZ5F_dctx_t*)LZ5F_decompressionContext;
-    if (dctxPtr != NULL)   /* can accept NULL input, like free() */
-    {
+    LZ5F_dctx_t* const dctxPtr = (LZ5F_dctx_t*)LZ5F_decompressionContext;
+    if (dctxPtr != NULL) {   /* can accept NULL input, like free() */
       result = (LZ5F_errorCode_t)dctxPtr->dStage;
       FREEMEM(dctxPtr->tmpIn);
       FREEMEM(dctxPtr->tmpOutBuffer);
@@ -806,12 +719,36 @@ typedef enum { dstage_getHeader=0, dstage_storeHeader,
 } dStage_t;
 
 
-/* LZ5F_decodeHeader
-   return : nb Bytes read from srcVoidPtr (necessarily <= srcSize)
-            or an error code (testable with LZ5F_isError())
-   output : set internal values of dctx, such as
-            dctxPtr->frameInfo and dctxPtr->dStage.
-   input  : srcVoidPtr points at the **beginning of the frame**
+/*! LZ5F_headerSize() :
+*   @return : size of frame header
+*             or an error code, which can be tested using LZ5F_isError()
+*/
+static size_t LZ5F_headerSize(const void* src, size_t srcSize)
+{
+    /* minimal srcSize to determine header size */
+    if (srcSize < 5) return (size_t)-LZ5F_ERROR_frameHeader_incomplete;
+
+    /* special case : skippable frames */
+    if ((LZ5F_readLE32(src) & 0xFFFFFFF0U) == LZ5F_MAGIC_SKIPPABLE_START) return 8;
+
+    /* control magic number */
+    if (LZ5F_readLE32(src) != LZ5F_MAGICNUMBER) return (size_t)-LZ5F_ERROR_frameType_unknown;
+
+    /* Frame Header Size */
+    {   BYTE const FLG = ((const BYTE*)src)[4];
+        U32 const contentSizeFlag = (FLG>>3) & _1BIT;
+        return contentSizeFlag ? maxFHSize : minFHSize;
+    }
+}
+
+
+/*! LZ5F_decodeHeader() :
+   input   : `srcVoidPtr` points at the **beginning of the frame**
+   output  : set internal values of dctx, such as
+             dctxPtr->frameInfo and dctxPtr->dStage.
+             Also allocates internal buffers.
+   @return : nb Bytes read from srcVoidPtr (necessarily <= srcSize)
+             or an error code (testable with LZ5F_isError())
 */
 static size_t LZ5F_decodeHeader(LZ5F_dctx_t* dctxPtr, const void* srcVoidPtr, size_t srcSize)
 {
@@ -826,18 +763,14 @@ static size_t LZ5F_decodeHeader(LZ5F_dctx_t* dctxPtr, const void* srcVoidPtr, si
     memset(&(dctxPtr->frameInfo), 0, sizeof(dctxPtr->frameInfo));
 
     /* special case : skippable frames */
-    if ((LZ5F_readLE32(srcPtr) & 0xFFFFFFF0U) == LZ5F_MAGIC_SKIPPABLE_START)
-    {
+    if ((LZ5F_readLE32(srcPtr) & 0xFFFFFFF0U) == LZ5F_MAGIC_SKIPPABLE_START) {
         dctxPtr->frameInfo.frameType = LZ5F_skippableFrame;
-        if (srcVoidPtr == (void*)(dctxPtr->header))
-        {
+        if (srcVoidPtr == (void*)(dctxPtr->header)) {
             dctxPtr->tmpInSize = srcSize;
             dctxPtr->tmpInTarget = 8;
             dctxPtr->dStage = dstage_storeSFrameSize;
             return srcSize;
-        }
-        else
-        {
+        } else {
             dctxPtr->dStage = dstage_getSFrameSize;
             return 4;
         }
@@ -858,8 +791,7 @@ static size_t LZ5F_decodeHeader(LZ5F_dctx_t* dctxPtr, const void* srcVoidPtr, si
     /* Frame Header Size */
     frameHeaderSize = contentSizeFlag ? maxFHSize : minFHSize;
 
-    if (srcSize < frameHeaderSize)
-    {
+    if (srcSize < frameHeaderSize) {
         /* not enough input to fully decode frame header */
         if (srcPtr != dctxPtr->header)
             memcpy(dctxPtr->header, srcPtr, srcSize);
@@ -896,15 +828,14 @@ static size_t LZ5F_decodeHeader(LZ5F_dctx_t* dctxPtr, const void* srcVoidPtr, si
     if (contentChecksumFlag) XXH32_reset(&(dctxPtr->xxh), 0);
 
     /* alloc */
-    bufferNeeded = dctxPtr->maxBlockSize + ((dctxPtr->frameInfo.blockMode==LZ5F_blockLinked) * 2 * LZ5F_DICT_SIZE);
-    if (bufferNeeded > dctxPtr->maxBufferSize)   /* tmp buffers too small */
-    {
+    bufferNeeded = dctxPtr->maxBlockSize + ((dctxPtr->frameInfo.blockMode==LZ5F_blockLinked) * 2 * LZ5_DICT_SIZE);
+    if (bufferNeeded > dctxPtr->maxBufferSize) {   /* tmp buffers too small */
         FREEMEM(dctxPtr->tmpIn);
         FREEMEM(dctxPtr->tmpOutBuffer);
         dctxPtr->maxBufferSize = bufferNeeded;
-        dctxPtr->tmpIn = (BYTE*)ALLOCATOR(dctxPtr->maxBlockSize);
+        dctxPtr->tmpIn = (BYTE*)ALLOCATOR(1, dctxPtr->maxBlockSize);
         if (dctxPtr->tmpIn == NULL) return (size_t)-LZ5F_ERROR_GENERIC;
-        dctxPtr->tmpOutBuffer= (BYTE*)ALLOCATOR(dctxPtr->maxBufferSize);
+        dctxPtr->tmpOutBuffer= (BYTE*)ALLOCATOR(1, dctxPtr->maxBufferSize);
         if (dctxPtr->tmpOutBuffer== NULL) return (size_t)-LZ5F_ERROR_GENERIC;
     }
     dctxPtr->tmpInSize = 0;
@@ -921,35 +852,36 @@ static size_t LZ5F_decodeHeader(LZ5F_dctx_t* dctxPtr, const void* srcVoidPtr, si
 }
 
 
-/* LZ5F_getFrameInfo()
-* This function decodes frame header information, such as blockSize.
-* It is optional : you could start by calling directly LZ5F_decompress() instead.
-* The objective is to extract header information without starting decompression, typically for allocation purposes.
-* LZ5F_getFrameInfo() can also be used *after* starting decompression, on a valid LZ5F_decompressionContext_t.
-* The number of bytes read from srcBuffer will be provided within *srcSizePtr (necessarily <= original value).
-* You are expected to resume decompression from where it stopped (srcBuffer + *srcSizePtr)
-* The function result is an hint of the better srcSize to use for next call to LZ5F_decompress,
-* or an error code which can be tested using LZ5F_isError().
+/*! LZ5F_getFrameInfo() :
+*   Decodes frame header information, such as blockSize.
+*   It is optional : you could start by calling directly LZ5F_decompress() instead.
+*   The objective is to extract header information without starting decompression, typically for allocation purposes.
+*   LZ5F_getFrameInfo() can also be used *after* starting decompression, on a valid LZ5F_decompressionContext_t.
+*   The number of bytes read from srcBuffer will be provided within *srcSizePtr (necessarily <= original value).
+*   You are expected to resume decompression from where it stopped (srcBuffer + *srcSizePtr)
+*   @return : hint of the better `srcSize` to use for next call to LZ5F_decompress,
+*             or an error code which can be tested using LZ5F_isError().
 */
 LZ5F_errorCode_t LZ5F_getFrameInfo(LZ5F_decompressionContext_t dCtx, LZ5F_frameInfo_t* frameInfoPtr,
                                    const void* srcBuffer, size_t* srcSizePtr)
 {
     LZ5F_dctx_t* dctxPtr = (LZ5F_dctx_t*)dCtx;
 
-    if (dctxPtr->dStage > dstage_storeHeader)   /* note : requires dstage_* header related to be at beginning of enum */
-    {
-        size_t o=0, i=0;
+    if (dctxPtr->dStage > dstage_storeHeader) {  /* note : requires dstage_* header related to be at beginning of enum */
         /* frameInfo already decoded */
+        size_t o=0, i=0;
         *srcSizePtr = 0;
         *frameInfoPtr = dctxPtr->frameInfo;
-        return LZ5F_decompress(dCtx, NULL, &o, NULL, &i, NULL);
-    }
-    else
-    {
-        size_t o=0;
-        size_t nextSrcSize = LZ5F_decompress(dCtx, NULL, &o, srcBuffer, srcSizePtr, NULL);
-        if (dctxPtr->dStage <= dstage_storeHeader)   /* note : requires dstage_* header related to be at beginning of enum */
-            return (size_t)-LZ5F_ERROR_frameHeader_incomplete;
+        return LZ5F_decompress(dCtx, NULL, &o, NULL, &i, NULL);  /* returns : recommended nb of bytes for LZ5F_decompress() */
+    } else {
+        size_t nextSrcSize, o=0;
+        size_t const hSize = LZ5F_headerSize(srcBuffer, *srcSizePtr);
+        if (LZ5F_isError(hSize)) { *srcSizePtr=0; return hSize; }
+        if (*srcSizePtr < hSize) { *srcSizePtr=0; return (size_t)-LZ5F_ERROR_frameHeader_incomplete; }
+
+        *srcSizePtr = hSize;
+        nextSrcSize = LZ5F_decompress(dCtx, NULL, &o, srcBuffer, srcSizePtr, NULL);
+        if (dctxPtr->dStage <= dstage_storeHeader) return (size_t)-LZ5F_ERROR_frameHeader_incomplete; /* should not happen, already checked */
         *frameInfoPtr = dctxPtr->frameInfo;
         return nextSrcSize;
     }
@@ -969,32 +901,28 @@ static void LZ5F_updateDict(LZ5F_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dst
     if (dctxPtr->dictSize==0)
         dctxPtr->dict = (const BYTE*)dstPtr;   /* priority to dictionary continuity */
 
-    if (dctxPtr->dict + dctxPtr->dictSize == dstPtr)   /* dictionary continuity */
-    {
+    if (dctxPtr->dict + dctxPtr->dictSize == dstPtr) {  /* dictionary continuity */
         dctxPtr->dictSize += dstSize;
         return;
     }
 
-    if (dstPtr - dstPtr0 + dstSize >= 64 KB)   /* dstBuffer large enough to become dictionary */
-    {
+    if (dstPtr - dstPtr0 + dstSize >= LZ5_DICT_SIZE) {  /* dstBuffer large enough to become dictionary */
         dctxPtr->dict = (const BYTE*)dstPtr0;
         dctxPtr->dictSize = dstPtr - dstPtr0 + dstSize;
         return;
     }
 
-    if ((withinTmp) && (dctxPtr->dict == dctxPtr->tmpOutBuffer))
-    {
+    if ((withinTmp) && (dctxPtr->dict == dctxPtr->tmpOutBuffer)) {
         /* assumption : dctxPtr->dict + dctxPtr->dictSize == dctxPtr->tmpOut + dctxPtr->tmpOutStart */
         dctxPtr->dictSize += dstSize;
         return;
     }
 
-    if (withinTmp) /* copy relevant dict portion in front of tmpOut within tmpOutBuffer */
-    {
+    if (withinTmp) { /* copy relevant dict portion in front of tmpOut within tmpOutBuffer */
         size_t preserveSize = dctxPtr->tmpOut - dctxPtr->tmpOutBuffer;
-        size_t copySize = 64 KB - dctxPtr->tmpOutSize;
+        size_t copySize = LZ5_DICT_SIZE - dctxPtr->tmpOutSize;
         const BYTE* oldDictEnd = dctxPtr->dict + dctxPtr->dictSize - dctxPtr->tmpOutStart;
-        if (dctxPtr->tmpOutSize > 64 KB) copySize = 0;
+        if (dctxPtr->tmpOutSize > LZ5_DICT_SIZE) copySize = 0;
         if (copySize > preserveSize) copySize = preserveSize;
 
         memcpy(dctxPtr->tmpOutBuffer + preserveSize - copySize, oldDictEnd - copySize, copySize);
@@ -1004,11 +932,9 @@ static void LZ5F_updateDict(LZ5F_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dst
         return;
     }
 
-    if (dctxPtr->dict == dctxPtr->tmpOutBuffer)     /* copy dst into tmp to complete dict */
-    {
-        if (dctxPtr->dictSize + dstSize > dctxPtr->maxBufferSize)   /* tmp buffer not large enough */
-        {
-            size_t preserveSize = 64 KB - dstSize;   /* note : dstSize < 64 KB */
+    if (dctxPtr->dict == dctxPtr->tmpOutBuffer) {    /* copy dst into tmp to complete dict */
+        if (dctxPtr->dictSize + dstSize > dctxPtr->maxBufferSize) {  /* tmp buffer not large enough */
+            size_t preserveSize = LZ5_DICT_SIZE - dstSize;   /* note : dstSize < LZ5_DICT_SIZE */
             memcpy(dctxPtr->tmpOutBuffer, dctxPtr->dict + dctxPtr->dictSize - preserveSize, preserveSize);
             dctxPtr->dictSize = preserveSize;
         }
@@ -1018,8 +944,7 @@ static void LZ5F_updateDict(LZ5F_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dst
     }
 
     /* join dict & dest into tmp */
-    {
-        size_t preserveSize = 64 KB - dstSize;   /* note : dstSize < 64 KB */
+    {   size_t preserveSize = LZ5_DICT_SIZE - dstSize;   /* note : dstSize < LZ5_DICT_SIZE */
         if (preserveSize > dctxPtr->dictSize) preserveSize = dctxPtr->dictSize;
         memcpy(dctxPtr->tmpOutBuffer, dctxPtr->dict + dctxPtr->dictSize - preserveSize, preserveSize);
         memcpy(dctxPtr->tmpOutBuffer + preserveSize, dstPtr, dstSize);
@@ -1030,7 +955,7 @@ static void LZ5F_updateDict(LZ5F_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dst
 
 
 
-/* LZ5F_decompress()
+/*! LZ5F_decompress() :
 * Call this function repetitively to regenerate data compressed within srcBuffer.
 * The function will attempt to decode *srcSizePtr from srcBuffer, into dstBuffer of maximum size *dstSizePtr.
 *
@@ -1071,69 +996,57 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
     *dstSizePtr = 0;
 
     /* expect to continue decoding src buffer where it left previously */
-    if (dctxPtr->srcExpect != NULL)
-    {
+    if (dctxPtr->srcExpect != NULL) {
         if (srcStart != dctxPtr->srcExpect) return (size_t)-LZ5F_ERROR_srcPtr_wrong;
     }
 
     /* programmed as a state machine */
 
-    while (doAnotherStage)
-    {
+    while (doAnotherStage) {
 
         switch(dctxPtr->dStage)
         {
 
         case dstage_getHeader:
-            {
-                if ((size_t)(srcEnd-srcPtr) >= maxFHSize)   /* enough to decode - shortcut */
-                {
-                    LZ5F_errorCode_t errorCode = LZ5F_decodeHeader(dctxPtr, srcPtr, srcEnd-srcPtr);
-                    if (LZ5F_isError(errorCode)) return errorCode;
-                    srcPtr += errorCode;
-                    break;
-                }
-                dctxPtr->tmpInSize = 0;
-                dctxPtr->tmpInTarget = minFHSize;   /* minimum to attempt decode */
-                dctxPtr->dStage = dstage_storeHeader;
+            if ((size_t)(srcEnd-srcPtr) >= maxFHSize) {  /* enough to decode - shortcut */
+                LZ5F_errorCode_t const hSize = LZ5F_decodeHeader(dctxPtr, srcPtr, srcEnd-srcPtr);
+                if (LZ5F_isError(hSize)) return hSize;
+                srcPtr += hSize;
+                break;
             }
+            dctxPtr->tmpInSize = 0;
+            dctxPtr->tmpInTarget = minFHSize;   /* minimum to attempt decode */
+            dctxPtr->dStage = dstage_storeHeader;
+            /* pass-through */
 
         case dstage_storeHeader:
-            {
-                size_t sizeToCopy = dctxPtr->tmpInTarget - dctxPtr->tmpInSize;
+            {   size_t sizeToCopy = dctxPtr->tmpInTarget - dctxPtr->tmpInSize;
                 if (sizeToCopy > (size_t)(srcEnd - srcPtr)) sizeToCopy =  srcEnd - srcPtr;
                 memcpy(dctxPtr->header + dctxPtr->tmpInSize, srcPtr, sizeToCopy);
                 dctxPtr->tmpInSize += sizeToCopy;
                 srcPtr += sizeToCopy;
-                if (dctxPtr->tmpInSize < dctxPtr->tmpInTarget)
-                {
+                if (dctxPtr->tmpInSize < dctxPtr->tmpInTarget) {
                     nextSrcSizeHint = (dctxPtr->tmpInTarget - dctxPtr->tmpInSize) + BHSize;   /* rest of header + nextBlockHeader */
                     doAnotherStage = 0;   /* not enough src data, ask for some more */
                     break;
                 }
-                {
-                    LZ5F_errorCode_t errorCode = LZ5F_decodeHeader(dctxPtr, dctxPtr->header, dctxPtr->tmpInTarget);
-                    if (LZ5F_isError(errorCode)) return errorCode;
+                {   LZ5F_errorCode_t const hSize = LZ5F_decodeHeader(dctxPtr, dctxPtr->header, dctxPtr->tmpInTarget);
+                    if (LZ5F_isError(hSize)) return hSize;
                 }
                 break;
             }
 
         case dstage_getCBlockSize:
-            {
-                if ((size_t)(srcEnd - srcPtr) >= BHSize)
-                {
-                    selectedIn = srcPtr;
-                    srcPtr += BHSize;
-                }
-                else
-                {
+            if ((size_t)(srcEnd - srcPtr) >= BHSize) {
+                selectedIn = srcPtr;
+                srcPtr += BHSize;
+            } else {
                 /* not enough input to read cBlockSize field */
-                    dctxPtr->tmpInSize = 0;
-                    dctxPtr->dStage = dstage_storeCBlockSize;
-                }
+                dctxPtr->tmpInSize = 0;
+                dctxPtr->dStage = dstage_storeCBlockSize;
             }
 
-            if (dctxPtr->dStage == dstage_storeCBlockSize)
+            if (dctxPtr->dStage == dstage_storeCBlockSize)   /* can be skipped */
         case dstage_storeCBlockSize:
             {
                 size_t sizeToCopy = BHSize - dctxPtr->tmpInSize;
@@ -1141,8 +1054,7 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
                 memcpy(dctxPtr->tmpIn + dctxPtr->tmpInSize, srcPtr, sizeToCopy);
                 srcPtr += sizeToCopy;
                 dctxPtr->tmpInSize += sizeToCopy;
-                if (dctxPtr->tmpInSize < BHSize) /* not enough input to get full cBlockSize; wait for more */
-                {
+                if (dctxPtr->tmpInSize < BHSize) {   /* not enough input to get full cBlockSize; wait for more */
                     nextSrcSizeHint = BHSize - dctxPtr->tmpInSize;
                     doAnotherStage  = 0;
                     break;
@@ -1151,23 +1063,19 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
             }
 
         /* case dstage_decodeCBlockSize: */   /* no more direct access, to prevent scan-build warning */
-            {
-                size_t nextCBlockSize = LZ5F_readLE32(selectedIn) & 0x7FFFFFFFU;
-                if (nextCBlockSize==0)   /* frameEnd signal, no more CBlock */
-                {
+            {   size_t const nextCBlockSize = LZ5F_readLE32(selectedIn) & 0x7FFFFFFFU;
+                if (nextCBlockSize==0) {  /* frameEnd signal, no more CBlock */
                     dctxPtr->dStage = dstage_getSuffix;
                     break;
                 }
-                if (nextCBlockSize > dctxPtr->maxBlockSize) return (size_t)-LZ5F_ERROR_GENERIC; /* invalid cBlockSize */
+                if (nextCBlockSize > dctxPtr->maxBlockSize) return (size_t)-LZ5F_ERROR_GENERIC;   /* invalid cBlockSize */
                 dctxPtr->tmpInTarget = nextCBlockSize;
-                if (LZ5F_readLE32(selectedIn) & LZ5F_BLOCKUNCOMPRESSED_FLAG)
-                {
+                if (LZ5F_readLE32(selectedIn) & LZ5F_BLOCKUNCOMPRESSED_FLAG) {
                     dctxPtr->dStage = dstage_copyDirect;
                     break;
                 }
                 dctxPtr->dStage = dstage_getCBlock;
-                if (dstPtr==dstEnd)
-                {
+                if (dstPtr==dstEnd) {
                     nextSrcSizeHint = nextCBlockSize + BHSize;
                     doAnotherStage = 0;
                 }
@@ -1175,8 +1083,7 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
             }
 
         case dstage_copyDirect:   /* uncompressed block */
-            {
-                size_t sizeToCopy = dctxPtr->tmpInTarget;
+            {   size_t sizeToCopy = dctxPtr->tmpInTarget;
                 if ((size_t)(srcEnd-srcPtr) < sizeToCopy) sizeToCopy = srcEnd - srcPtr;  /* not enough input to read full block */
                 if ((size_t)(dstEnd-dstPtr) < sizeToCopy) sizeToCopy = dstEnd - dstPtr;
                 memcpy(dstPtr, srcPtr, sizeToCopy);
@@ -1189,8 +1096,7 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
 
                 srcPtr += sizeToCopy;
                 dstPtr += sizeToCopy;
-                if (sizeToCopy == dctxPtr->tmpInTarget)   /* all copied */
-                {
+                if (sizeToCopy == dctxPtr->tmpInTarget) {  /* all copied */
                     dctxPtr->dStage = dstage_getCBlockSize;
                     break;
                 }
@@ -1201,28 +1107,23 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
             }
 
         case dstage_getCBlock:   /* entry from dstage_decodeCBlockSize */
-            {
-                if ((size_t)(srcEnd-srcPtr) < dctxPtr->tmpInTarget)
-                {
-                    dctxPtr->tmpInSize = 0;
-                    dctxPtr->dStage = dstage_storeCBlock;
-                    break;
-                }
-                selectedIn = srcPtr;
-                srcPtr += dctxPtr->tmpInTarget;
-                dctxPtr->dStage = dstage_decodeCBlock;
+            if ((size_t)(srcEnd-srcPtr) < dctxPtr->tmpInTarget) {
+                dctxPtr->tmpInSize = 0;
+                dctxPtr->dStage = dstage_storeCBlock;
                 break;
             }
+            selectedIn = srcPtr;
+            srcPtr += dctxPtr->tmpInTarget;
+            dctxPtr->dStage = dstage_decodeCBlock;
+            break;
 
         case dstage_storeCBlock:
-            {
-                size_t sizeToCopy = dctxPtr->tmpInTarget - dctxPtr->tmpInSize;
+            {   size_t sizeToCopy = dctxPtr->tmpInTarget - dctxPtr->tmpInSize;
                 if (sizeToCopy > (size_t)(srcEnd-srcPtr)) sizeToCopy = srcEnd-srcPtr;
                 memcpy(dctxPtr->tmpIn + dctxPtr->tmpInSize, srcPtr, sizeToCopy);
                 dctxPtr->tmpInSize += sizeToCopy;
                 srcPtr += sizeToCopy;
-                if (dctxPtr->tmpInSize < dctxPtr->tmpInTarget)  /* need more input */
-                {
+                if (dctxPtr->tmpInSize < dctxPtr->tmpInTarget) { /* need more input */
                     nextSrcSizeHint = (dctxPtr->tmpInTarget - dctxPtr->tmpInSize) + BHSize;
                     doAnotherStage=0;
                     break;
@@ -1233,17 +1134,14 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
             }
 
         case dstage_decodeCBlock:
-            {
-                if ((size_t)(dstEnd-dstPtr) < dctxPtr->maxBlockSize)   /* not enough place into dst : decode into tmpOut */
-                    dctxPtr->dStage = dstage_decodeCBlock_intoTmp;
-                else
-                    dctxPtr->dStage = dstage_decodeCBlock_intoDst;
-                break;
-            }
+            if ((size_t)(dstEnd-dstPtr) < dctxPtr->maxBlockSize)   /* not enough place into dst : decode into tmpOut */
+                dctxPtr->dStage = dstage_decodeCBlock_intoTmp;
+            else
+                dctxPtr->dStage = dstage_decodeCBlock_intoDst;
+            break;
 
         case dstage_decodeCBlock_intoDst:
-            {
-                int (*decoder)(const char*, char*, int, int, const char*, int);
+            {   int (*decoder)(const char*, char*, int, int, const char*, int);
                 int decodedSize;
 
                 if (dctxPtr->frameInfo.blockMode == LZ5F_blockLinked)
@@ -1252,7 +1150,7 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
                     decoder = LZ5F_decompress_safe;
 
                 decodedSize = decoder((const char*)selectedIn, (char*)dstPtr, (int)dctxPtr->tmpInTarget, (int)dctxPtr->maxBlockSize, (const char*)dctxPtr->dict, (int)dctxPtr->dictSize);
-                if (decodedSize < 0) return (size_t)-LZ5F_ERROR_GENERIC;    /* decompression failed */
+                if (decodedSize < 0) return (size_t)-LZ5F_ERROR_GENERIC;   /* decompression failed */
                 if (dctxPtr->frameInfo.contentChecksumFlag) XXH32_update(&(dctxPtr->xxh), dstPtr, decodedSize);
                 if (dctxPtr->frameInfo.contentSize) dctxPtr->frameRemainingSize -= decodedSize;
 
@@ -1266,9 +1164,8 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
             }
 
         case dstage_decodeCBlock_intoTmp:
-            {
-                /* not enough place into dst : decode into tmpOut */
-                int (*decoder)(const char*, char*, int, int, const char*, int);
+            /* not enough place into dst : decode into tmpOut */
+            {   int (*decoder)(const char*, char*, int, int, const char*, int);
                 int decodedSize;
 
                 if (dctxPtr->frameInfo.blockMode == LZ5F_blockLinked)
@@ -1277,21 +1174,16 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
                     decoder = LZ5F_decompress_safe;
 
                 /* ensure enough place for tmpOut */
-                if (dctxPtr->frameInfo.blockMode == LZ5F_blockLinked)
-                {
-                    if (dctxPtr->dict == dctxPtr->tmpOutBuffer)
-                    {
-                        if (dctxPtr->dictSize > 128 KB)
-                        {
-                            memcpy(dctxPtr->tmpOutBuffer, dctxPtr->dict + dctxPtr->dictSize - 64 KB, 64 KB);
-                            dctxPtr->dictSize = 64 KB;
+                if (dctxPtr->frameInfo.blockMode == LZ5F_blockLinked) {
+                    if (dctxPtr->dict == dctxPtr->tmpOutBuffer) {
+                        if (dctxPtr->dictSize > 2 * LZ5_DICT_SIZE) {
+                            memcpy(dctxPtr->tmpOutBuffer, dctxPtr->dict + dctxPtr->dictSize - LZ5_DICT_SIZE, LZ5_DICT_SIZE);
+                            dctxPtr->dictSize = LZ5_DICT_SIZE;
                         }
                         dctxPtr->tmpOut = dctxPtr->tmpOutBuffer + dctxPtr->dictSize;
-                    }
-                    else   /* dict not within tmp */
-                    {
+                    } else {  /* dict not within tmp */
                         size_t reservedDictSpace = dctxPtr->dictSize;
-                        if (reservedDictSpace > 64 KB) reservedDictSpace = 64 KB;
+                        if (reservedDictSpace > LZ5_DICT_SIZE) reservedDictSpace = LZ5_DICT_SIZE;
                         dctxPtr->tmpOut = dctxPtr->tmpOutBuffer + reservedDictSpace;
                     }
                 }
@@ -1308,8 +1200,7 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
             }
 
         case dstage_flushOut:  /* flush decoded data from tmpOut to dstBuffer */
-            {
-                size_t sizeToCopy = dctxPtr->tmpOutSize - dctxPtr->tmpOutStart;
+            {   size_t sizeToCopy = dctxPtr->tmpOutSize - dctxPtr->tmpOutStart;
                 if (sizeToCopy > (size_t)(dstEnd-dstPtr)) sizeToCopy = dstEnd-dstPtr;
                 memcpy(dstPtr, dctxPtr->tmpOut + dctxPtr->tmpOutStart, sizeToCopy);
 
@@ -1321,8 +1212,7 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
                 dstPtr += sizeToCopy;
 
                 /* end of flush ? */
-                if (dctxPtr->tmpOutStart == dctxPtr->tmpOutSize)
-                {
+                if (dctxPtr->tmpOutStart == dctxPtr->tmpOutSize) {
                     dctxPtr->dStage = dstage_getCBlockSize;
                     break;
                 }
@@ -1332,29 +1222,24 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
             }
 
         case dstage_getSuffix:
-            {
-                size_t suffixSize = dctxPtr->frameInfo.contentChecksumFlag * 4;
+            {   size_t const suffixSize = dctxPtr->frameInfo.contentChecksumFlag * 4;
                 if (dctxPtr->frameRemainingSize) return (size_t)-LZ5F_ERROR_frameSize_wrong;   /* incorrect frame size decoded */
-                if (suffixSize == 0)   /* frame completed */
-                {
+                if (suffixSize == 0) {  /* frame completed */
                     nextSrcSizeHint = 0;
                     dctxPtr->dStage = dstage_getHeader;
                     doAnotherStage = 0;
                     break;
                 }
-                if ((srcEnd - srcPtr) < 4)   /* not enough size for entire CRC */
-                {
+                if ((srcEnd - srcPtr) < 4) {  /* not enough size for entire CRC */
                     dctxPtr->tmpInSize = 0;
                     dctxPtr->dStage = dstage_storeSuffix;
-                }
-                else
-                {
+                } else {
                     selectedIn = srcPtr;
                     srcPtr += 4;
                 }
             }
 
-            if (dctxPtr->dStage == dstage_storeSuffix)
+            if (dctxPtr->dStage == dstage_storeSuffix)   /* can be skipped */
         case dstage_storeSuffix:
             {
                 size_t sizeToCopy = 4 - dctxPtr->tmpInSize;
@@ -1362,8 +1247,7 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
                 memcpy(dctxPtr->tmpIn + dctxPtr->tmpInSize, srcPtr, sizeToCopy);
                 srcPtr += sizeToCopy;
                 dctxPtr->tmpInSize += sizeToCopy;
-                if (dctxPtr->tmpInSize < 4)  /* not enough input to read complete suffix */
-                {
+                if (dctxPtr->tmpInSize < 4) { /* not enough input to read complete suffix */
                     nextSrcSizeHint = 4 - dctxPtr->tmpInSize;
                     doAnotherStage=0;
                     break;
@@ -1372,9 +1256,8 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
             }
 
         /* case dstage_checkSuffix: */   /* no direct call, to avoid scan-build warning */
-            {
-                U32 readCRC = LZ5F_readLE32(selectedIn);
-                U32 resultCRC = XXH32_digest(&(dctxPtr->xxh));
+            {   U32 const readCRC = LZ5F_readLE32(selectedIn);
+                U32 const resultCRC = XXH32_digest(&(dctxPtr->xxh));
                 if (readCRC != resultCRC) return (size_t)-LZ5F_ERROR_contentChecksum_invalid;
                 nextSrcSizeHint = 0;
                 dctxPtr->dStage = dstage_getHeader;
@@ -1383,19 +1266,14 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
             }
 
         case dstage_getSFrameSize:
-            {
-                if ((srcEnd - srcPtr) >= 4)
-                {
-                    selectedIn = srcPtr;
-                    srcPtr += 4;
-                }
-                else
-                {
+            if ((srcEnd - srcPtr) >= 4) {
+                selectedIn = srcPtr;
+                srcPtr += 4;
+            } else {
                 /* not enough input to read cBlockSize field */
-                    dctxPtr->tmpInSize = 4;
-                    dctxPtr->tmpInTarget = 8;
-                    dctxPtr->dStage = dstage_storeSFrameSize;
-                }
+                dctxPtr->tmpInSize = 4;
+                dctxPtr->tmpInTarget = 8;
+                dctxPtr->dStage = dstage_storeSFrameSize;
             }
 
             if (dctxPtr->dStage == dstage_storeSFrameSize)
@@ -1406,8 +1284,7 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
                 memcpy(dctxPtr->header + dctxPtr->tmpInSize, srcPtr, sizeToCopy);
                 srcPtr += sizeToCopy;
                 dctxPtr->tmpInSize += sizeToCopy;
-                if (dctxPtr->tmpInSize < dctxPtr->tmpInTarget) /* not enough input to get full sBlockSize; wait for more */
-                {
+                if (dctxPtr->tmpInSize < dctxPtr->tmpInTarget) { /* not enough input to get full sBlockSize; wait for more */
                     nextSrcSizeHint = dctxPtr->tmpInTarget - dctxPtr->tmpInSize;
                     doAnotherStage = 0;
                     break;
@@ -1416,8 +1293,7 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
             }
 
         /* case dstage_decodeSFrameSize: */   /* no direct access */
-            {
-                size_t SFrameSize = LZ5F_readLE32(selectedIn);
+            {   size_t const SFrameSize = LZ5F_readLE32(selectedIn);
                 dctxPtr->frameInfo.contentSize = SFrameSize;
                 dctxPtr->tmpInTarget = SFrameSize;
                 dctxPtr->dStage = dstage_skipSkippable;
@@ -1425,8 +1301,7 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
             }
 
         case dstage_skipSkippable:
-            {
-                size_t skipSize = dctxPtr->tmpInTarget;
+            {   size_t skipSize = dctxPtr->tmpInTarget;
                 if (skipSize > (size_t)(srcEnd-srcPtr)) skipSize = srcEnd-srcPtr;
                 srcPtr += skipSize;
                 dctxPtr->tmpInTarget -= skipSize;
@@ -1446,24 +1321,21 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
         &&((unsigned)(dctxPtr->dStage-1) < (unsigned)(dstage_getSuffix-1))
         )
     {
-        if (dctxPtr->dStage == dstage_flushOut)
-        {
+        if (dctxPtr->dStage == dstage_flushOut) {
             size_t preserveSize = dctxPtr->tmpOut - dctxPtr->tmpOutBuffer;
-            size_t copySize = 64 KB - dctxPtr->tmpOutSize;
+            size_t copySize = LZ5_DICT_SIZE - dctxPtr->tmpOutSize;
             const BYTE* oldDictEnd = dctxPtr->dict + dctxPtr->dictSize - dctxPtr->tmpOutStart;
-            if (dctxPtr->tmpOutSize > 64 KB) copySize = 0;
+            if (dctxPtr->tmpOutSize > LZ5_DICT_SIZE) copySize = 0;
             if (copySize > preserveSize) copySize = preserveSize;
 
             memcpy(dctxPtr->tmpOutBuffer + preserveSize - copySize, oldDictEnd - copySize, copySize);
 
             dctxPtr->dict = dctxPtr->tmpOutBuffer;
             dctxPtr->dictSize = preserveSize + dctxPtr->tmpOutStart;
-        }
-        else
-        {
+        } else {
             size_t newDictSize = dctxPtr->dictSize;
             const BYTE* oldDictEnd = dctxPtr->dict + dctxPtr->dictSize;
-            if ((newDictSize) > 64 KB) newDictSize = 64 KB;
+            if ((newDictSize) > LZ5_DICT_SIZE) newDictSize = LZ5_DICT_SIZE;
 
             memcpy(dctxPtr->tmpOutBuffer, oldDictEnd - newDictSize, newDictSize);
 

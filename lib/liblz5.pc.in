@@ -1,4 +1,4 @@
-#   LZ4 - Fast LZ compression algorithm
+#   LZ5 - Fast LZ compression algorithm
 #   Copyright (C) 2011-2014, Yann Collet.
 #   BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
 
@@ -6,9 +6,9 @@ prefix=@PREFIX@
 libdir=@LIBDIR@
 includedir=@INCLUDEDIR@
 
-Name: lz4
-Description: fast lossless compression algorithm library
-URL: http://lz4.org/
+Name: lz5
+Description: extremely fast lossless compression algorithm library
+URL: http://github.com/inikep/lz5
 Version: @VERSION@
-Libs: -L@LIBDIR@ -llz4
+Libs: -L@LIBDIR@ -llz5
 Cflags: -I@INCLUDEDIR@
