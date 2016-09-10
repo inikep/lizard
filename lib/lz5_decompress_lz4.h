@@ -38,7 +38,8 @@ FORCE_INLINE int LZ5_decompress_LZ4(
     const int checkOffset = ((safeDecode) && (dictSize < (int)(LZ5_DICT_SIZE)));
     LZ5_parameters params = LZ5_defaultParameters[compressionLevel];
 
-    *ip++; // skip compression level
+    unsigned temp = *ip++; // skip compression level
+    (void)temp;
 
     /* Special cases */
     if ((partialDecoding) && (oexit > oend-MFLIMIT)) oexit = oend-MFLIMIT;                        /* targetOutputSize too high => decode everything */
@@ -54,12 +55,12 @@ FORCE_INLINE int LZ5_decompress_LZ4(
 
         /* get literal length */
         token = *ip++;
-        if ((length=(token>>ML_BITS)) == RUN_MASK) {
+        if ((length=(token>>ML_BITS_LZ4)) == RUN_MASK_LZ4) {
             unsigned s;
             do {
                 s = *ip++;
                 length += s;
-            } while ( likely(endOnInput ? ip<iend-RUN_MASK : 1) & (s==255) );
+            } while ( likely(endOnInput ? ip<iend-RUN_MASK_LZ4 : 1) & (s==255) );
             if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) goto _output_error;   /* overflow detection */
             if ((safeDecode) && unlikely((size_t)(ip+length)<(size_t)(ip))) goto _output_error;   /* overflow detection */
         }
@@ -98,8 +99,8 @@ FORCE_INLINE int LZ5_decompress_LZ4(
         if ((checkOffset) && (unlikely(match < lowLimit))) goto _output_error;   /* Error : offset outside buffers */
 
         /* get matchlength */
-        length = token & ML_MASK;
-        if (length == ML_MASK) {
+        length = token & ML_MASK_LZ4;
+        if (length == ML_MASK_LZ4) {
             unsigned s;
             do {
                 s = *ip++;
@@ -112,7 +113,7 @@ FORCE_INLINE int LZ5_decompress_LZ4(
 
         /* check external dictionary */
         if ((dict==usingExtDict) && (match < lowPrefix)) {
-            if (unlikely(op+length > oend-LASTLITERALS)) goto _output_error;   /* doesn't respect parsing restriction */
+            if (unlikely(op + length + LASTLITERALS > oend)) goto _output_error;   /* doesn't respect parsing restriction */
 
             if (length <= (size_t)(lowPrefix-match)) {
                 /* match can be copied as a single segment from external dictionary */

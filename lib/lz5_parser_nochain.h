@@ -63,7 +63,6 @@ FORCE_INLINE int LZ5_compress_nochain(
     const int hashLog = ctx->params.hashLog;
     const U32 maxDistance = (1 << ctx->params.windowLog) - 1;
 
-    (void)LZ5_hashPtr;
   //  fprintf(stderr, "base=%p LZ5_stream_t=%d inputSize=%d maxOutputSize=%d\n", base, sizeof(LZ5_stream_t), inputSize, maxOutputSize);
  //   fprintf(stderr, "ip=%d base=%p lowPrefixPtr=%p dictBase=%d lowLimit=%p op=%p\n", ip, base, lowPrefixPtr, lowLimit, dictBase, op);
 
@@ -133,8 +132,12 @@ FORCE_INLINE int LZ5_compress_nochain(
         }
 
 _next_match:
-        if (LZ5_encodeSequence(ctx, &ip, &op, &anchor, matchLength+MINMATCH, match, outputLimited, oend)) goto _output_error;
-
+        if (ctx->params.decompressType == LZ5_coderwords_LZ4) {
+            if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, matchLength+MINMATCH, match, outputLimited, oend)) goto _output_error;
+        } else {
+            if (LZ5_encodeSequence_LZ5v2(ctx, &ip, &op, &anchor, matchLength+MINMATCH, match, outputLimited, oend)) goto _output_error;          
+        }
+        
         /* Test end of chunk */
         if (ip > mflimit) break;
 
@@ -171,7 +174,11 @@ _next_match:
 _last_literals:
     /* Encode Last Literals */
     ip = iend;
-    if (LZ5_encodeLastLiterals(&ip, &op, &anchor, outputLimited, oend)) goto _output_error;
+    if (ctx->params.decompressType == LZ5_coderwords_LZ4) {
+        if (LZ5_encodeLastLiterals_LZ4(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;
+    } else {
+        if (LZ5_encodeLastLiterals_LZ5v2(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;      
+    }
 
     /* End */
     return (int) (((char*)op)-dest);

@@ -48,34 +48,32 @@ extern "C" {
 #include "mem.h"
 #include "lz5_compress.h"      /* LZ5_GCC_VERSION */
 
-#define ALLOCATOR(n,s) calloc(n,s)
-#define FREEMEM        free
-#define MEM_INIT       memset
-#define MIN(a,b) ((a)<(b) ? (a) : (b))
-
 
 /*-************************************
 *  Common Constants
 **************************************/
 #define MINMATCH 4
-#define WILDCOPYLENGTH 8
-#define LASTLITERALS 5
+#define WILDCOPYLENGTH 16 //8
+#define LASTLITERALS WILDCOPYLENGTH // 5
 #define MFLIMIT (WILDCOPYLENGTH+MINMATCH)
 #define LZ5_DICT_SIZE (1 << 16)
 
-#define KB *(1 <<10)
-#define MB *(1 <<20)
-#define GB *(1U<<30)
+#define ML_BITS_LZ4  4
+#define ML_MASK_LZ4  ((1U<<ML_BITS_LZ4)-1)
+#define RUN_BITS_LZ4 (8-ML_BITS_LZ4)
+#define RUN_MASK_LZ4 ((1U<<RUN_BITS_LZ4)-1)
 
-#define ML_BITS  4
-#define ML_MASK  ((1U<<ML_BITS)-1)
-#define RUN_BITS (8-ML_BITS)
-#define RUN_MASK ((1U<<RUN_BITS)-1)
+#define ML_BITS_LZ5v2  4
+#define ML_MASK_LZ5v2  ((1U<<ML_BITS_LZ5v2)-1)
+#define RUN_BITS_LZ5v2 3
+#define RUN_MASK_LZ5v2 ((1U<<RUN_BITS_LZ5v2)-1)
+#define ML_RUN_BITS (ML_BITS_LZ5v2 + RUN_BITS_LZ5v2)
+#define MM_LONGOFF 16
 
 
 typedef enum { noLimit = 0, limitedOutput = 1 } limitedOutput_directive;
 typedef enum { LZ5_parser_nochain, LZ5_parser_HC } LZ5_compress_type;   /* from faster to stronger */ 
-typedef enum { LZ5_coderwords_LZ4, LZ5_coderwords_LZ5 } LZ5_decompress_type;
+typedef enum { LZ5_coderwords_LZ4, LZ5_coderwords_LZ5v2 } LZ5_decompress_type;
 
 typedef struct
 {
@@ -106,6 +104,7 @@ struct LZ5_stream_s
     U32   chainTableSize;
     U32*  chainTable;
     U32*  hashTable;
+    U32   last_off;
 };
 
 
@@ -167,6 +166,16 @@ static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1] =
 
 #define likely(expr)     expect((expr) != 0, 1)
 #define unlikely(expr)   expect((expr) != 0, 0)
+
+
+#define ALLOCATOR(n,s) calloc(n,s)
+#define FREEMEM        free
+#define MEM_INIT       memset
+#define MIN(a,b) ((a)<(b) ? (a) : (b))
+
+#define KB *(1 <<10)
+#define MB *(1 <<20)
+#define GB *(1U<<30)
 
 
 

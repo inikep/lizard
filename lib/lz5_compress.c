@@ -44,7 +44,6 @@
 /* *************************************
 *  Local Macros
 ***************************************/
-#define OPTIMAL_ML (int)((ML_MASK-1)+MINMATCH)
 #define LZ5_TRANSFORM_LEVEL 1
 #define DELTANEXT(p)        chainTable[(p) & contentMask]
 
@@ -119,12 +118,14 @@ static size_t LZ5_count_2segments(const BYTE* ip, const BYTE* match, const BYTE*
 *  Include parsers
 **************************************/
 #include "lz5_compress_lz4.h"
+#include "lz5_compress_lz5v2.h"
 #include "lz5_parser_hc.h"
 #include "lz5_parser_nochain.h"
 
 
 int LZ5_verifyCompressionLevel(int compressionLevel)
 {
+    (void)LZ5_hashPtr;
     if (compressionLevel > LZ5_MAX_CLEVEL) compressionLevel = LZ5_MAX_CLEVEL;
     if (compressionLevel < 1) compressionLevel = LZ5_DEFAULT_CLEVEL;
     return compressionLevel;
@@ -155,6 +156,7 @@ static void LZ5_init(LZ5_stream_t* ctx, const BYTE* start)
     ctx->dictBase = start - LZ5_DICT_SIZE;
     ctx->dictLimit = LZ5_DICT_SIZE;
     ctx->lowLimit = LZ5_DICT_SIZE;
+    ctx->last_off = 0;
 }
 
 

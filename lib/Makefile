@@ -45,6 +45,7 @@ PREFIX ?= /usr/local
 CPPFLAGS= -DXXH_NAMESPACE=LZ5_
 CFLAGS ?= -O3
 CFLAGS += -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes
+CFLAGS  += $(MOREFLAGS) 
 FLAGS   = $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)
 
 LIBDIR?= $(PREFIX)/lib

@@ -1,3 +1,5 @@
+#define OPTIMAL_ML (int)((ML_MASK_LZ4-1)+MINMATCH)
+
 /* Update chains up to ip (excluded) */
 FORCE_INLINE void LZ5_Insert (LZ5_stream_t* ctx, const BYTE* ip)
 {
@@ -212,7 +214,7 @@ _Search2:
         else ml2 = ml;
 
         if (ml2 == ml) { /* No better match */
-            if (LZ5_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
+            if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
             continue;
         }
 
@@ -260,9 +262,9 @@ _Search3:
             /* ip & ref are known; Now for ml */
             if (start2 < ip+ml)  ml = (int)(start2 - ip);
             /* Now, encode 2 sequences */
-            if (LZ5_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
+            if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
             ip = start2;
-            if (LZ5_encodeSequence(ctx, &ip, &op, &anchor, ml2, ref2, outputLimited, oend)) return 0;
+            if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, ml2, ref2, outputLimited, oend)) return 0;
             continue;
         }
 
@@ -280,7 +282,7 @@ _Search3:
                     }
                 }
 
-                if (LZ5_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
+                if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
                 ip  = start3;
                 ref = ref3;
                 ml  = ml3;
@@ -302,7 +304,7 @@ _Search3:
         * ip & ref are known; Now for ml
         */
         if (start2 < ip+ml) {
-            if ((start2 - ip) < (int)ML_MASK) {
+            if ((start2 - ip) < (int)ML_MASK_LZ4) {
                 int correction;
                 if (ml > OPTIMAL_ML) ml = OPTIMAL_ML;
                 if (ip + ml > start2 + ml2 - MINMATCH) ml = (int)(start2 - ip) + ml2 - MINMATCH;
@@ -316,7 +318,7 @@ _Search3:
                 ml = (int)(start2 - ip);
             }
         }
-        if (LZ5_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
+        if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
 
         ip = start2;
         ref = ref2;
@@ -331,9 +333,9 @@ _Search3:
 
     /* Encode Last Literals */
     {   int lastRun = (int)(iend - anchor);
-        if ((outputLimited) && (((char*)op - dest) + lastRun + 1 + ((lastRun+255-RUN_MASK)/255) > (U32)maxOutputSize)) return 0;  /* Check output limit */
-        if (lastRun>=(int)RUN_MASK) { *op++=(RUN_MASK<<ML_BITS); lastRun-=RUN_MASK; for(; lastRun > 254 ; lastRun-=255) *op++ = 255; *op++ = (BYTE) lastRun; }
-        else *op++ = (BYTE)(lastRun<<ML_BITS);
+        if ((outputLimited) && (((char*)op - dest) + lastRun + 1 + ((lastRun+255-RUN_MASK_LZ4)/255) > (U32)maxOutputSize)) return 0;  /* Check output limit */
+        if (lastRun>=(int)RUN_MASK_LZ4) { *op++=(RUN_MASK_LZ4<<ML_BITS_LZ4); lastRun-=RUN_MASK_LZ4; for(; lastRun > 254 ; lastRun-=255) *op++ = 255; *op++ = (BYTE) lastRun; }
+        else *op++ = (BYTE)(lastRun<<ML_BITS_LZ4);
         memcpy(op, anchor, iend - anchor);
         op += iend-anchor;
     }

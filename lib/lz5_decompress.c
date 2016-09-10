@@ -40,6 +40,7 @@
 #include "lz5_decompress.h"
 #define LZ5_MEM_FUNCTIONS
 #include "lz5_common.h"
+#include <stdio.h> // printf
 
 
 /*-************************************
@@ -49,8 +50,8 @@ typedef enum { noDict = 0, withPrefix64k, usingExtDict } dict_directive;
 typedef enum { endOnOutputSize = 0, endOnInputSize = 1 } endCondition_directive;
 typedef enum { full = 0, partial = 1 } earlyEnd_directive;
 
-
 #include "lz5_decompress_lz4.h"
+#include "lz5_decompress_lz5v2.h"
 
 
 /*-*****************************
