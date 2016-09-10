@@ -120,7 +120,7 @@ static size_t LZ5_count_2segments(const BYTE* ip, const BYTE* match, const BYTE*
 **************************************/
 #include "lz5_compress_lz4.h"
 #include "lz5_parser_hc.h"
-#include "lz5_parser_nochain.h "
+#include "lz5_parser_nochain.h"
 
 
 int LZ5_verifyCompressionLevel(int compressionLevel)
