@@ -2,7 +2,7 @@ Introduction
 -------------------------
 
 LZ5 is a modification of [LZ4] which gives a better ratio at cost of slower compression and decompression speed. 
-**In my experiments there is no open-source bytewise compressor that gives better ratio than lz5hc.**
+**In my experiments there is no open-source bytewise compressor that gives better ratio than lz5.**
 The improvement in compression ratio is caused mainly because of:
 - 22-bit dictionary instead of 16-bit in LZ4
 - using 4 new parsers (including an optimal parser) optimized for a bigger dictionary
@@ -21,6 +21,15 @@ The improvement in compression ratio is caused mainly because of:
 [AppveyorDevBadge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/dev?svg=true "Visual test suite"
 [AppveyorLink]: https://ci.appveyor.com/project/inikep/lz5
 [LZ4]: https://github.com/Cyan4973/lz4
+
+> **Branch Policy:**
+
+> - The "master" branch is considered stable, at all times.
+> - The "dev" branch is the one where all contributions must be merged
+    before being promoted to master.
+>   + If you plan to propose a patch, please commit into the "dev" branch,
+      or its own feature branch.
+      Direct commit to "master" are not permitted.
 
 
 Benchmarks

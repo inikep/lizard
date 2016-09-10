@@ -1,17 +1,3 @@
-# Directories
-_lz5bench/
-_codelite/
-_visual/
-cmake_unofficial/
-contrib/
-debian/
-examples/
-versionsTest/
-visual/
-
-# Archives
-*.zip 
-
 # Object files
 *.o
 *.ko
@@ -31,5 +17,19 @@ visual/
 *.out
 *.app
 
-# Visual Studio files
-projects/VS2010
+# IDE / editors files
+*.suo
+*.user
+.clang_complete
+
+# Directories
+_lz5bench/
+_visual/
+_codelite/
+_codelite_lz4/
+
+# Archives
+*.zip
+*.lz5
+
+to_do.txt
