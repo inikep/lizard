@@ -94,7 +94,7 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
                 intptr_t new_dist = MEM_readLE16(ip);
                 uintptr_t use_distance = (uintptr_t)(token >> ML_RUN_BITS) - 1;
                 last_off ^= use_distance & (last_off ^ -new_dist);
-                ip = (uint8_t*)((uintptr_t)ip + (use_distance & 2));
+                ip = (BYTE*)((uintptr_t)ip + (use_distance & 2));
             }
 #else
             if ((token >> ML_RUN_BITS_LZ5v2) == 0)

@@ -41,7 +41,7 @@
 #define LZ5_MEM_FUNCTIONS
 #include "lz5_common.h"
 #include <stdio.h> // printf
-
+#include <stdint.h> // uintptr_t
 
 /*-************************************
 *  Local Structures and types

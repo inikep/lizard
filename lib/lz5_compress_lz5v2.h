@@ -12,18 +12,18 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
 {
     BYTE* token = (*op)++;
     U32 offset = (U32)(*ip - match);
-    int length = (int)(*ip - *anchor);
+    size_t length = (int)(*ip - *anchor);
 
 
     if (length > 0 || offset < LZ5_MAX_16BIT_OFFSET)
     {
         /* Encode Literal length */
         if ((limitedOutputBuffer) && ((*op + length + (2 + 1 + LASTLITERALS)) > oend)) return 1;   /* Check output limit */
-        if (length>=(int)RUN_MASK_LZ5v2) 
-        {   int len; 
+        if (length >= RUN_MASK_LZ5v2) 
+        {   size_t len; 
             *token = RUN_MASK_LZ5v2; 
             len = length - RUN_MASK_LZ5v2; 
-            if (len >= 255) { *(*op) = 255;  MEM_writeLE16(*op+1, len - 255);  *op += 3; }
+            if (len >= 255) { *(*op) = 255;  MEM_writeLE16(*op+1, (U16)(len - 255));  *op += 3; }
             else *(*op)++ = (BYTE)len;
         }
         else *token = (BYTE)length;
@@ -47,15 +47,15 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
         if (matchLength - MM_LONGOFF >= 31) 
         {
           //  printf("T2 enc 24-bit length=%d matchLength=%d offset=%u\n", length, matchLength, offset);
-            int len = matchLength - MM_LONGOFF - 31;
+            size_t len = matchLength - MM_LONGOFF - 31;
             *token = 31;
-            if (len >= (1<<16) + 255) printf("ERROR2 matchLength=%d\n", len), exit(0);
-            if (len >= 255) { *(*op) = 255;  MEM_writeLE16(*op+1, len - 255);  *op += 3; }
+            if (len >= (1<<16) + 255) printf("ERROR2 matchLength=%d\n", (int)len), exit(0);
+            if (len >= 255) { *(*op) = 255;  MEM_writeLE16(*op+1, (U16)(len - 255));  *op += 3; }
             else *(*op)++ = (BYTE)len; 
         }
         else
         {
-            *token = matchLength - MM_LONGOFF;
+            *token = (BYTE)(matchLength - MM_LONGOFF);
         }
 
         MEM_writeLE24(*op, offset); 
@@ -81,13 +81,13 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
 
 
         /* Encode MatchLength */
-        length = (int)(matchLength);
+        length = matchLength;
         if ((limitedOutputBuffer) && (*op + (3 + LASTLITERALS) > oend)) return 1;   /* Check output limit */
-        if (length>=(int)ML_MASK_LZ5v2) 
-        {   int len; 
+        if (length >= ML_MASK_LZ5v2) 
+        {   size_t len; 
             *token += ML_MASK_LZ5v2<<RUN_BITS_LZ5v2;
             len = length - ML_MASK_LZ5v2; 
-            if (len >= 255) { *(*op) = 255;  MEM_writeLE16(*op+1, len - 255);  *op += 3; }
+            if (len >= 255) { *(*op) = 255;  MEM_writeLE16(*op+1, (U16)(len - 255));  *op += 3; }
             else *(*op)++ = (BYTE)len;
         }
         else *token += (BYTE)(length<<RUN_BITS_LZ5v2);
