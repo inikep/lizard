@@ -39,7 +39,7 @@ extern "C" {
 #endif
 
 /*
- * lz5.h provides block compression functions. It gives full buffer control to user.
+ * lz5_compress.h provides block compression functions. It gives full buffer control to user.
  * Block compression functions are not-enough to send information,
  * since it's still necessary to provide metadata (such as compressed size),
  * and each application can do it in whichever way it wants.

@@ -46,7 +46,7 @@ extern "C" {
 #include <stdlib.h>   /* malloc, calloc, free */
 #include <string.h>   /* memset, memcpy */
 #include "mem.h"
-#include "lz5.h"      /* LZ5_GCC_VERSION */
+#include "lz5_compress.h"      /* LZ5_GCC_VERSION */
 
 #define ALLOCATOR(n,s) calloc(n,s)
 #define FREEMEM        free
@@ -74,7 +74,8 @@ extern "C" {
 
 
 typedef enum { noLimit = 0, limitedOutput = 1 } limitedOutput_directive;
-typedef int (*LZ5_compress_func)(void* const ctxvoid, const char* const source, char* const dest, const int inputSize, const int maxOutputSize, const limitedOutput_directive outputLimited); 
+typedef enum { LZ5_parser_nochain, LZ5_parser_HC } LZ5_compress_type;   /* from faster to stronger */ 
+typedef enum { LZ5_coderwords_LZ4, LZ5_coderwords_LZ5 } LZ5_decompress_type;
 
 typedef struct
 {
@@ -86,7 +87,8 @@ typedef struct
     U32 searchLength;  /* size of matches : larger == faster decompression */
     U32 sufficientLength;  /* used only by optimal parser: size of matches which is acceptable: larger == more compression, slower */
     U32 fullSearch;    /* used only by optimal parser: perform full search of matches: 1 == more compression, slower */
-    LZ5_compress_func compressFunc;
+    LZ5_compress_type compressType;
+    LZ5_decompress_type decompressType;
 } LZ5_parameters; 
 
 
@@ -98,7 +100,7 @@ struct LZ5_stream_s
     U32   dictLimit;        /* below that point, need extDict */
     U32   lowLimit;         /* below that point, no more dict */
     U32   nextToUpdate;     /* index from which to continue dictionary update */
-    U32   compressionLevel;
+    int   compressionLevel;
     LZ5_parameters params;
     U32   hashTableSize;
     U32   chainTableSize;
@@ -110,10 +112,6 @@ struct LZ5_stream_s
 /* *************************************
 *  HC Pre-defined compression levels
 ***************************************/
-int LZ5_compress_nochain(void* const ctxvoid, const char* const source, char* const dest, const int inputSize, const int maxOutputSize, const limitedOutput_directive outputLimited);
-int LZ5_compress_HC(void* const ctxvoid, const char* const source, char* const dest, const int inputSize, const int maxOutputSize, const limitedOutput_directive outputLimited);
-
-
 #define LZ5_WINDOWLOG_SMALL 16
 #define LZ5_WINDOWLOG_BIG   20
 #define LZ5_CHAINLOG        16
@@ -125,17 +123,17 @@ int LZ5_compress_HC(void* const ctxvoid, const char* const source, char* const d
 static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1] =
 {
     /*            windLog,   contentLog,     HashLog,  H3,  Snum, SL, SuffL, FS, Compression function */
-    {                   0,            0,           0,   0,     0,  0,     0,  0, NULL                 }, // level 0 - never used
-    { LZ5_WINDOWLOG_SMALL,            0,          12,   0,     0,  0,     0,  0, LZ5_compress_nochain }, // level 1
-    { LZ5_WINDOWLOG_SMALL,            0, LZ5_HASHLOG,   0,     0,  0,     0,  0, LZ5_compress_nochain }, // level 2
-    { LZ5_WINDOWLOG_SMALL, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     4,  0,     0,  0, LZ5_compress_HC      }, // level 3
-    { LZ5_WINDOWLOG_SMALL, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     8,  0,     0,  0, LZ5_compress_HC      }, // level 4
-    { LZ5_WINDOWLOG_SMALL, LZ5_CHAINLOG, LZ5_HASHLOG,   0,    16,  0,     0,  0, LZ5_compress_HC      }, // level 5
-    {   LZ5_WINDOWLOG_BIG,            0,          12,   0,     0,  0,     0,  0, LZ5_compress_nochain }, // level 6
-    {   LZ5_WINDOWLOG_BIG,            0, LZ5_HASHLOG,   0,     0,  0,     0,  0, LZ5_compress_nochain }, // level 7
-    {   LZ5_WINDOWLOG_BIG, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     4,  0,     0,  0, LZ5_compress_HC      }, // level 8
-    {   LZ5_WINDOWLOG_BIG, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     8,  0,     0,  0, LZ5_compress_HC      }, // level 9
-    {   LZ5_WINDOWLOG_BIG, LZ5_CHAINLOG, LZ5_HASHLOG,   0,    16,  0,     0,  0, LZ5_compress_HC      }, // level 10
+    {                   0,            0,           0,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 0 - never used
+    { LZ5_WINDOWLOG_SMALL,            0,          12,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 1
+    { LZ5_WINDOWLOG_SMALL,            0, LZ5_HASHLOG,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 2
+    { LZ5_WINDOWLOG_SMALL, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     4,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 3
+    { LZ5_WINDOWLOG_SMALL, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     8,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 4
+    { LZ5_WINDOWLOG_SMALL, LZ5_CHAINLOG, LZ5_HASHLOG,   0,    16,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 5
+    {   LZ5_WINDOWLOG_BIG,            0,          12,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 6
+    {   LZ5_WINDOWLOG_BIG,            0, LZ5_HASHLOG,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 7
+    {   LZ5_WINDOWLOG_BIG, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     4,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 8
+    {   LZ5_WINDOWLOG_BIG, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     8,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 9
+    {   LZ5_WINDOWLOG_BIG, LZ5_CHAINLOG, LZ5_HASHLOG,   0,    16,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 10
 };
 
 
@@ -160,7 +158,7 @@ static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1] =
 #  endif   /* __STDC_VERSION__ */
 #endif  /* _MSC_VER */
 
-/* LZ5_GCC_VERSION is defined into lz5.h */
+/* LZ5_GCC_VERSION is defined into lz5_compress.h */
 #if (LZ5_GCC_VERSION >= 302) || (__INTEL_COMPILER >= 800) || defined(__clang__)
 #  define expect(expr,value)    (__builtin_expect ((expr),(value)) )
 #else
