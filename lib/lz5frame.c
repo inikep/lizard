@@ -28,7 +28,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 You can contact the author at :
-- LZ5 homepage : http://github.com/inikep/lz5
 - LZ5 source repository : https://github.com/inikep/lz5
 */
 
