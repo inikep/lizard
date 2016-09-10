@@ -81,9 +81,9 @@ FORCE_INLINE int LZ5_decompress_generic(
 
     params = LZ5_defaultParameters[compressionLevel];
     if (params.decompressType == LZ5_coderwords_LZ4)
-        return LZ5_decompress_LZ4(source+1, dest, inputSize-1, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
+        return LZ5_decompress_LZ4(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
 
-    return LZ5_decompress_LZ4(source+1, dest, inputSize-1, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
+    return LZ5_decompress_LZ4(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
 }
 
 

@@ -37,7 +37,9 @@ FORCE_INLINE int LZ5_decompress_LZ4(
     const int safeDecode = (endOnInput==endOnInputSize);
     const int checkOffset = ((safeDecode) && (dictSize < (int)(LZ5_DICT_SIZE)));
     LZ5_parameters params = LZ5_defaultParameters[compressionLevel];
-    
+
+    *ip++; // skip compression level
+
     /* Special cases */
     if ((partialDecoding) && (oexit > oend-MFLIMIT)) oexit = oend-MFLIMIT;                        /* targetOutputSize too high => decode everything */
     if ((endOnInput) && (unlikely(outputSize==0))) return ((inputSize==1) && (*ip==0)) ? 0 : -1;  /* Empty output buffer */
