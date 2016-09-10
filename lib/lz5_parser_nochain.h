@@ -1,3 +1,5 @@
+#define LZ5_NOCHAIN_MIN_OFFSET 8
+
 /**************************************
 *  Hash Functions
 **************************************/
@@ -102,6 +104,9 @@ FORCE_INLINE int LZ5_compress_nochain(
 
                 if (matchIndex >= dictLimit) {
                     match = base + matchIndex;
+#if LZ5_NOCHAIN_MIN_OFFSET > 0
+                    if ((U32)(ip - match) >= LZ5_NOCHAIN_MIN_OFFSET)
+#endif
                     if (MEM_read32(match) == MEM_read32(ip))
                     {
                         int back = 0;
@@ -115,6 +120,9 @@ FORCE_INLINE int LZ5_compress_nochain(
                     }
                 } else {
                     match = dictBase + matchIndex;
+#if LZ5_NOCHAIN_MIN_OFFSET > 0
+                    if ((U32)(ip - (base + matchIndex)) >= LZ5_NOCHAIN_MIN_OFFSET)
+#endif
                     if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
                     if (MEM_read32(match) == MEM_read32(ip)) {
                         const U32 newLowLimit = (lowLimit + maxDistance >= (U32)(ip-base)) ? lowLimit : (U32)(ip - base) - maxDistance;
@@ -151,6 +159,9 @@ _next_match:
         {
             if (matchIndex >= dictLimit) {
                 match = base + matchIndex;
+#if LZ5_NOCHAIN_MIN_OFFSET > 0
+                if ((U32)(ip - match) >= LZ5_NOCHAIN_MIN_OFFSET)
+#endif
                 if (MEM_read32(match) == MEM_read32(ip))
                 {
                     matchLength = LZ5_count(ip+MINMATCH, match+MINMATCH, matchlimit);
@@ -158,6 +169,9 @@ _next_match:
                 }
             } else {
                 match = dictBase + matchIndex;
+#if LZ5_NOCHAIN_MIN_OFFSET > 0
+                if ((U32)(ip - (base + matchIndex)) >= LZ5_NOCHAIN_MIN_OFFSET)
+#endif
                 if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
                 if (MEM_read32(match) == MEM_read32(ip)) {
                     matchLength = LZ5_count_2segments(ip+MINMATCH, match+MINMATCH, matchlimit, dictEnd, lowPrefixPtr);

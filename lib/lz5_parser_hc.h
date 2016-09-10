@@ -1,3 +1,4 @@
+#define LZ5_HC_MIN_OFFSET 8
 #define OPTIMAL_ML (int)((ML_MASK_LZ4-1)+MINMATCH)
 
 /* Update chains up to ip (excluded) */
@@ -53,6 +54,9 @@ FORCE_INLINE int LZ5_InsertAndFindBestMatch (LZ5_stream_t* ctx,   /* Index table
         nbAttempts--;
         if (matchIndex >= dictLimit) {
             match = base + matchIndex;
+#if LZ5_HC_MIN_OFFSET > 0
+            if ((U32)(ip - match) >= LZ5_HC_MIN_OFFSET)
+#endif
             if (*(match+ml) == *(ip+ml)
                 && (MEM_read32(match) == MEM_read32(ip)))
             {
@@ -62,6 +66,9 @@ FORCE_INLINE int LZ5_InsertAndFindBestMatch (LZ5_stream_t* ctx,   /* Index table
         } else {
             match = dictBase + matchIndex;
 //            fprintf(stderr, "dictBase[%p]+matchIndex[%d]=match[%p] dictLimit=%d base=%p ip=%p iLimit=%p off=%d\n", dictBase, matchIndex, match, dictLimit, base, ip, iLimit, (U32)(ip-match));
+#if LZ5_HC_MIN_OFFSET > 0
+            if ((U32)(ip - (base + matchIndex)) >= LZ5_HC_MIN_OFFSET)
+#endif
             if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
             if (MEM_read32(match) == MEM_read32(ip)) {
 #if 1
@@ -117,42 +124,48 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatch (
     while ((matchIndex>=lowLimit) && (nbAttempts)) {
         nbAttempts--;
         if (matchIndex >= dictLimit) {
-            const BYTE* matchPtr = base + matchIndex;
-            if (*(iLowLimit + longest) == *(matchPtr - LLdelta + longest)) {
-                if (MEM_read32(matchPtr) == MEM_read32(ip)) {
-                    int mlt = MINMATCH + LZ5_count(ip+MINMATCH, matchPtr+MINMATCH, iHighLimit);
+            const BYTE* match = base + matchIndex;
+#if LZ5_HC_MIN_OFFSET > 0
+            if ((U32)(ip - match) >= LZ5_HC_MIN_OFFSET)
+#endif
+            if (*(iLowLimit + longest) == *(match - LLdelta + longest)) {
+                if (MEM_read32(match) == MEM_read32(ip)) {
+                    int mlt = MINMATCH + LZ5_count(ip+MINMATCH, match+MINMATCH, iHighLimit);
                     int back = 0;
 
                     while ((ip+back > iLowLimit)
-                           && (matchPtr+back > lowPrefixPtr)
-                           && (ip[back-1] == matchPtr[back-1]))
+                           && (match+back > lowPrefixPtr)
+                           && (ip[back-1] == match[back-1]))
                             back--;
 
                     mlt -= back;
 
                     if (mlt > longest) {
                         longest = (int)mlt;
-                        *matchpos = matchPtr+back;
+                        *matchpos = match+back;
                         *startpos = ip+back;
                     }
                 }
             }
         } else {
-            const BYTE* matchPtr = dictBase + matchIndex;
+            const BYTE* match = dictBase + matchIndex;
+#if LZ5_HC_MIN_OFFSET > 0
+            if ((U32)(ip - (base + matchIndex)) >= LZ5_HC_MIN_OFFSET)
+#endif
             if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
-            if (MEM_read32(matchPtr) == MEM_read32(ip)) {
+            if (MEM_read32(match) == MEM_read32(ip)) {
                 int back=0;
 #if 1
-                size_t mlt = LZ5_count_2segments(ip+MINMATCH, matchPtr+MINMATCH, iHighLimit, dictEnd, lowPrefixPtr) + MINMATCH;
+                size_t mlt = LZ5_count_2segments(ip+MINMATCH, match+MINMATCH, iHighLimit, dictEnd, lowPrefixPtr) + MINMATCH;
 #else
                 size_t mlt;
                 const BYTE* vLimit = ip + (dictLimit - matchIndex);
                 if (vLimit > iHighLimit) vLimit = iHighLimit;
-                mlt = LZ5_count(ip+MINMATCH, matchPtr+MINMATCH, vLimit) + MINMATCH;
+                mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, vLimit) + MINMATCH;
                 if ((ip+mlt == vLimit) && (vLimit < iHighLimit))
                     mlt += LZ5_count(ip+mlt, base+dictLimit, iHighLimit);
 #endif
-                while ((ip+back > iLowLimit) && (matchIndex+back > lowLimit) && (ip[back-1] == matchPtr[back-1])) back--;
+                while ((ip+back > iLowLimit) && (matchIndex+back > lowLimit) && (ip[back-1] == match[back-1])) back--;
                 mlt -= back;
                 if ((int)mlt > longest) { longest = (int)mlt; *matchpos = base + matchIndex + back; *startpos = ip+back; }
             }
