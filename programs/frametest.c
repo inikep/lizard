@@ -1,6 +1,6 @@
 /*
     frameTest - test tool for lz5frame
-    Copyright (C) Yann Collet 2014-2015
+    Copyright (C) Yann Collet 2014-2016
 
     GPL v2 License
 
@@ -19,11 +19,11 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     You can contact the author at :
+    - LZ5 homepage : http://github.com/inikep/lz5
     - LZ5 source repository : https://github.com/inikep/lz5
-    - LZ5 public forum : https://groups.google.com/forum/#!forum/lz5c
 */
 
-/**************************************
+/*-************************************
 *  Compiler specific
 **************************************/
 #ifdef _MSC_VER    /* Visual Studio */
@@ -31,31 +31,21 @@
 #  pragma warning(disable : 4146)        /* disable: C4146: minus unsigned expression */
 #endif
 
-/* S_ISREG & gettimeofday() are not supported by MSVC */
-#if defined(_MSC_VER) || defined(_WIN32)
-#  define FUZ_LEGACY_TIMER 1
-#endif
 
-
-/**************************************
+/*-************************************
 *  Includes
 **************************************/
 #include <stdlib.h>     /* malloc, free */
 #include <stdio.h>      /* fprintf */
 #include <string.h>     /* strcmp */
-#include "lz5.h"        // LZ5_VERSION
+#include <time.h>       /* clock_t, clock(), CLOCKS_PER_SEC */
 #include "lz5frame_static.h"
+#include "lz5.h"        /* LZ5_VERSION_STRING */
+#define XXH_STATIC_LINKING_ONLY
 #include "xxhash.h"     /* XXH64 */
 
-/* Use ftime() if gettimeofday() is not available on your target */
-#if defined(FUZ_LEGACY_TIMER)
-#  include <sys/timeb.h>   /* timeb, ftime */
-#else
-#  include <sys/time.h>    /* gettimeofday */
-#endif
 
-
-/**************************************
+/*-************************************
 *  Basic Types
 **************************************/
 #if defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)   /* C99 */
@@ -85,10 +75,9 @@ static void FUZ_writeLE32 (void* dstVoidPtr, U32 value32)
 }
 
 
-/**************************************
+/*-************************************
 *  Constants
 **************************************/
-
 #define LZ5F_MAGIC_SKIPPABLE_START 0x184D2A50U
 
 #define KB *(1U<<10)
@@ -103,20 +92,20 @@ static const U32 prime2 = 2246822519U;
 
 
 
-/**************************************
+/*-************************************
 *  Macros
 **************************************/
 #define DISPLAY(...)          fprintf(stderr, __VA_ARGS__)
 #define DISPLAYLEVEL(l, ...)  if (displayLevel>=l) { DISPLAY(__VA_ARGS__); }
 #define DISPLAYUPDATE(l, ...) if (displayLevel>=l) { \
-            if ((FUZ_GetMilliSpan(g_time) > refreshRate) || (displayLevel>=4)) \
-            { g_time = FUZ_GetMilliStart(); DISPLAY(__VA_ARGS__); \
+            if ((FUZ_GetClockSpan(g_clockTime) > refreshRate) || (displayLevel>=4)) \
+            { g_clockTime = clock(); DISPLAY(__VA_ARGS__); \
             if (displayLevel>=4) fflush(stdout); } }
-static const U32 refreshRate = 150;
-static U32 g_time = 0;
+static const clock_t refreshRate = CLOCKS_PER_SEC / 6;
+static clock_t g_clockTime = 0;
 
 
-/*****************************************
+/*-***************************************
 *  Local Parameters
 *****************************************/
 static U32 no_prompt = 0;
@@ -125,45 +114,16 @@ static U32 displayLevel = 2;
 static U32 pause = 0;
 
 
-/*********************************************************
+/*-*******************************************************
 *  Fuzzer functions
 *********************************************************/
-#if defined(FUZ_LEGACY_TIMER)
-
-static U32 FUZ_GetMilliStart(void)
+static clock_t FUZ_GetClockSpan(clock_t clockStart)
 {
-    struct timeb tb;
-    U32 nCount;
-    ftime( &tb );
-    nCount = (U32) (((tb.time & 0xFFFFF) * 1000) +  tb.millitm);
-    return nCount;
-}
-
-#else
-
-static U32 FUZ_GetMilliStart(void)
-{
-    struct timeval tv;
-    U32 nCount;
-    gettimeofday(&tv, NULL);
-    nCount = (U32) (tv.tv_usec/1000 + (tv.tv_sec & 0xfffff) * 1000);
-    return nCount;
-}
-
-#endif
-
-
-static U32 FUZ_GetMilliSpan(U32 nTimeStart)
-{
-    U32 nCurrent = FUZ_GetMilliStart();
-    U32 nSpan = nCurrent - nTimeStart;
-    if (nTimeStart > nCurrent)
-        nSpan += 0x100000 * 1000;
-    return nSpan;
+    return clock() - clockStart;   /* works even if overflow; max span ~ 30 mn */
 }
 
 
-#  define FUZ_rotl32(x,r) ((x << r) | (x >> (32 - r)))
+#define FUZ_rotl32(x,r) ((x << r) | (x >> (32 - r)))
 unsigned int FUZ_rand(unsigned int* src)
 {
     U32 rand32 = *src;
@@ -186,11 +146,9 @@ static void FUZ_fillCompressibleNoiseBuffer(void* buffer, unsigned bufferSize, d
     /* First Byte */
     BBuffer[pos++] = (BYTE)(FUZ_rand(seed));
 
-    while (pos < bufferSize)
-    {
+    while (pos < bufferSize) {
         /* Select : Literal (noise) or copy (within 64K) */
-        if (FUZ_RAND15BITS < P32)
-        {
+        if (FUZ_RAND15BITS < P32) {
             /* Copy (within 64K) */
             unsigned match, end;
             unsigned length = FUZ_RANDLENGTH + 4;
@@ -200,9 +158,7 @@ static void FUZ_fillCompressibleNoiseBuffer(void* buffer, unsigned bufferSize, d
             match = pos - offset;
             end = pos + length;
             while (pos < end) BBuffer[pos++] = BBuffer[match++];
-        }
-        else
-        {
+        } else {
             /* Literal (noise) */
             unsigned end;
             unsigned length = FUZ_RANDLENGTH;
@@ -218,11 +174,7 @@ static unsigned FUZ_highbit(U32 v32)
 {
     unsigned nbBits = 0;
     if (v32==0) return 0;
-    while (v32)
-    {
-        v32 >>= 1;
-        nbBits ++;
-    }
+    while (v32) v32 >>= 1, nbBits ++;
     return nbBits;
 }
 
@@ -248,16 +200,37 @@ int basicTests(U32 seed, double compressibility)
     FUZ_fillCompressibleNoiseBuffer(CNBuffer, COMPRESSIBLE_NOISE_LENGTH, compressibility, &randState);
     crcOrig = XXH64(CNBuffer, COMPRESSIBLE_NOISE_LENGTH, 1);
 
+    /* Special case : null-content frame */
+    testSize = 0;
+    DISPLAYLEVEL(3, "LZ5F_compressFrame, compress null content : \n");
+    cSize = LZ5F_compressFrame(compressedBuffer, LZ5F_compressFrameBound(testSize, NULL), CNBuffer, testSize, NULL);
+    if (LZ5F_isError(cSize)) goto _output_error;
+    DISPLAYLEVEL(3, "Compressed null content into a %i bytes frame \n", (int)cSize);
+
+    DISPLAYLEVEL(3, "LZ5F_createDecompressionContext \n");
+    { LZ5F_errorCode_t const errorCode = LZ5F_createDecompressionContext(&dCtx, LZ5F_VERSION);
+      if (LZ5F_isError(errorCode)) goto _output_error; }
+
+    DISPLAYLEVEL(3, "LZ5F_getFrameInfo on null-content frame (#157) \n");
+    {   size_t avail_in = cSize;
+        LZ5F_frameInfo_t frame_info;
+        LZ5F_errorCode_t const errorCode = LZ5F_getFrameInfo(dCtx, &frame_info, compressedBuffer, &avail_in);
+        if (LZ5F_isError(errorCode)) goto _output_error;
+    }
+
+    DISPLAYLEVEL(3, "LZ5F_freeDecompressionContext \n");
+    { LZ5F_errorCode_t const errorCode = LZ5F_freeDecompressionContext(dCtx);
+      if (LZ5F_isError(errorCode)) goto _output_error; }
+
     /* Trivial tests : one-step frame */
     testSize = COMPRESSIBLE_NOISE_LENGTH;
-    DISPLAYLEVEL(3, "Using NULL preferences : \n");
+    DISPLAYLEVEL(3, "LZ5F_compressFrame, using default preferences : \n");
     cSize = LZ5F_compressFrame(compressedBuffer, LZ5F_compressFrameBound(testSize, NULL), CNBuffer, testSize, NULL);
     if (LZ5F_isError(cSize)) goto _output_error;
     DISPLAYLEVEL(3, "Compressed %i bytes into a %i bytes frame \n", (int)testSize, (int)cSize);
 
     DISPLAYLEVEL(3, "Decompression test : \n");
-    {
-        size_t decodedBufferSize = COMPRESSIBLE_NOISE_LENGTH;
+    {   size_t decodedBufferSize = COMPRESSIBLE_NOISE_LENGTH;
         size_t compressedBufferSize = cSize;
         BYTE* op = (BYTE*)decodedBuffer;
         BYTE* const oend = (BYTE*)decodedBuffer + COMPRESSIBLE_NOISE_LENGTH;
@@ -275,25 +248,24 @@ int basicTests(U32 seed, double compressibility)
         if (crcDest != crcOrig) goto _output_error;
         DISPLAYLEVEL(3, "Regenerated %i bytes \n", (int)decodedBufferSize);
 
-        DISPLAYLEVEL(4, "Reusing decompression context \n");
-        {
-            size_t iSize = compressedBufferSize - 4;
+        DISPLAYLEVEL(3, "Reusing decompression context \n");
+        {   size_t iSize = compressedBufferSize - 4;
             const BYTE* cBuff = (const BYTE*) compressedBuffer;
+            size_t decResult;
             DISPLAYLEVEL(3, "Missing last 4 bytes : ");
-            errorCode = LZ5F_decompress(dCtx, decodedBuffer, &decodedBufferSize, cBuff, &iSize, NULL);
-            if (LZ5F_isError(errorCode)) goto _output_error;
-            if (!errorCode) goto _output_error;
-            DISPLAYLEVEL(3, "indeed, request %u bytes \n", (unsigned)errorCode);
+            decResult = LZ5F_decompress(dCtx, decodedBuffer, &decodedBufferSize, cBuff, &iSize, NULL);
+            if (LZ5F_isError(decResult)) goto _output_error;
+            if (!decResult) goto _output_error;   /* not finished */
+            DISPLAYLEVEL(3, "indeed, request %u bytes \n", (unsigned)decResult);
             cBuff += iSize;
-            iSize = errorCode;
-            errorCode = LZ5F_decompress(dCtx, decodedBuffer, &decodedBufferSize, cBuff, &iSize, NULL);
-            if (errorCode != 0) goto _output_error;
+            iSize = decResult;
+            decResult = LZ5F_decompress(dCtx, decodedBuffer, &decodedBufferSize, cBuff, &iSize, NULL);
+            if (decResult != 0) goto _output_error;   /* should finish now */
             crcDest = XXH64(decodedBuffer, COMPRESSIBLE_NOISE_LENGTH, 1);
             if (crcDest != crcOrig) goto _output_error;
         }
 
-        {
-            size_t oSize = 0;
+        {   size_t oSize = 0;
             size_t iSize = 0;
             LZ5F_frameInfo_t fi;
 
@@ -323,8 +295,7 @@ int basicTests(U32 seed, double compressibility)
         }
 
         DISPLAYLEVEL(3, "Byte after byte : \n");
-        while (ip < iend)
-        {
+        while (ip < iend) {
             size_t oSize = oend-op;
             size_t iSize = 1;
             errorCode = LZ5F_decompress(dCtx, op, &oSize, ip, &iSize, NULL);
@@ -361,8 +332,7 @@ int basicTests(U32 seed, double compressibility)
     DISPLAYLEVEL(3, "Compressed %i bytes into a %i bytes frame \n", (int)testSize, (int)cSize);
 
     DISPLAYLEVEL(3, "Decompression test : \n");
-    {
-        size_t decodedBufferSize = COMPRESSIBLE_NOISE_LENGTH;
+    {   size_t decodedBufferSize = COMPRESSIBLE_NOISE_LENGTH;
         unsigned maxBits = FUZ_highbit((U32)decodedBufferSize);
         BYTE* op = (BYTE*)decodedBuffer;
         BYTE* const oend = (BYTE*)decodedBuffer + COMPRESSIBLE_NOISE_LENGTH;
@@ -374,8 +344,7 @@ int basicTests(U32 seed, double compressibility)
         if (LZ5F_isError(errorCode)) goto _output_error;
 
         DISPLAYLEVEL(3, "random segment sizes : \n");
-        while (ip < iend)
-        {
+        while (ip < iend) {
             unsigned nbBits = FUZ_rand(&randState) % maxBits;
             size_t iSize = (FUZ_rand(&randState) & ((1<<nbBits)-1)) + 1;
             size_t oSize = oend-op;
@@ -426,8 +395,7 @@ int basicTests(U32 seed, double compressibility)
     if (LZ5F_isError(cSize)) goto _output_error;
     DISPLAYLEVEL(3, "Compressed %i bytes into a %i bytes frame \n", (int)testSize, (int)cSize);
 
-    {
-        size_t errorCode;
+    {   size_t errorCode;
         BYTE* const ostart = (BYTE*)compressedBuffer;
         BYTE* op = ostart;
         errorCode = LZ5F_createCompressionContext(&cctx, LZ5F_VERSION);
@@ -478,8 +446,7 @@ int basicTests(U32 seed, double compressibility)
     }
 
     DISPLAYLEVEL(3, "Skippable frame test : \n");
-    {
-        size_t decodedBufferSize = COMPRESSIBLE_NOISE_LENGTH;
+    {   size_t decodedBufferSize = COMPRESSIBLE_NOISE_LENGTH;
         unsigned maxBits = FUZ_highbit((U32)decodedBufferSize);
         BYTE* op = (BYTE*)decodedBuffer;
         BYTE* const oend = (BYTE*)decodedBuffer + COMPRESSIBLE_NOISE_LENGTH;
@@ -494,8 +461,7 @@ int basicTests(U32 seed, double compressibility)
         FUZ_writeLE32(ip+4, (U32)cSize);
 
         DISPLAYLEVEL(3, "random segment sizes : \n");
-        while (ip < iend)
-        {
+        while (ip < iend) {
             unsigned nbBits = FUZ_rand(&randState) % maxBits;
             size_t iSize = (FUZ_rand(&randState) & ((1<<nbBits)-1)) + 1;
             size_t oSize = oend-op;
@@ -515,8 +481,7 @@ int basicTests(U32 seed, double compressibility)
         FUZ_writeLE32(ip+4, 0);
         iend = ip+8;
 
-        while (ip < iend)
-        {
+        while (ip < iend) {
             unsigned nbBits = FUZ_rand(&randState) % maxBits;
             size_t iSize = (FUZ_rand(&randState) & ((1<<nbBits)-1)) + 1;
             size_t oSize = oend-op;
@@ -534,8 +499,7 @@ int basicTests(U32 seed, double compressibility)
         FUZ_writeLE32(ip, LZ5F_MAGIC_SKIPPABLE_START+2);
         FUZ_writeLE32(ip+4, 10);
         iend = ip+18;
-        while (ip < iend)
-        {
+        while (ip < iend) {
             size_t iSize = 10;
             size_t oSize = 10;
             if (iSize > (size_t)(iend-ip)) iSize = iend-ip;
@@ -568,8 +532,7 @@ static void locateBuffDiff(const void* buff1, const void* buff2, size_t size, un
     int p=0;
     const BYTE* b1=(const BYTE*)buff1;
     const BYTE* b2=(const BYTE*)buff2;
-    if (nonContiguous)
-    {
+    if (nonContiguous) {
         DISPLAY("Non-contiguous output test (%i bytes)\n", (int)size);
         return;
     }
@@ -580,7 +543,7 @@ static void locateBuffDiff(const void* buff1, const void* buff2, size_t size, un
 
 static const U32 srcDataLength = 9 MB;  /* needs to be > 2x4MB to test large blocks */
 
-int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressibility, U32 duration)
+int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressibility, U32 duration_s)
 {
     unsigned testResult = 0;
     unsigned testNb = 0;
@@ -591,14 +554,11 @@ int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressi
     LZ5F_decompressionContext_t dCtx = NULL;
     LZ5F_compressionContext_t cCtx = NULL;
     size_t result;
-    const U32 startTime = FUZ_GetMilliStart();
+    clock_t const startClock = clock();
+    clock_t const clockDuration = duration_s * CLOCKS_PER_SEC;
     XXH64_state_t xxh64;
 #   define CHECK(cond, ...) if (cond) { DISPLAY("Error => "); DISPLAY(__VA_ARGS__); \
                             DISPLAY(" (seed %u, test nb %u)  \n", seed, testNb); goto _output_error; }
-
-
-    /* Init */
-    duration *= 1000;
 
     /* Create buffers */
     result = LZ5F_createDecompressionContext(&dCtx, LZ5F_VERSION);
@@ -617,8 +577,7 @@ int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressi
     for (testNb =0; (testNb < startTest); testNb++) (void)FUZ_rand(&coreRand);   // sync randomizer
 
     /* main fuzzer test loop */
-    for ( ; (testNb < nbTests) || (duration > FUZ_GetMilliSpan(startTime)) ; testNb++)
-    {
+    for ( ; (testNb < nbTests) || (clockDuration > FUZ_GetClockSpan(startClock)) ; testNb++) {
         U32 randState = coreRand ^ prime1;
         unsigned BSId   = 4 + (FUZ_rand(&randState) & 3);
         unsigned BMId   = FUZ_rand(&randState) & 1;
@@ -650,21 +609,16 @@ int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressi
         DISPLAYUPDATE(2, "\r%5u   ", testNb);
         crcOrig = XXH64((BYTE*)srcBuffer+srcStart, srcSize, 1);
 
-        if ((FUZ_rand(&randState) & 0xFFF) == 0)
-        {
+        if ((FUZ_rand(&randState) & 0xFFF) == 0) {
             /* create a skippable frame (rare case) */
             BYTE* op = (BYTE*)compressedBuffer;
             FUZ_writeLE32(op, LZ5F_MAGIC_SKIPPABLE_START + (FUZ_rand(&randState) & 15));
             FUZ_writeLE32(op+4, (U32)srcSize);
             cSize = srcSize+8;
-        }
-        else if ((FUZ_rand(&randState) & 0xF) == 2)
-        {
+        } else if ((FUZ_rand(&randState) & 0xF) == 2) {
             cSize = LZ5F_compressFrame(compressedBuffer, LZ5F_compressFrameBound(srcSize, prefsPtr), (char*)srcBuffer + srcStart, srcSize, prefsPtr);
             CHECK(LZ5F_isError(cSize), "LZ5F_compressFrame failed : error %i (%s)", (int)cSize, LZ5F_getErrorName(cSize));
-        }
-        else
-        {
+        } else {
             const BYTE* ip = (const BYTE*)srcBuffer + srcStart;
             const BYTE* const iend = ip + srcSize;
             BYTE* op = (BYTE*)compressedBuffer;
@@ -673,8 +627,7 @@ int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressi
             result = LZ5F_compressBegin(cCtx, op, oend-op, prefsPtr);
             CHECK(LZ5F_isError(result), "Compression header failed (error %i)", (int)result);
             op += result;
-            while (ip < iend)
-            {
+            while (ip < iend) {
                 unsigned nbBitsSeg = FUZ_rand(&randState) % maxBits;
                 size_t iSize = (FUZ_rand(&randState) & ((1<<nbBitsSeg)-1)) + 1;
                 size_t oSize = LZ5F_compressBound(iSize, prefsPtr);
@@ -683,14 +636,13 @@ int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressi
                 cOptions.stableSrc = ((FUZ_rand(&randState) & 3) == 1);
 
                 result = LZ5F_compressUpdate(cCtx, op, oSize, ip, iSize, &cOptions);
-                CHECK(LZ5F_isError(result), "Compression failed (error %i)", (int)result);
+                CHECK(LZ5F_isError(result), "Compression failed (error %i) iSize=%d oSize=%d", (int)result, (int)iSize, (int)oSize);
                 op += result;
                 ip += iSize;
 
-                if (forceFlush)
-                {
+                if (forceFlush) {
                     result = LZ5F_flush(cCtx, op, oend-op, &cOptions);
-                    CHECK(LZ5F_isError(result), "Compression failed (error %i)", (int)result);
+                    CHECK(LZ5F_isError(result), "Compression flush failed (error %i)", (int)result);
                     op += result;
                 }
             }
@@ -700,8 +652,7 @@ int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressi
             cSize = op-(BYTE*)compressedBuffer;
         }
 
-        {
-            const BYTE* ip = (const BYTE*)compressedBuffer;
+        {   const BYTE* ip = (const BYTE*)compressedBuffer;
             const BYTE* const iend = ip + cSize;
             BYTE* op = (BYTE*)decodedBuffer;
             BYTE* const oend = op + srcDataLength;
@@ -711,8 +662,7 @@ int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressi
             nonContiguousDst += FUZ_rand(&randState) & nonContiguousDst;   /* 0=>0; 1=>1,2 */
             XXH64_reset(&xxh64, 1);
             if (maxBits < 3) maxBits = 3;
-            while (ip < iend)
-            {
+            while (ip < iend) {
                 unsigned nbBitsI = (FUZ_rand(&randState) % (maxBits-1)) + 1;
                 unsigned nbBitsO = (FUZ_rand(&randState) % (maxBits)) + 1;
                 size_t iSize = (FUZ_rand(&randState) & ((1<<nbBitsI)-1)) + 1;
@@ -733,8 +683,7 @@ int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressi
                 if (nonContiguousDst==2) op = (BYTE*)decodedBuffer;   /* overwritten destination */
             }
             CHECK(result != 0, "Frame decompression failed (error %i)", (int)result);
-            if (totalOut)   /* otherwise, it's a skippable frame */
-            {
+            if (totalOut) {  /* otherwise, it's a skippable frame */
                 crcDecoded = XXH64_digest(&xxh64);
                 if (crcDecoded != crcOrig) locateBuffDiff((BYTE*)srcBuffer+srcStart, decodedBuffer, srcSize, nonContiguousDst);
                 CHECK(crcDecoded != crcOrig, "Decompression corruption");
@@ -751,8 +700,7 @@ _end:
     free(compressedBuffer);
     free(decodedBuffer);
 
-    if (pause)
-    {
+    if (pause) {
         DISPLAY("press enter to finish \n");
         (void)getchar();
     }
@@ -794,17 +742,14 @@ int main(int argc, char** argv)
 
     /* Check command line */
     programName = argv[0];
-    for(argNb=1; argNb<argc; argNb++)
-    {
+    for(argNb=1; argNb<argc; argNb++) {
         char* argument = argv[argNb];
 
         if(!argument) continue;   /* Protection if argument empty */
 
         /* Decode command (note : aggregated commands are allowed) */
-        if (argument[0]=='-')
-        {
-            if (!strcmp(argument, "--no-prompt"))
-            {
+        if (argument[0]=='-') {
+            if (!strcmp(argument, "--no-prompt")) {
                 no_prompt=1;
                 seedset=1;
                 displayLevel=1;
@@ -812,8 +757,7 @@ int main(int argc, char** argv)
             }
             argument++;
 
-            while (*argument!=0)
-            {
+            while (*argument!=0) {
                 switch(*argument)
                 {
                 case 'h':
@@ -834,8 +778,7 @@ int main(int argc, char** argv)
                 case 'i':
                     argument++;
                     nbTests=0; duration=0;
-                    while ((*argument>='0') && (*argument<='9'))
-                    {
+                    while ((*argument>='0') && (*argument<='9')) {
                         nbTests *= 10;
                         nbTests += *argument - '0';
                         argument++;
@@ -845,8 +788,7 @@ int main(int argc, char** argv)
                 case 'T':
                     argument++;
                     nbTests = 0; duration = 0;
-                    for (;;)
-                    {
+                    for (;;) {
                         switch(*argument)
                         {
                             case 'm': duration *= 60; argument++; continue;
@@ -871,8 +813,7 @@ int main(int argc, char** argv)
                     argument++;
                     seed=0;
                     seedset=1;
-                    while ((*argument>='0') && (*argument<='9'))
-                    {
+                    while ((*argument>='0') && (*argument<='9')) {
                         seed *= 10;
                         seed += *argument - '0';
                         argument++;
@@ -881,8 +822,7 @@ int main(int argc, char** argv)
                 case 't':
                     argument++;
                     testNb=0;
-                    while ((*argument>='0') && (*argument<='9'))
-                    {
+                    while ((*argument>='0') && (*argument<='9')) {
                         testNb *= 10;
                         testNb += *argument - '0';
                         argument++;
@@ -891,8 +831,7 @@ int main(int argc, char** argv)
                 case 'P':   /* compressibility % */
                     argument++;
                     proba=0;
-                    while ((*argument>='0') && (*argument<='9'))
-                    {
+                    while ((*argument>='0') && (*argument<='9')) {
                         proba *= 10;
                         proba += *argument - '0';
                         argument++;
@@ -909,9 +848,13 @@ int main(int argc, char** argv)
     }
 
     /* Get Seed */
-    printf("Starting lz5frame tester (%i-bits, %s)\n", (int)(sizeof(size_t)*8), LZ5_VERSION);
+    printf("Starting lz5frame tester (%i-bits, %s)\n", (int)(sizeof(size_t)*8), LZ5_VERSION_STRING);
 
-    if (!seedset) seed = FUZ_GetMilliStart() % 10000;
+    if (!seedset) {
+        time_t const t = time(NULL);
+        U32 const h = XXH32(&t, sizeof(t), 1);
+        seed = h % 10000;
+    }
     printf("Seed = %u\n", seed);
     if (proba!=FUZ_COMPRESSIBILITY_DEFAULT) printf("Compressibility : %i%%\n", proba);
 

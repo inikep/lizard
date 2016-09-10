@@ -1,2 +1,14 @@
-/lz4
-/*.exe
+# local binary (Makefile)
+lz5
+lz5c32
+datagen
+frametest
+frametest32
+fullbench
+fullbench32
+fuzzer
+fuzzer32
+*.exe
+
+# tests files
+tmp*

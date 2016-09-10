@@ -20,7 +20,6 @@
 
   You can contact the author at :
   - LZ5 source repository : https://github.com/inikep/lz5
-  - LZ5 public forum : https://groups.google.com/forum/#!forum/lz5c
 */
 /*
   Note : this is stand-alone program.
@@ -42,27 +41,9 @@
 #define _LARGE_FILES           /* Large file support on 32-bits AIX */
 #define _FILE_OFFSET_BITS 64   /* Large file support on 32-bits unix */
 
-
-/******************************
-*  OS-specific Includes
-******************************/
-#if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(_WIN32)
-#  if defined(_POSIX_C_SOURCE) || defined(_POSIX_SOURCE) || defined(_MSC_VER)
-#    include <fcntl.h>   /* _O_BINARY */
-#    include <io.h>      /* _setmode, _fileno, _get_osfhandle */
-#    include <windows.h> /* DeviceIoControl, HANDLE, FSCTL_SET_SPARSE */
-#    define SET_BINARY_MODE(file) { int unused=_setmode(_fileno(file), _O_BINARY); (void)unused; }
-#    define SET_SPARSE_FILE_MODE(file) { DWORD dw; DeviceIoControl((HANDLE) _get_osfhandle(_fileno(file)), FSCTL_SET_SPARSE, 0, 0, 0, 0, &dw, 0); }
-#  else
-#    define _POSIX_SOURCE 1          /* enable %llu with MinGW on Windows */ 
-#    define SET_BINARY_MODE(file)
-#    define SET_SPARSE_FILE_MODE(file)
-#  endif
-#else
-#  define SET_BINARY_MODE(file)
-#  define SET_SPARSE_FILE_MODE(file)
+#if defined(__MINGW32__) && !defined(_POSIX_SOURCE)
+#  define _POSIX_SOURCE 1          /* disable %llu warnings with MinGW on Windows */
 #endif
-
 
 /*****************************
 *  Includes
@@ -75,10 +56,31 @@
 #include <sys/stat.h>  /* stat64 */
 #include "lz5io.h"
 #include "lz5.h"       /* still required for legacy format */
-#include "lz5hc.h"     /* still required for legacy format */
 #include "lz5frame.h"
 
 
+/******************************
+*  OS-specific Includes
+******************************/
+#if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(_WIN32)
+#  include <fcntl.h>   /* _O_BINARY */
+#  include <io.h>      /* _setmode, _fileno, _get_osfhandle */
+#  if !defined(__DJGPP__)
+#    define SET_BINARY_MODE(file) { int unused=_setmode(_fileno(file), _O_BINARY); (void)unused; }
+#    include <windows.h> /* DeviceIoControl, HANDLE, FSCTL_SET_SPARSE */
+#    include <WinIoCtl.h> /* FSCTL_SET_SPARSE */
+#    define SET_SPARSE_FILE_MODE(file) { DWORD dw; DeviceIoControl((HANDLE) _get_osfhandle(_fileno(file)), FSCTL_SET_SPARSE, 0, 0, 0, 0, &dw, 0); }
+#    if defined(_MSC_VER) && (_MSC_VER >= 1400)  /* Avoid MSVC fseek()'s 2GiB barrier */
+#      define fseek _fseeki64
+#    endif
+#  else
+#    define SET_BINARY_MODE(file) setmode(fileno(file), O_BINARY)
+#    define SET_SPARSE_FILE_MODE(file)
+#  endif
+#else
+#  define SET_BINARY_MODE(file)
+#  define SET_SPARSE_FILE_MODE(file)
+#endif
 
 #if !defined(S_ISREG)
 #  define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
@@ -99,9 +101,9 @@
 #define _8BITS 0xFF
 
 #define MAGICNUMBER_SIZE    4
-#define LZ5IO_MAGICNUMBER   0x184D2205U
-#define LZ5IO_SKIPPABLE0    0x184D2A50U
-#define LZ5IO_SKIPPABLEMASK 0xFFFFFFF0U
+#define LZ5IO_MAGICNUMBER   0x184D2205
+#define LZ5IO_SKIPPABLE0    0x184D2A50
+#define LZ5IO_SKIPPABLEMASK 0xFFFFFFF0
 
 #define CACHELINE 64
 #define MIN_STREAM_BUFSIZE (192 KB)
@@ -183,7 +185,7 @@ int LZ5IO_setBlockSizeID(int bsid)
     if ((bsid < minBlockSizeID) || (bsid > maxBlockSizeID)) return -1;
     g_blockSizeId = bsid;
     return blockSizeTable[g_blockSizeId-minBlockSizeID];
-}
+} 
 
 int LZ5IO_setBlockMode(LZ5IO_blockMode_t blockMode)
 {
@@ -252,7 +254,8 @@ static unsigned long long LZ5IO_GetFileSize(const char* infilename)
 ** ********************** LZ5 File / Pipe compression ********************* **
 ** ************************************************************************ */
 
-static int LZ5IO_GetBlockSize_FromBlockId (int id) { /*printf("LZ5IO_GetBlockSize_FromBlockId %d=%d\n", id, (1 << (14 + (2 * id)))); */ return (1 << (14 + (2 * id))); }
+static int LZ5IO_GetBlockSize_FromBlockId (int id) { return (1 << (14 + (2 * id))); }
+//static int LZ5IO_GetBlockSize_FromBlockId (int id) { return (1 << (8 + (2 * id))); }
 static int LZ5IO_isSkippableMagicNumber(unsigned int magic) { return (magic & LZ5IO_SKIPPABLEMASK) == LZ5IO_SKIPPABLE0; }
 
 
@@ -315,11 +318,6 @@ static int LZ5IO_getFiles(const char* input_filename, const char* output_filenam
 }
 
 
-
-/***************************************
-*   Legacy Compression
-***************************************/
-
 /* unoptimized version; solves endianess & alignment issues */
 static void LZ5IO_writeLE32 (void* p, unsigned value32)
 {
@@ -329,7 +327,6 @@ static void LZ5IO_writeLE32 (void* p, unsigned value32)
     dstPtr[2] = (unsigned char)(value32 >> 16);
     dstPtr[3] = (unsigned char)(value32 >> 24);
 }
-
 
 
 
@@ -422,14 +419,14 @@ static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName,
     {
         /* Compress in single pass */
         size_t cSize = LZ5F_compressFrame(dstBuffer, dstBufferSize, srcBuffer, readSize, &prefs);
-        if (LZ5F_isError(cSize)) EXM_THROW(34, "Compression failed : %s", LZ5F_getErrorName(cSize));
+        if (LZ5F_isError(cSize)) EXM_THROW(31, "Compression failed : %s", LZ5F_getErrorName(cSize));
         compressedfilesize += cSize;
         DISPLAYUPDATE(2, "\rRead : %u MB   ==> %.2f%%   ",
                       (unsigned)(filesize>>20), (double)compressedfilesize/(filesize+!filesize)*100);   /* avoid division by zero */
 
         /* Write Block */
         sizeCheck = fwrite(dstBuffer, 1, cSize, dstFile);
-        if (sizeCheck!=cSize) EXM_THROW(35, "Write error : cannot write compressed block");
+        if (sizeCheck!=cSize) EXM_THROW(32, "Write error : cannot write compressed block");
     }
 
     else
@@ -646,7 +643,6 @@ static void LZ5IO_fwriteSparseEnd(FILE* file, unsigned storedSkips)
 }
 
 
-
 typedef struct {
     void*  srcBuffer;
     size_t srcBufferSize;
@@ -656,6 +652,8 @@ typedef struct {
 } dRess_t;
 
 static const size_t LZ5IO_dBufferSize = 64 KB;
+static unsigned g_magicRead = 0;
+
 
 static dRess_t LZ5IO_createDResources(void)
 {
@@ -768,7 +766,6 @@ static unsigned long long LZ5IO_passThrough(FILE* finput, FILE* foutput, unsigne
 
 
 #define ENDOFSTREAM ((unsigned long long)-1)
-static unsigned g_magicRead = 0;
 static unsigned long long selectDecoder(dRess_t ress, FILE* finput, FILE* foutput)
 {
     unsigned char MNstore[MAGICNUMBER_SIZE];
