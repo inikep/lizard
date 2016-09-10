@@ -49,28 +49,28 @@ default: all
 
 all: printVersion doubleBuffer ringBuffer ringBufferHC lineCompress frameCompress
 
-printVersion: $(LZ5DIR)/lz5.c printVersion.c
+printVersion: $(LZ5DIR)/lz5_compress.c printVersion.c
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-doubleBuffer: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5.c blockStreaming_doubleBuffer.c
+doubleBuffer: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c blockStreaming_doubleBuffer.c
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-ringBuffer  : $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5.c blockStreaming_ringBuffer.c
+ringBuffer  : $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c blockStreaming_ringBuffer.c
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-ringBufferHC: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5.c HCStreaming_ringBuffer.c
+ringBufferHC: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c HCStreaming_ringBuffer.c
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-lineCompress: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5.c blockStreaming_lineByLine.c
+lineCompress: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c blockStreaming_lineByLine.c
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
 frameCompress: frameCompress.c
 	$(CC)      $(FLAGS) $^ -o $@$(EXT) -L$(LZ5DIR) -llz5
 
-compressFunctions: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5.c compress_functions.c
+compressFunctions: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c compress_functions.c
 	$(CC)      $(FLAGS) $^ -o $@$(EXT) -lrt
 
-simpleBuffer: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5.c simple_buffer.c
+simpleBuffer: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c simple_buffer.c
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
 test : all

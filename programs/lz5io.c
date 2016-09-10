@@ -55,7 +55,7 @@
 #include <sys/types.h> /* stat64 */
 #include <sys/stat.h>  /* stat64 */
 #include "lz5io.h"
-#include "lz5.h"       /* still required for legacy format */
+#include "lz5_compress.h"       /* still required for legacy format */
 #include "lz5frame.h"
 
 

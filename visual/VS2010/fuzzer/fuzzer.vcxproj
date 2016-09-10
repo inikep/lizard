@@ -152,13 +152,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\lib\lz5.c" />
+    <ClCompile Include="..\..\..\lib\lz5_compress.c" />
     <ClCompile Include="..\..\..\lib\lz5_decompress.c" />
     <ClCompile Include="..\..\..\lib\xxhash.c" />
     <ClCompile Include="..\..\..\programs\fuzzer.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\lib\lz5.h" />
+    <ClInclude Include="..\..\..\lib\lz5_compress.h" />
     <ClInclude Include="..\..\..\lib\lz5_common.h" />
     <ClInclude Include="..\..\..\lib\xxhash.h" />
   </ItemGroup>

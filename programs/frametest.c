@@ -39,7 +39,7 @@
 #include <string.h>     /* strcmp */
 #include <time.h>       /* clock_t, clock(), CLOCKS_PER_SEC */
 #include "lz5frame_static.h"
-#include "lz5.h"        /* LZ5_VERSION_STRING */
+#include "lz5_compress.h"        /* LZ5_VERSION_STRING */
 #define XXH_STATIC_LINKING_ONLY
 #include "xxhash.h"     /* XXH64 */
 

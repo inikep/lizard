@@ -3,7 +3,7 @@ LZ5 - Library Files
 
 The __lib__ directory contains several files, but you don't necessarily need them all.
 
-To integrate fast LZ5 compression/decompression into your program, you basically just need "**lz5.c**" and "**lz5.h**".
+To integrate fast LZ5 compression/decompression into your program, you basically just need "**lz5_compress.c**" and "**lz5_compress.h**".
 
 For more compression at the cost of compression speed (while preserving decompression speed), use **lz5hc** on top of regular lz5. `lz5hc` only provides compression functions. It also needs `lz5` to compile properly.
 

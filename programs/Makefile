@@ -67,28 +67,28 @@ bins: lz5 fullbench fuzzer frametest datagen
 
 all: bins m32
 
-lz5: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash.o bench.o lz5io.o lz5cli.o
+lz5: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash.o bench.o lz5io.o lz5cli.o
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-lz5c32: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5.c $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash.c bench.c lz5io.c lz5cli.c
+lz5c32: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash.c bench.c lz5io.c lz5cli.c
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
-fullbench  : $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash.o fullbench.c
+fullbench  : $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash.o fullbench.c
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-fullbench32: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5.c $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash.c fullbench.c
+fullbench32: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash.c fullbench.c
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
-fuzzer  : $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5.o $(LZ5DIR)/xxhash.o fuzzer.c
+fuzzer  : $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/xxhash.o fuzzer.c
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-fuzzer32: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5.c $(LZ5DIR)/xxhash.c fuzzer.c
+fuzzer32: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/xxhash.c fuzzer.c
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
-frametest: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/lz5.o $(LZ5DIR)/xxhash.o frametest.c
+frametest: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/xxhash.o frametest.c
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-frametest32: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5frame.c $(LZ5DIR)/lz5.c $(LZ5DIR)/xxhash.c frametest.c
+frametest32: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5frame.c $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/xxhash.c frametest.c
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
 datagen : datagen.o datagencli.c

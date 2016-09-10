@@ -53,7 +53,7 @@
 #include <string.h>      /* strcmp */
 #include <time.h>        /* clock_t, clock(), CLOCKS_PER_SEC */
 
-#include "lz5.h"
+#include "lz5_compress.h"
 #include "lz5_decompress.h"
 #include "lz5_common.h"
 #include "lz5frame.h"

@@ -1,14 +1,14 @@
 /*
  * simple_buffer.c
  * Copyright  : Kyle Harper
- * License    : Follows same licensing as the lz5.c/lz5.h program at any given time.  Currently, BSD 2.
- * Description: Example program to demonstrate the basic usage of the compress/decompress functions within lz5.c/lz5.h.
+ * License    : Follows same licensing as the lz5_compress.c/lz5_compress.h program at any given time.  Currently, BSD 2.
+ * Description: Example program to demonstrate the basic usage of the compress/decompress functions within lz5_compress.c/lz5_compress.h.
  *              The functions you'll likely want are LZ5_compress_Level1 and LZ5_decompress_safe.  Both of these are documented in
- *              the lz5.h header file; I recommend reading them.
+ *              the lz5_compress.h header file; I recommend reading them.
  */
 
 /* Includes, for Power! */
-#include "lz5.h"    // This is all that is required to expose the prototypes for basic compression and decompression.
+#include "lz5_compress.h"    // This is all that is required to expose the prototypes for basic compression and decompression.
 #include "lz5_decompress.h"
 #include <stdio.h>  // For printf()
 #include <string.h> // For memcmp()
@@ -30,7 +30,7 @@ void run_screaming(const char *message, const int code) {
 int main(void) {
   /* Introduction */
   // Below we will have a Compression and Decompression section to demonstrate.  There are a few important notes before we start:
-  //   1) The return codes of LZ5_ functions are important.  Read lz5.h if you're unsure what a given code means.
+  //   1) The return codes of LZ5_ functions are important.  Read lz5_compress.h if you're unsure what a given code means.
   //   2) LZ5 uses char* pointers in all LZ5_ functions.  This is baked into the API and probably not going to change.  If your
   //      program uses pointers that are unsigned char*, void*, or otherwise different you may need to do some casting or set the
   //      right -W compiler flags to ignore those warnings (e.g.: -Wno-pointer-sign).
@@ -76,7 +76,7 @@ int main(void) {
   if (return_value < 0)
     run_screaming("A negative result from LZ5_decompress_fast indicates a failure trying to decompress the data.  See exit code (echo $?) for value returned.", return_value);
   if (return_value == 0)
-    run_screaming("I'm not sure this function can ever return 0.  Documentation in lz5.h doesn't indicate so.", 1);
+    run_screaming("I'm not sure this function can ever return 0.  Documentation in lz5_compress.h doesn't indicate so.", 1);
   if (return_value > 0)
     printf("We successfully decompressed some data!\n");
   // Not only does a positive return value mean success, the value returned == the number of bytes read from the compressed_data

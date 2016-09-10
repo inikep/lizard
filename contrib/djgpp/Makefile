@@ -7,9 +7,9 @@ DESTDIR ?= /opt/local
 # Version numbers
 VERSION ?= 129
 RELEASE ?= r$(VERSION)
-LIBVER_MAJOR=$(shell sed -n '/define LZ5_VERSION_MAJOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5.h)
-LIBVER_MINOR=$(shell sed -n '/define LZ5_VERSION_MINOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5.h)
-LIBVER_PATCH=$(shell sed -n '/define LZ5_VERSION_RELEASE/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5.h)
+LIBVER_MAJOR=$(shell sed -n '/define LZ5_VERSION_MAJOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5_compress.h)
+LIBVER_MINOR=$(shell sed -n '/define LZ5_VERSION_MINOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5_compress.h)
+LIBVER_PATCH=$(shell sed -n '/define LZ5_VERSION_RELEASE/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5_compress.h)
 LIBVER=$(LIBVER_MAJOR).$(LIBVER_MINOR).$(LIBVER_PATCH)
 
 ######################################################################
@@ -29,7 +29,7 @@ EDIR = .
 EXE = lz5.exe
 LNK = lz5
 LDIR = lib
-LSRC = lib/lz5.c lib/lz5frame.c lib/xxhash.c
+LSRC = lib/lz5_compress.c lib/lz5frame.c lib/xxhash.c
 INC = $(LSRC:.c=.h)
 LOBJ = $(LSRC:.c=.o)
 LSDEPS = $(LSRC:.c=.d)

@@ -50,7 +50,7 @@ You can contact the author at :
 *  Includes
 **************************************/
 #include "lz5frame_static.h"
-#include "lz5.h"
+#include "lz5_compress.h"
 #include "lz5_decompress.h"
 #include "lz5_common.h"
 #define XXH_STATIC_LINKING_ONLY

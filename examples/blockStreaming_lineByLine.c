@@ -6,7 +6,7 @@
 #  define _CRT_SECURE_NO_WARNINGS
 #  define snprintf sprintf_s
 #endif
-#include "lz5.h"
+#include "lz5_compress.h"
 #include "lz5_decompress.h"
 #include <stdio.h>
 #include <stdint.h>

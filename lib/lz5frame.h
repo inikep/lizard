@@ -34,7 +34,7 @@
 /* LZ5F is a stand-alone API to create LZ5-compressed frames
  * conformant with specification v1.5.1.
  * All related operations, including memory management, are handled internally by the library.
- * You don't need lz5.h when using lz5frame.h.
+ * You don't need lz5_compress.h when using lz5frame.h.
  * */
 
 #pragma once

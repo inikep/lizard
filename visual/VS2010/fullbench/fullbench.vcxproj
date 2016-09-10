@@ -152,14 +152,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\lib\lz5.c" />
+    <ClCompile Include="..\..\..\lib\lz5_compress.c" />
     <ClCompile Include="..\..\..\lib\lz5_decompress.c" />
     <ClCompile Include="..\..\..\lib\lz5frame.c" />
     <ClCompile Include="..\..\..\lib\xxhash.c" />
     <ClCompile Include="..\..\..\programs\fullbench.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\lib\lz5.h" />
+    <ClInclude Include="..\..\..\lib\lz5_compress.h" />
     <ClInclude Include="..\..\..\lib\lz5frame.h" />
     <ClInclude Include="..\..\..\lib\lz5frame_static.h" />
     <ClInclude Include="..\..\..\lib\lz5_common.h" />
