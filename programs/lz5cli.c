@@ -50,7 +50,7 @@
 #include <stdio.h>    /* fprintf, getchar */
 #include <stdlib.h>   /* exit, calloc, free */
 #include <string.h>   /* strcmp, strlen */
-#include "bench.h"    /* BMK_benchFile, BMK_SetNbIterations, BMK_SetBlocksize, BMK_SetPause */
+#include "bench.h"    /* BMK_benchFile, BMK_SetNbIterations, BMK_SetBlocksize */
 #include "lz5io.h"    /* LZ5IO_compressFilename, LZ5IO_decompressFilename, LZ5IO_compressMultipleFilenames */
 #include "lz5_compress.h"      /* LZ5_VERSION_STRING */
 #define LZ5_NO_MEM_FUNCTIONS
@@ -380,7 +380,7 @@ int main(int argc, const char** argv)
                         case '7':
                             {   int B = argument[1] - '0';
                                 blockSize = LZ5IO_setBlockSizeID(B);
-                                BMK_setBlocksize(blockSize);
+                                BMK_SetBlockSize(blockSize);
                                 argument++;
                                 break;
                             }
@@ -410,12 +410,9 @@ int main(int argc, const char** argv)
                         argument++;
                         iters = readU32FromChar(&argument);
                         argument--;
-                        BMK_setNbIterations(iters);
+                        BMK_SetNbIterations(iters);
                     }
                     break;
-
-                    /* Pause at the end (hidden option) */
-                case 'p': main_pause=1; BMK_setPause(); break;
 
                     /* Specific commands for customized versions */
                 EXTENDED_ARGUMENTS;

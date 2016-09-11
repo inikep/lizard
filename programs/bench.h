@@ -27,7 +27,6 @@ int BMK_benchFiles(const char** fileNamesTable, int nbFiles, int cLevel, int cLe
 int BMK_benchLevel(const char** fileNamesTable, int nbFiles, int cLevel);
 
 /* Set Parameters */
-void BMK_setBlocksize(int bsize);
-void BMK_setNbIterations(int nbLoops);
-void BMK_setPause(void);
+void BMK_SetBlockSize(int bsize);
+void BMK_SetNbIterations(int nbLoops);
 
