@@ -126,6 +126,7 @@ static size_t LZ5_count_2segments(const BYTE* ip, const BYTE* match, const BYTE*
 int LZ5_verifyCompressionLevel(int compressionLevel)
 {
     (void)LZ5_hashPtr;
+    (void)LZ5_wildCopy16;
     if (compressionLevel > LZ5_MAX_CLEVEL) compressionLevel = LZ5_MAX_CLEVEL;
     if (compressionLevel < 1) compressionLevel = LZ5_DEFAULT_CLEVEL;
     return compressionLevel;

@@ -1,4 +1,4 @@
-#define LZ5_HC_MIN_OFFSET 0
+#define LZ5_HC_MIN_OFFSET 8
 #define OPTIMAL_ML (int)((ML_MASK_LZ4-1)+MINMATCH)
 
 /* Update chains up to ip (excluded) */

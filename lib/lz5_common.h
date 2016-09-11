@@ -53,7 +53,7 @@ extern "C" {
 *  Common Constants
 **************************************/
 #define MINMATCH 4
-#if 1
+#if 0
     #define WILDCOPYLENGTH 8
     #define LASTLITERALS 5
 #else
@@ -213,6 +213,17 @@ static void LZ5_wildCopy(void* dstPtr, const void* srcPtr, void* dstEnd)
 #endif /* join to align */
 
     do { LZ5_copy8(d,s); d+=8; s+=8; } while (d<e);
+}
+
+static void LZ5_wildCopy16(BYTE* dstPtr, const BYTE* srcPtr, BYTE* dstEnd)
+{
+    do {
+        LZ5_copy8(dstPtr, srcPtr);
+        LZ5_copy8(dstPtr+8, srcPtr+8);
+        dstPtr += 16;
+        srcPtr += 16;
+    }
+    while (dstPtr < dstEnd);
 }
 
 /*

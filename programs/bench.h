@@ -19,14 +19,16 @@
     You can contact the author at :
     - LZ5 source repository : https://github.com/inikep/lz5
 */
-#pragma once
-
+#ifndef BENCH_H_1212
+#define BENCH_H_1212
 
 /* Main function */
-int BMK_benchFiles(const char** fileNamesTable, int nbFiles, int cLevel, int cLevelLast);
+int BMK_benchFiles(const char** fileNamesTable, unsigned nbFiles, int cLevel, int cLevelLast);
 int BMK_benchLevel(const char** fileNamesTable, int nbFiles, int cLevel);
 
 /* Set Parameters */
-void BMK_SetBlockSize(int bsize);
-void BMK_SetNbIterations(int nbLoops);
+void BMK_SetBlockSize(size_t bsize);
+void BMK_SetNbIterations(unsigned nbLoops);
 
+
+#endif   /* BENCH_H_1212 */ 

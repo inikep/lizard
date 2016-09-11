@@ -137,7 +137,7 @@ static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
     size_t const blockSize = (g_blockSize>=32 ? g_blockSize : srcSize) + (!srcSize) /* avoid div by 0 */ ;
     U32 const maxNbBlocks = (U32) ((srcSize + (blockSize-1)) / blockSize) + nbFiles;
     blockParam_t* const blockTable = (blockParam_t*) malloc(maxNbBlocks * sizeof(blockParam_t));
-    size_t const maxCompressedSize = LZ5_compressBound(srcSize) + (maxNbBlocks * 1024);   /* add some room for safety */
+    size_t const maxCompressedSize = LZ5_compressBound((int)srcSize) + (maxNbBlocks * 1024);   /* add some room for safety */
     void* const compressedBuffer = malloc(maxCompressedSize);
     void* const resultBuffer = malloc(srcSize);
     U32 nbBlocks;
@@ -166,7 +166,7 @@ static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
                 blockTable[nbBlocks].cPtr = cPtr;
                 blockTable[nbBlocks].resPtr = resPtr;
                 blockTable[nbBlocks].srcSize = thisBlockSize;
-                blockTable[nbBlocks].cRoom = LZ5_compressBound(thisBlockSize);
+                blockTable[nbBlocks].cRoom = LZ5_compressBound((int)thisBlockSize);
                 srcPtr += thisBlockSize;
                 cPtr += blockTable[nbBlocks].cRoom;
                 resPtr += thisBlockSize;
@@ -215,7 +215,7 @@ static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
                 do {
                     U32 blockNb;
                     for (blockNb=0; blockNb<nbBlocks; blockNb++) {
-                        size_t const rSize = LZ5_compress(blockTable[blockNb].srcPtr, blockTable[blockNb].cPtr, blockTable[blockNb].srcSize,  blockTable[blockNb].cRoom, cLevel);
+                        size_t const rSize = LZ5_compress(blockTable[blockNb].srcPtr, blockTable[blockNb].cPtr, (int)blockTable[blockNb].srcSize, (int)blockTable[blockNb].cRoom, cLevel);
                         if (LZ5_isError(rSize)) EXM_THROW(1, "LZ5_compress() failed");
                         blockTable[blockNb].cSize = rSize;
                     }                   
@@ -249,7 +249,7 @@ static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
                 do {
                     U32 blockNb;
                     for (blockNb=0; blockNb<nbBlocks; blockNb++) {
-                        size_t const regenSize = LZ5_decompress_safe(blockTable[blockNb].cPtr, blockTable[blockNb].resPtr, blockTable[blockNb].cSize, blockTable[blockNb].srcSize);
+                        size_t const regenSize = LZ5_decompress_safe(blockTable[blockNb].cPtr, blockTable[blockNb].resPtr, (int)blockTable[blockNb].cSize, (int)blockTable[blockNb].srcSize);
 
                         if (LZ5_isError(regenSize)) {
                             DISPLAY("LZ5_decompress_safe() failed on block %u  \n", blockNb);

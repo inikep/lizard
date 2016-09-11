@@ -1,4 +1,4 @@
-#define LZ5_NOCHAIN_MIN_OFFSET 0
+#define LZ5_NOCHAIN_MIN_OFFSET 8
 
 /**************************************
 *  Hash Functions
@@ -72,7 +72,7 @@ FORCE_INLINE int LZ5_compress_nochain(
     ctx->end += inputSize;
     if ((U32)inputSize > (U32)LZ5_MAX_INPUT_SIZE) goto _output_error;   /* Unsupported inputSize, too large (or negative) */
 
-    if (inputSize<LZ5_minLength) goto _last_literals;                  /* Input too small, no compression (all literals) */
+    if (inputSize < LZ5_minLength) goto _last_literals;                  /* Input too small, no compression (all literals) */
 
     /* First Byte */
     LZ5_putPosition(ip, ctx->hashTable, base, hashLog);
