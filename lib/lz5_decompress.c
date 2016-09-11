@@ -89,7 +89,7 @@ FORCE_INLINE int LZ5_decompress_generic(
     else 
         res = LZ5_decompress_LZ4(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
 
-//    printf("LZ5_decompress_generic inputSize=%d compressionLevel=%d res=%d\n", inputSize, compressionLevel, res);
+  //  printf("LZ5_decompress_generic source=%p inputSize=%d dest=%p outputSize=%d cLevel=%d res=%d dict=%d dictSize=%d dictStart=%p partialDecoding=%d endOnInput=%d\n", source, inputSize, dest, outputSize, compressionLevel, res, dict, (int)dictSize, dictStart, partialDecoding, endOnInput);
     return res;
 }
 

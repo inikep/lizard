@@ -290,7 +290,7 @@ FORCE_INLINE int LZ5_compress_generic (
     *dest++ = (BYTE)ctx->compressionLevel;
     maxOutputSize--; // can be lower than 0
 
-  //  printf("LZ5_compress_generic inputSize=%d maxOutputSize=%d compressionLevel=%d limit=%d", inputSize, maxOutputSize, ctx->compressionLevel, limit);  
+  //  printf("LZ5_compress_generic source=%p inputSize=%d dest=%p maxOutputSize=%d cLevel=%d limit=%d", source, inputSize, dest, maxOutputSize, ctx->compressionLevel, limit);  
     if (ctx->params.compressType == LZ5_parser_nochain)
         res = LZ5_compress_nochain(ctxvoid, source, dest, inputSize, maxOutputSize, limit);
     else

@@ -32,6 +32,10 @@ FORCE_INLINE int LZ5_decompress_LZ4(
     BYTE* oexit = op + targetOutputSize;
     const BYTE* const lowLimit = lowPrefix - dictSize;
     const BYTE* const dictEnd = (const BYTE*)dictStart + dictSize;
+#if 0
+    const unsigned dec32table[] = {4, 1, 2, 1, 4, 4, 4, 4};
+    const int dec64table[] = {0, 0, 0, -1, 0, 1, 2, 3};
+#endif
 
     const int safeDecode = (endOnInput==endOnInputSize);
     const int checkOffset = ((safeDecode) && (dictSize < (int)(LZ5_DICT_SIZE)));
@@ -83,19 +87,28 @@ FORCE_INLINE int LZ5_decompress_LZ4(
             break;     /* Necessarily EOF, due to parsing restrictions */
         }
 
+#if 1
+        LZ5_copy8(op, ip);
+        if (length > 8)
+            LZ5_wildCopy16(op + 8, ip + 8, cpy);
+        ip += length; 
+        op = cpy;
+#else
+        if (unlikely(ip + length + WILDCOPYLENGTH > iend || op + length + WILDCOPYLENGTH > oend)) { printf("6b %p/%p %p/%p\n", ip + length + WILDCOPYLENGTH, iend, op + length + WILDCOPYLENGTH, oend); goto _output_error; }   /* Error : offset outside buffers */
         LZ5_copy8(op, ip);
         LZ5_copy8(op+8, ip+8);
         if (length > 16)
             LZ5_wildCopy16(op + 16, ip + 16, cpy);
         op = cpy;
         ip += length; 
+#endif
 
         /* get offset */
         offset = MEM_readLE16(ip); 
         ip += 2;
 
         match = op - offset;
-        if ((checkOffset) && (unlikely(match < lowLimit))) { LZ4_DEBUG("lowPrefix[%p]-dictSize[%d]=lowLimit[%p] match[%p]=op[%p]-offset[%d]\n", lowPrefix, dictSize, lowLimit, match, op, (int)offset); goto _output_error; }  /* Error : offset outside buffers */
+        if ((checkOffset) && (unlikely(match < lowLimit))) { LZ4_DEBUG("lowPrefix[%p]-dictSize[%d]=lowLimit[%p] match[%p]=op[%p]-offset[%d]\n", lowPrefix, (int)dictSize, lowLimit, match, op, (int)offset); goto _output_error; }  /* Error : offset outside buffers */
 
         /* get matchlength */
         length = token & ML_MASK_LZ4;
@@ -136,13 +149,43 @@ FORCE_INLINE int LZ5_decompress_LZ4(
         }
 
         /* copy match within block */
-        if (unlikely(match < lowLimit || op + length + LASTLITERALS > oend)) { LZ4_DEBUG("1match=%p lowLimit=%p\n", match, lowLimit); goto _output_error; }   /* Error : offset outside buffers */
+#if 0
+        cpy = op + length;
+        if (unlikely(offset<8)) {
+            const int dec64 = dec64table[offset];
+            op[0] = match[0];
+            op[1] = match[1];
+            op[2] = match[2];
+            op[3] = match[3];
+            match += dec32table[offset];
+            memcpy(op+4, match, 4);
+            match -= dec64;
+        } else { LZ5_copy8(op, match); match+=8; }
+        op += 8;
+
+        if (unlikely(cpy>oend-12)) {
+            BYTE* const oCopyLimit = oend-(WILDCOPYLENGTH-1);
+            if (cpy > oend-LASTLITERALS) { LZ4_DEBUG("11"); goto _output_error; }   /* Error : last LASTLITERALS bytes must be literals (uncompressed) */
+            if (op < oCopyLimit) {
+                LZ5_wildCopy(op, match, oCopyLimit);
+                match += oCopyLimit - op;
+                op = oCopyLimit;
+            }
+            while (op<cpy) *op++ = *match++;
+        } else {
+            LZ5_copy8(op, match);
+            if (length>16) LZ5_wildCopy(op+8, match+8, cpy);
+        }
+        op=cpy;   /* correction */
+#else
+        if (unlikely(match < lowLimit || op + length + WILDCOPYLENGTH > oend)) { LZ4_DEBUG("1match=%p lowLimit=%p\n", match, lowLimit); goto _output_error; }   /* Error : offset outside buffers */
         cpy = op + length;
         LZ5_copy8(op, match);
         LZ5_copy8(op+8, match+8);
         if (length > 16)
             LZ5_wildCopy16(op + 16, match + 16, cpy);
         op = cpy;
+#endif
     }
 
     /* end of decoding */
@@ -154,6 +197,6 @@ FORCE_INLINE int LZ5_decompress_LZ4(
     /* Overflow error detected */
 _output_error:
     LZ4_DEBUG("_output_error=%d\n", (int) (-(((const char*)ip)-source))-1);
-    LZ4_DEBUG("cpy=%p oend=%p ip+length[%d]=%p iend=%p\n", cpy, oend, length, ip+length, iend);
+    LZ4_DEBUG("cpy=%p oend=%p ip+length[%d]=%p iend=%p\n", cpy, oend, (int)length, ip+length, iend);
     return (int) (-(((const char*)ip)-source))-1;
 }

@@ -27,7 +27,7 @@ ENDIF()
 set(LZ5_DIR ../lib/)
 set(PRG_DIR ../programs/)
 set(LZ5_SRCS_LIB ${LZ5_DIR}lz5_decompress.c ${LZ5_DIR}lz5_compress.c ${LZ5_DIR}lz5_compress.h ${LZ5_DIR}lz5_common.h ${LZ5_DIR}lz5frame.c ${LZ5_DIR}lz5frame.h ${LZ5_DIR}xxhash.c)
-set(LZ5_SRCS ${LZ5_DIR}lz5frame.c ${LZ5_DIR}xxhash.c ${PRG_DIR}bench.c ${PRG_DIR}lz5cli.c ${PRG_DIR}lz5io.c)
+set(LZ5_SRCS ${LZ5_DIR}lz5frame.c ${LZ5_DIR}xxhash.c ${PRG_DIR}bench.c ${PRG_DIR}datagen.c ${PRG_DIR}lz5cli.c ${PRG_DIR}lz5io.c)
 
 if(BUILD_TOOLS AND NOT (LINK_TOOLS_WITH_LIB AND BUILD_LIBS))
     set(LZ5_SRCS ${LZ5_SRCS} ${LZ5_SRCS_LIB})
