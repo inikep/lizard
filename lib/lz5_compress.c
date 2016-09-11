@@ -118,7 +118,7 @@ static size_t LZ5_count_2segments(const BYTE* ip, const BYTE* match, const BYTE*
 *  Include parsers
 **************************************/
 #include "lz5_compress_lz4.h"
-#include "lz5_compress_lz5v2.h"
+//#include "lz5_compress_lz5v2.h"
 #include "lz5_parser_hc.h"
 #include "lz5_parser_nochain.h"
 
@@ -288,13 +288,14 @@ FORCE_INLINE int LZ5_compress_generic (
     
     *dest++ = (BYTE)ctx->compressionLevel;
     maxOutputSize--; // can be lower than 0
-    
+
+  //  printf("LZ5_compress_generic inputSize=%d maxOutputSize=%d compressionLevel=%d limit=%d", inputSize, maxOutputSize, ctx->compressionLevel, limit);  
     if (ctx->params.compressType == LZ5_parser_nochain)
         res = LZ5_compress_nochain(ctxvoid, source, dest, inputSize, maxOutputSize, limit);
     else
         res = LZ5_compress_HC(ctxvoid, source, dest, inputSize, maxOutputSize, limit);
 
- //   printf("LZ5_compress_generic inputSize=%d maxOutputSize=%d res=%d compressionLevel=%d limit=%d\n", inputSize, maxOutputSize, res, ctx->compressionLevel, limit);
+  //  printf(" res=%d\n", res);
     return (res > 0) ? res+1 : res;
 }
 

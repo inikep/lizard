@@ -51,7 +51,7 @@ typedef enum { endOnOutputSize = 0, endOnInputSize = 1 } endCondition_directive;
 typedef enum { full = 0, partial = 1 } earlyEnd_directive;
 
 #include "lz5_decompress_lz4.h"
-#include "lz5_decompress_lz5v2.h"
+//#include "lz5_decompress_lz5v2.h"
 
 
 /*-*****************************
@@ -73,18 +73,24 @@ FORCE_INLINE int LZ5_decompress_generic(
 {
     /* Local Variables */
     LZ5_parameters params;
-    int compressionLevel;
+    int res, compressionLevel;
 
  //   if (inputSize < 1) return -1;
     compressionLevel = *source;
-//    printf("compressionLevel=%d\n", compressionLevel);
-     if (compressionLevel == 0 || compressionLevel > LZ5_MAX_CLEVEL) return -1;
+    if (compressionLevel == 0 || compressionLevel > LZ5_MAX_CLEVEL)
+    {
+        printf("ERROR LZ5_decompress_generic inputSize=%d compressionLevel=%d\n", inputSize, compressionLevel);
+        return -1;
+    }
 
     params = LZ5_defaultParameters[compressionLevel];
     if (params.decompressType == LZ5_coderwords_LZ4)
-        return LZ5_decompress_LZ4(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
+        res = LZ5_decompress_LZ4(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
+    else 
+        res = LZ5_decompress_LZ4(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
 
-    return LZ5_decompress_LZ5v2(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
+//    printf("LZ5_decompress_generic inputSize=%d compressionLevel=%d res=%d\n", inputSize, compressionLevel, res);
+    return res;
 }
 
 

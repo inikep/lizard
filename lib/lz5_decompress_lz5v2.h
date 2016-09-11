@@ -1,3 +1,5 @@
+#define LZ5v2_DEBUG(...) printf(__VA_ARGS__)
+
 /*! LZ5_decompress_LZ5v2() :
  *  This generic decompression function cover all use cases.
  *  It shall be instantiated several times, using different sets of directives
@@ -26,13 +28,14 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
 
     BYTE* op = (BYTE*) dest;
     BYTE* const oend = op + outputSize;
-    BYTE* oexit = op + targetOutputSize;
+    BYTE* oexit;
     const BYTE* const lowLimit = lowPrefix - dictSize;
     const BYTE* const dictEnd = (const BYTE*)dictStart + dictSize;
 
     LZ5_parameters params = LZ5_defaultParameters[compressionLevel];
     intptr_t last_off = -1;
-
+intptr_t length = 0;
+        
     unsigned temp = *ip++; // skip compression level
     (void)temp;
     (void)params;
@@ -40,14 +43,21 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
     (void)dict;
 
     /* Special cases */
-    if ((partialDecoding) && (oexit > oend-MFLIMIT)) oexit = oend-MFLIMIT;                        /* targetOutputSize too high => decode everything */
+    if (partialDecoding) {
+        oexit = op + targetOutputSize;
+        if (oexit > oend-WILDCOPYLENGTH) oexit = oend-WILDCOPYLENGTH; /* targetOutputSize too high => decode everything */
+    }
+    else
+        oexit = oend-WILDCOPYLENGTH; 
     if ((endOnInput) && (unlikely(outputSize==0))) return ((inputSize==1) && (*ip==0)) ? 0 : -1;  /* Empty output buffer */
     if ((!endOnInput) && (unlikely(outputSize==0))) return (*ip==0?1:-1);
+
+  //  LZ5v2_DEBUG("LZ5_decompress_LZ5v2 inputSize=%d outputSize=%d \n", inputSize, outputSize);
+
 
     /* Main Loop : decode sequences */
     while (1) {
         unsigned token;
-        size_t length;
         const BYTE* match;
 
         /* get literal length */
@@ -58,7 +68,7 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
             length = token & RUN_MASK_LZ5v2;
             if (length == RUN_MASK_LZ5v2)
             {
-                if (unlikely(ip + LASTLITERALS > iend)) goto _output_error;
+                if (unlikely(ip + LASTLITERALS > iend)) { LZ5v2_DEBUG("5"); goto _output_error; } 
                 length = *ip;
                 if (length == 255) {
                     length += MEM_readLE16(ip+1);
@@ -67,17 +77,19 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
                 ip++;
                 length += RUN_MASK_LZ5v2;
             }
+        //    LZ5v2_DEBUG("litlength=%d\n", (int)length);
 
-            if (unlikely(ip + length + LASTLITERALS > iend || op + length + WILDCOPYLENGTH > oend)) { 
+            if (unlikely(ip + length + LASTLITERALS > iend || op + length > oexit)) { 
                 if (op + length == oend) {
                     memcpy(op, ip, length);
                     op += length;
                     break;
                 }
-                printf("op=%p+length=%d %p oend=%p\n", op, (int)length, op + length + WILDCOPYLENGTH, oend); 
-                printf("ip=%p+length=%d %p iend=%p token=%d\n", ip, (int)length, ip + length, iend, token); 
+                LZ5v2_DEBUG("op=%p+length=%d %p oend=%p\n", op, (int)length, op + length + WILDCOPYLENGTH, oend); 
+                LZ5v2_DEBUG("ip=%p+length=%d %p iend=%p token=%d\n", ip, (int)length, ip + length, iend, token); 
                 goto _output_error; 
-            } 
+            }
+            
             do {
                 LZ5_copy8(op, ip);
                 LZ5_copy8(op+8, ip+8);
@@ -101,17 +113,17 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
             {
                 last_off = -(intptr_t)MEM_readLE16(ip); 
                 ip += 2;
-            //    printf("MEM_readLE16 offset=%d\n", (int)offset);
+            //    LZ5v2_DEBUG("MEM_readLE16 offset=%d\n", (int)offset);
             }
 #endif
 
-        //    printf("DECODE literals=%u off=%u mlen=%u\n", length, offset, (token>>RUN_BITS_LZ5v2)&ML_MASK);
+        //    LZ5v2_DEBUG("DECODE literals=%u off=%u mlen=%u\n", length, offset, (token>>RUN_BITS_LZ5v2)&ML_MASK);
 
             /* get matchlength */
             length = (token>>RUN_BITS_LZ5v2)&ML_MASK_LZ5v2;
             if (length == ML_MASK_LZ5v2)
             {
-                if (unlikely(ip + LASTLITERALS > iend)) goto _output_error;
+                if (unlikely(ip + LASTLITERALS > iend)) { LZ5v2_DEBUG("4"); goto _output_error; } 
                 length = *ip;
                 if (length == 255) {
                     length += MEM_readLE16(ip+1);
@@ -125,15 +137,15 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
         else
         if (token < 31)
         {
-            if (unlikely(ip + LASTLITERALS > iend)) goto _output_error;
+            if (unlikely(ip + LASTLITERALS > iend)) { LZ5v2_DEBUG("3"); goto _output_error; } 
             length = token + MM_LONGOFF;
             last_off = -(intptr_t)MEM_readLE24(ip); 
             ip += 3;
-         //   printf("T3 dec 24-bit matchLength=%d offset=%u\n", length, offset);
+         //   LZ5v2_DEBUG("T3 dec 24-bit matchLength=%d offset=%u\n", length, offset);
         }
         else // token == 0
         { 
-            if (unlikely(ip + LASTLITERALS > iend)) goto _output_error;
+            if (unlikely(ip + LASTLITERALS > iend)) { LZ5v2_DEBUG("2"); goto _output_error; } 
             length = *ip;
             if (length == 255) {
                 length += MEM_readLE16(ip+1);
@@ -142,15 +154,20 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
             ip++;
             length += 31 + MM_LONGOFF;
 
-//                printf("T2 dec 24-bit matchLength=%d offset=%u\n", length, offset);
+//                LZ5v2_DEBUG("T2 dec 24-bit matchLength=%d offset=%u\n", length, offset);
             last_off = -(intptr_t)MEM_readLE24(ip); 
             ip += 3;
         }
 
-
+   //     LZ5v2_DEBUG("matchlength=%d\n", (int)length);
         match = op + last_off;
+        /* check external dictionary */
+        if ((dict==usingExtDict) && (match < lowPrefix)) { 
+            LZ5v2_DEBUG("match < lowPrefix\n");
+            exit(0); 
+        }
 
-        if (unlikely(match < lowLimit || op + length + WILDCOPYLENGTH > oend)) { printf("1"); goto _output_error; }   /* Error : offset outside buffers */
+        if (unlikely(match < lowLimit || op + length > oexit)) { LZ5v2_DEBUG("1match=%p lowLimit=%p\n", match, lowLimit); goto _output_error; }   /* Error : offset outside buffers */
         do {
             LZ5_copy8(op, match);
             LZ5_copy8(op+8, match+8);
@@ -169,7 +186,7 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
 
     /* Overflow error detected */
 _output_error:
- //   printf("cpy=%p oend=%p ip+length[%d]=%p iend=%p\n", cpy, oend, length, ip+length, iend);
- //   printf("_output_error=%d\n", (int) (-(((const char*)ip)-source))-1);
+    LZ5v2_DEBUG("op=%p op + length[%d]=%p oexit=%p ip+length[%d]=%p iend=%p\n", op, (int)length, op + length, oexit, (int)length, ip+length, iend);
+    LZ5v2_DEBUG("_output_error=%d\n", (int) (-(((const char*)ip)-source))-1);
     return (int) (-(((const char*)ip)-source))-1;
 }

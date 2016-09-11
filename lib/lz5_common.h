@@ -53,8 +53,13 @@ extern "C" {
 *  Common Constants
 **************************************/
 #define MINMATCH 4
-#define WILDCOPYLENGTH 16 //8
-#define LASTLITERALS WILDCOPYLENGTH // 5
+#if 1
+    #define WILDCOPYLENGTH 8
+    #define LASTLITERALS 5
+#else
+    #define WILDCOPYLENGTH 16
+    #define LASTLITERALS WILDCOPYLENGTH
+#endif
 #define MFLIMIT (WILDCOPYLENGTH+MINMATCH)
 #define LZ5_DICT_SIZE (1 << 16)
 
@@ -111,8 +116,8 @@ struct LZ5_stream_s
 /* *************************************
 *  HC Pre-defined compression levels
 ***************************************/
-#define LZ5_WINDOWLOG_SMALL 16
-#define LZ5_WINDOWLOG_BIG   20
+#define LZ5_WINDOWLOG_LZ4   16
+#define LZ5_WINDOWLOG_LZ5v2 16
 #define LZ5_CHAINLOG        16
 #define LZ5_HASHLOG         (LZ5_CHAINLOG-1)
 #define LZ5_DEFAULT_CLEVEL  4
@@ -123,16 +128,16 @@ static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1] =
 {
     /*            windLog,   contentLog,     HashLog,  H3,  Snum, SL, SuffL, FS, Compression function */
     {                   0,            0,           0,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 0 - never used
-    { LZ5_WINDOWLOG_SMALL,            0,          12,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 1
-    { LZ5_WINDOWLOG_SMALL,            0, LZ5_HASHLOG,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 2
-    { LZ5_WINDOWLOG_SMALL, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     4,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 3
-    { LZ5_WINDOWLOG_SMALL, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     8,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 4
-    { LZ5_WINDOWLOG_SMALL, LZ5_CHAINLOG, LZ5_HASHLOG,   0,    16,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 5
-    {   LZ5_WINDOWLOG_BIG,            0,          12,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 6
-    {   LZ5_WINDOWLOG_BIG,            0, LZ5_HASHLOG,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 7
-    {   LZ5_WINDOWLOG_BIG, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     4,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 8
-    {   LZ5_WINDOWLOG_BIG, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     8,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 9
-    {   LZ5_WINDOWLOG_BIG, LZ5_CHAINLOG, LZ5_HASHLOG,   0,    16,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 10
+    {   LZ5_WINDOWLOG_LZ4,            0,          12,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 1
+    {   LZ5_WINDOWLOG_LZ4,            0, LZ5_HASHLOG,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 2
+    {   LZ5_WINDOWLOG_LZ4, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     4,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 3
+    {   LZ5_WINDOWLOG_LZ4, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     8,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 4
+    {   LZ5_WINDOWLOG_LZ4, LZ5_CHAINLOG, LZ5_HASHLOG,   0,    16,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 5
+    { LZ5_WINDOWLOG_LZ5v2,            0,          12,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 6
+    { LZ5_WINDOWLOG_LZ5v2,            0, LZ5_HASHLOG,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 7
+    { LZ5_WINDOWLOG_LZ5v2, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     4,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 8
+    { LZ5_WINDOWLOG_LZ5v2, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     8,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 9
+    { LZ5_WINDOWLOG_LZ5v2, LZ5_CHAINLOG, LZ5_HASHLOG,   0,    16,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 10
 };
 
 

@@ -26,10 +26,9 @@
 _lz5bench/
 _visual/
 _codelite/
+_backup/
 _codelite_lz4/
 
 # Archives
 *.zip
 *.lz5
-
-to_do.txt

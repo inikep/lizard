@@ -1,4 +1,4 @@
-#define LZ5_NOCHAIN_MIN_OFFSET 8
+#define LZ5_NOCHAIN_MIN_OFFSET 0
 
 /**************************************
 *  Hash Functions
@@ -140,11 +140,11 @@ FORCE_INLINE int LZ5_compress_nochain(
         }
 
 _next_match:
-        if (ctx->params.decompressType == LZ5_coderwords_LZ4) {
+  //      if (ctx->params.decompressType == LZ5_coderwords_LZ4) {
             if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, matchLength+MINMATCH, match, outputLimited, oend)) goto _output_error;
-        } else {
-            if (LZ5_encodeSequence_LZ5v2(ctx, &ip, &op, &anchor, matchLength+MINMATCH, match, outputLimited, oend)) goto _output_error;          
-        }
+  //      } else {
+  //          if (LZ5_encodeSequence_LZ5v2(ctx, &ip, &op, &anchor, matchLength+MINMATCH, match, outputLimited, oend)) goto _output_error;          
+  //      }
         
         /* Test end of chunk */
         if (ip > mflimit) break;
@@ -188,11 +188,11 @@ _next_match:
 _last_literals:
     /* Encode Last Literals */
     ip = iend;
-    if (ctx->params.decompressType == LZ5_coderwords_LZ4) {
+ //   if (ctx->params.decompressType == LZ5_coderwords_LZ4) {
         if (LZ5_encodeLastLiterals_LZ4(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;
-    } else {
-        if (LZ5_encodeLastLiterals_LZ5v2(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;      
-    }
+ //   } else {
+ //       if (LZ5_encodeLastLiterals_LZ5v2(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;      
+  //  }
 
     /* End */
     return (int) (((char*)op)-dest);

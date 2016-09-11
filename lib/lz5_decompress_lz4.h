@@ -1,3 +1,5 @@
+#define LZ4_DEBUG(...) // printf(__VA_ARGS__)
+
 /*! LZ5_decompress_LZ4() :
  *  This generic decompression function cover all use cases.
  *  It shall be instantiated several times, using different sets of directives
@@ -26,7 +28,7 @@ FORCE_INLINE int LZ5_decompress_LZ4(
 
     BYTE* op = (BYTE*) dest;
     BYTE* const oend = op + outputSize;
-    BYTE* cpy;
+    BYTE* cpy = NULL;
     BYTE* oexit = op + targetOutputSize;
     const BYTE* const lowLimit = lowPrefix - dictSize;
 
@@ -36,10 +38,11 @@ FORCE_INLINE int LZ5_decompress_LZ4(
 
     const int safeDecode = (endOnInput==endOnInputSize);
     const int checkOffset = ((safeDecode) && (dictSize < (int)(LZ5_DICT_SIZE)));
-    LZ5_parameters params = LZ5_defaultParameters[compressionLevel];
 
+    size_t length;
     unsigned temp = *ip++; // skip compression level
     (void)temp;
+    (void)compressionLevel;
 
     /* Special cases */
     if ((partialDecoding) && (oexit > oend-MFLIMIT)) oexit = oend-MFLIMIT;                        /* targetOutputSize too high => decode everything */
@@ -49,7 +52,6 @@ FORCE_INLINE int LZ5_decompress_LZ4(
     /* Main Loop : decode sequences */
     while (1) {
         unsigned token;
-        size_t length;
         const BYTE* match;
         size_t offset;
 
@@ -61,8 +63,8 @@ FORCE_INLINE int LZ5_decompress_LZ4(
                 s = *ip++;
                 length += s;
             } while ( likely(endOnInput ? ip<iend-RUN_MASK_LZ4 : 1) & (s==255) );
-            if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) goto _output_error;   /* overflow detection */
-            if ((safeDecode) && unlikely((size_t)(ip+length)<(size_t)(ip))) goto _output_error;   /* overflow detection */
+            if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) { LZ4_DEBUG("1"); goto _output_error; }  /* overflow detection */
+            if ((safeDecode) && unlikely((size_t)(ip+length)<(size_t)(ip))) { LZ4_DEBUG("2"); goto _output_error; }   /* overflow detection */
         }
 
         /* copy literals */
@@ -71,11 +73,11 @@ FORCE_INLINE int LZ5_decompress_LZ4(
             || ((!endOnInput) && (cpy>oend-WILDCOPYLENGTH)) )
         {
             if (partialDecoding) {
-                if (cpy > oend) goto _output_error;                           /* Error : write attempt beyond end of output buffer */
-                if ((endOnInput) && (ip+length > iend)) goto _output_error;   /* Error : read attempt beyond end of input buffer */
+                if (cpy > oend) { LZ4_DEBUG("3"); goto _output_error; }                           /* Error : write attempt beyond end of output buffer */
+                if ((endOnInput) && (ip+length > iend)) { LZ4_DEBUG("4"); goto _output_error; }   /* Error : read attempt beyond end of input buffer */
             } else {
-                if ((!endOnInput) && (cpy != oend)) goto _output_error;       /* Error : block decoding must stop exactly there */
-                if ((endOnInput) && ((ip+length != iend) || (cpy > oend))) goto _output_error;   /* Error : input must be consumed */
+                if ((!endOnInput) && (cpy != oend)) { LZ4_DEBUG("5"); goto _output_error; }       /* Error : block decoding must stop exactly there */
+                if ((endOnInput) && ((ip+length != iend) || (cpy > oend))) { LZ4_DEBUG("6"); goto _output_error; }   /* Error : input must be consumed */
             }
             memcpy(op, ip, length);
             ip += length;
@@ -86,17 +88,11 @@ FORCE_INLINE int LZ5_decompress_LZ4(
         ip += length; op = cpy;
 
         /* get offset */
-        if (params.windowLog <= 16) {
-            offset = MEM_readLE16(ip); 
-            ip+=2;
-        } else {
-            offset = MEM_readLE24(ip);
-            ip+=3;
-            if ((BYTE*)offset > op) goto _output_error;   /* Error : offset outside buffers */
-        }
+        offset = MEM_readLE16(ip); 
+        ip+=2;
 
         match = op - offset;
-        if ((checkOffset) && (unlikely(match < lowLimit))) goto _output_error;   /* Error : offset outside buffers */
+        if ((checkOffset) && (unlikely(match < lowLimit))) { LZ4_DEBUG("lowPrefix[%p]-dictSize[%d]=lowLimit[%p] match[%p]=op[%p]-offset[%d]\n", lowPrefix, dictSize, lowLimit, match, op, (int)offset); goto _output_error; }  /* Error : offset outside buffers */
 
         /* get matchlength */
         length = token & ML_MASK_LZ4;
@@ -104,16 +100,16 @@ FORCE_INLINE int LZ5_decompress_LZ4(
             unsigned s;
             do {
                 s = *ip++;
-                if ((endOnInput) && (ip > iend-LASTLITERALS)) goto _output_error;
+                if ((endOnInput) && (ip > iend-LASTLITERALS)) { LZ4_DEBUG("8"); goto _output_error; }
                 length += s;
             } while (s==255);
-            if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)op)) goto _output_error;   /* overflow detection */
+            if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)op)) { LZ4_DEBUG("9"); goto _output_error; }   /* overflow detection */
         }
         length += MINMATCH;
 
         /* check external dictionary */
         if ((dict==usingExtDict) && (match < lowPrefix)) {
-            if (unlikely(op + length + LASTLITERALS > oend)) goto _output_error;   /* doesn't respect parsing restriction */
+            if (unlikely(op + length + LASTLITERALS > oend)) { LZ4_DEBUG("10"); goto _output_error; }  /* doesn't respect parsing restriction */
 
             if (length <= (size_t)(lowPrefix-match)) {
                 /* match can be copied as a single segment from external dictionary */
@@ -152,7 +148,7 @@ FORCE_INLINE int LZ5_decompress_LZ4(
 
         if (unlikely(cpy>oend-12)) {
             BYTE* const oCopyLimit = oend-(WILDCOPYLENGTH-1);
-            if (cpy > oend-LASTLITERALS) goto _output_error;    /* Error : last LASTLITERALS bytes must be literals (uncompressed) */
+            if (cpy > oend-LASTLITERALS) { LZ4_DEBUG("11"); goto _output_error; }   /* Error : last LASTLITERALS bytes must be literals (uncompressed) */
             if (op < oCopyLimit) {
                 LZ5_wildCopy(op, match, oCopyLimit);
                 match += oCopyLimit - op;
@@ -174,7 +170,7 @@ FORCE_INLINE int LZ5_decompress_LZ4(
 
     /* Overflow error detected */
 _output_error:
- //   printf("cpy=%p oend=%p ip+length[%d]=%p iend=%p\n", cpy, oend, length, ip+length, iend);
- //   printf("_output_error=%d\n", (int) (-(((const char*)ip)-source))-1);
+    LZ4_DEBUG("_output_error=%d\n", (int) (-(((const char*)ip)-source))-1);
+    LZ4_DEBUG("cpy=%p oend=%p ip+length[%d]=%p iend=%p\n", cpy, oend, length, ip+length, iend);
     return (int) (-(((const char*)ip)-source))-1;
 }

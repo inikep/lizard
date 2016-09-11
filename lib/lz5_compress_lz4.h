@@ -15,6 +15,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ4 (
 {
     int length = (int)(*ip - *anchor);
     BYTE* token = (*op)++;
+    (void) ctx;
 
 #if LZ5_DEBUG
     if (debug) printf("literal : %u  --  match : %u  --  offset : %u\n", (U32)(*ip - *anchor), (U32)matchLength, (U32)(*ip-match));
@@ -30,13 +31,10 @@ FORCE_INLINE int LZ5_encodeSequence_LZ4 (
     *op += length;
 
     /* Encode Offset */
-    if (ctx->params.windowLog <= 16) {
-        MEM_writeLE16(*op, (U16)(*ip-match));
-        *op+=2;
-    } else {
-        MEM_writeLE24(*op, (U32)(*ip-match));
-        *op+=3;
-    }
+//    if (match > *ip) printf("match > *ip\n"), exit(1);
+//    if ((U32)(*ip-match) >= (1<<16)) printf("off=%d\n", (U32)(*ip-match)), exit(1);
+    MEM_writeLE16(*op, (U16)(*ip-match));
+    *op+=2;
 
     /* Encode MatchLength */
     length = (int)(matchLength-MINMATCH);
