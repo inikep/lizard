@@ -59,6 +59,7 @@ FORCE_INLINE int LZ5_decompress_LZ4(
 
         /* get literal length */
         token = *ip++;
+#ifdef OLD_LENGTH_ENCODING
         if ((length=(token & RUN_MASK_LZ4)) == RUN_MASK_LZ4) {
             unsigned s;
             do {
@@ -68,6 +69,44 @@ FORCE_INLINE int LZ5_decompress_LZ4(
             if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) { LZ4_DEBUG("1"); goto _output_error; }  /* overflow detection */
             if ((safeDecode) && unlikely((size_t)(ip+length)<(size_t)(ip))) { LZ4_DEBUG("2"); goto _output_error; }   /* overflow detection */
         }
+#else
+#if 1
+        if ((length=(token & RUN_MASK_LZ4)) == RUN_MASK_LZ4) {
+            if ((endOnInput) && unlikely(ip > iend - 5) ) { LZ4_DEBUG("0"); goto _output_error; } 
+            if likely(*ip < 254) {
+                length += *ip;
+                ip++;
+            } 
+            else if (*ip == 254) {
+                length += MEM_readLE16(ip+1);
+                ip += 3;
+            } else {
+                length += MEM_readLE32(ip+1);
+                ip += 5;
+            }
+            if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) { LZ4_DEBUG("1"); goto _output_error; }  /* overflow detection */
+            if ((safeDecode) && unlikely((size_t)(ip+length)<(size_t)(ip))) { LZ4_DEBUG("2"); goto _output_error; }   /* overflow detection */
+        }
+#else
+        if ((length=(token & RUN_MASK_LZ4)) == RUN_MASK_LZ4) {
+            if ((endOnInput) && unlikely(ip > iend - 5) ) { LZ4_DEBUG("0"); goto _output_error; } 
+            length = *ip;
+            if unlikely(length >= 254) {
+                if (length == 254) {
+                    length = MEM_readLE16(ip+1);
+                    ip += 2;
+                } else {
+                    length = MEM_readLE32(ip+1);
+                    ip += 4;
+                }
+            }
+            length += RUN_MASK_LZ4;
+            ip++;
+            if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) { LZ4_DEBUG("1"); goto _output_error; }  /* overflow detection */
+            if ((safeDecode) && unlikely((size_t)(ip+length)<(size_t)(ip))) { LZ4_DEBUG("2"); goto _output_error; }   /* overflow detection */
+        }
+#endif
+#endif
 
         /* copy literals */
         cpy = op + length;
@@ -87,15 +126,11 @@ FORCE_INLINE int LZ5_decompress_LZ4(
             break;     /* Necessarily EOF, due to parsing restrictions */
         }
 
-#if 0
-        LZ5_copy8(op, ip);
-        if (length > 8)
-            LZ5_wildCopy16(op + 8, ip + 8, cpy);
-        ip += length; 
+#if 1
+        LZ5_wildCopy16(op, ip, cpy);
         op = cpy;
+        ip += length; 
 #else
-    //    if (unlikely(ip > iend)) {  printf("6b ip=%p length=%d iend=%p\n", ip, (int)length, iend); goto _output_error; }   /* Error : offset outside buffers */
-  //      if (unlikely(ip + length + WILDCOPYLENGTH > iend || op + length + WILDCOPYLENGTH > oend)) { printf("6c ip=%p length=%d %p/%p %p/%p\n", ip, (int)length, ip + length + WILDCOPYLENGTH, iend, op + length + WILDCOPYLENGTH, oend); goto _output_error; }   /* Error : offset outside buffers */
         LZ5_copy8(op, ip);
         LZ5_copy8(op+8, ip+8);
         if (length > 16)
@@ -113,6 +148,7 @@ FORCE_INLINE int LZ5_decompress_LZ4(
 
         /* get matchlength */
         length = token >> RUN_BITS_LZ4;
+#if 1 //def OLD_LENGTH_ENCODING
         if (length == ML_MASK_LZ4) {
             unsigned s;
             do {
@@ -123,6 +159,24 @@ FORCE_INLINE int LZ5_decompress_LZ4(
             if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)op)) { LZ4_DEBUG("9"); goto _output_error; }   /* overflow detection */
         }
         length += MINMATCH;
+#else
+        if (length == ML_MASK_LZ4) {
+            if ((endOnInput) && unlikely(ip > iend - 5) ) { LZ4_DEBUG("0"); goto _output_error; } 
+            length = *ip;
+            if (length >= 254) {
+                if (length == 254) {
+                    length = MEM_readLE16(ip+1);
+                    ip += 2;
+                } else {
+                    length = MEM_readLE32(ip+1);
+                    ip += 4;
+                }
+            }
+            length += ML_MASK_LZ4 + MINMATCH;
+            ip++;
+            if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) { LZ4_DEBUG("9"); goto _output_error; }  /* overflow detection */
+        }
+#endif
 
         /* check external dictionary */
         if ((dict==usingExtDict) && (match < lowPrefix)) {
@@ -150,43 +204,23 @@ FORCE_INLINE int LZ5_decompress_LZ4(
         }
 
         /* copy match within block */
-#if 0
-        cpy = op + length;
-        if (unlikely(offset<8)) {
-            const int dec64 = dec64table[offset];
-            op[0] = match[0];
-            op[1] = match[1];
-            op[2] = match[2];
-            op[3] = match[3];
-            match += dec32table[offset];
-            memcpy(op+4, match, 4);
-            match -= dec64;
-        } else { LZ5_copy8(op, match); match+=8; }
-        op += 8;
-
-        if (unlikely(cpy>oend-12)) {
-            BYTE* const oCopyLimit = oend-(WILDCOPYLENGTH-1);
-            if (cpy > oend-LASTLITERALS) { LZ4_DEBUG("11"); goto _output_error; }   /* Error : last LASTLITERALS bytes must be literals (uncompressed) */
-            if (op < oCopyLimit) {
-                LZ5_wildCopy(op, match, oCopyLimit);
-                match += oCopyLimit - op;
-                op = oCopyLimit;
-            }
-            while (op<cpy) *op++ = *match++;
-        } else {
-            LZ5_copy8(op, match);
-            if (length>16) LZ5_wildCopy(op+8, match+8, cpy);
-        }
-        op=cpy;   /* correction */
-#else
         if (unlikely(match < lowLimit || op + length + WILDCOPYLENGTH > oend)) { LZ4_DEBUG("1match=%p lowLimit=%p\n", match, lowLimit); goto _output_error; }   /* Error : offset outside buffers */
         cpy = op + length;
         LZ5_copy8(op, match);
         LZ5_copy8(op+8, match+8);
+#if 0
+        if (length > 16)
+        {
+            LZ5_copy8(op+16, match+16);
+            LZ5_copy8(op+24, match+24);
+            if (length > 32)
+                LZ5_wildCopy16(op + 32, match + 32, cpy);
+        }
+#else
         if (length > 16)
             LZ5_wildCopy16(op + 16, match + 16, cpy);
-        op = cpy;
 #endif
+        op = cpy;
     }
 
     /* end of decoding */

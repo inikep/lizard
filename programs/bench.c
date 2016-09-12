@@ -43,7 +43,7 @@
 *  Constants
 ***************************************/
 #define NBLOOPS               3
-#define TIMELOOP_MICROSEC     1*1000000ULL /* 1 second */
+#define TIMELOOP_MICROSEC     1*1000000ULL /* 2 seconds */
 #define ACTIVEPERIOD_MICROSEC 70*1000000ULL /* 70 seconds */
 #define COOLPERIOD_SEC        10
 
@@ -259,11 +259,12 @@ static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
                         blockTable[blockNb].resSize = regenSize;
                     }
                     nbLoops++;
-                } while (UTIL_clockSpanMicro(clockStart, ticksPerSecond) < clockLoop);
+                } while (UTIL_clockSpanMicro(clockStart, ticksPerSecond) < 2*clockLoop);
+             //   printf("nbLoops=%d\n", nbLoops);
                 {   U64 const clockSpan = UTIL_clockSpanMicro(clockStart, ticksPerSecond);
                     if (clockSpan < fastestD*nbLoops) fastestD = clockSpan / nbLoops;
                     totalDTime += clockSpan;
-                    dCompleted = totalDTime>maxTime;
+                    dCompleted = totalDTime>(maxTime*2);
             }   }
 
             markNb = (markNb+1) % NB_MARKS;

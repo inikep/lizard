@@ -53,6 +53,7 @@ extern "C" {
 *  Common Constants
 **************************************/
 #define MINMATCH 4
+#define OLD_LENGTH_ENCODING
 #if 0
     #define WILDCOPYLENGTH 8
     #define LASTLITERALS 5
