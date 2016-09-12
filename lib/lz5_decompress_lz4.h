@@ -87,14 +87,15 @@ FORCE_INLINE int LZ5_decompress_LZ4(
             break;     /* Necessarily EOF, due to parsing restrictions */
         }
 
-#if 1
+#if 0
         LZ5_copy8(op, ip);
         if (length > 8)
             LZ5_wildCopy16(op + 8, ip + 8, cpy);
         ip += length; 
         op = cpy;
 #else
-        if (unlikely(ip + length + WILDCOPYLENGTH > iend || op + length + WILDCOPYLENGTH > oend)) { printf("6b %p/%p %p/%p\n", ip + length + WILDCOPYLENGTH, iend, op + length + WILDCOPYLENGTH, oend); goto _output_error; }   /* Error : offset outside buffers */
+    //    if (unlikely(ip > iend)) {  printf("6b ip=%p length=%d iend=%p\n", ip, (int)length, iend); goto _output_error; }   /* Error : offset outside buffers */
+  //      if (unlikely(ip + length + WILDCOPYLENGTH > iend || op + length + WILDCOPYLENGTH > oend)) { printf("6c ip=%p length=%d %p/%p %p/%p\n", ip, (int)length, ip + length + WILDCOPYLENGTH, iend, op + length + WILDCOPYLENGTH, oend); goto _output_error; }   /* Error : offset outside buffers */
         LZ5_copy8(op, ip);
         LZ5_copy8(op+8, ip+8);
         if (length > 16)

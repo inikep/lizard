@@ -83,13 +83,15 @@ FORCE_INLINE int LZ5_decompress_generic(
         return -1;
     }
 
+ //   printf("LZ5_decompress_generic source=%p inputSize=%d dest=%p outputSize=%d cLevel=%d dict=%d dictSize=%d dictStart=%p partialDecoding=%d endOnInput=%d\n", source, inputSize, dest, outputSize, compressionLevel, dict, (int)dictSize, dictStart, partialDecoding, endOnInput);
+
     params = LZ5_defaultParameters[compressionLevel];
     if (params.decompressType == LZ5_coderwords_LZ4)
         res = LZ5_decompress_LZ4(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
     else 
         res = LZ5_decompress_LZ4(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
+//    printf("LZ5_decompress_generic res=%d\n", res);
 
-  //  printf("LZ5_decompress_generic source=%p inputSize=%d dest=%p outputSize=%d cLevel=%d res=%d dict=%d dictSize=%d dictStart=%p partialDecoding=%d endOnInput=%d\n", source, inputSize, dest, outputSize, compressionLevel, res, dict, (int)dictSize, dictStart, partialDecoding, endOnInput);
     return res;
 }
 

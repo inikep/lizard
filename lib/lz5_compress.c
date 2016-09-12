@@ -287,16 +287,16 @@ FORCE_INLINE int LZ5_compress_generic (
     LZ5_stream_t* ctx = (LZ5_stream_t*) ctxvoid;
     int res;
     
+ //   printf("LZ5_compress_generic source=%p inputSize=%d dest=%p maxOutputSize=%d cLevel=%d limit=%d dictBase=%p dictSize=%d\n", source, inputSize, dest, maxOutputSize, ctx->compressionLevel, limit, ctx->dictBase, ctx->dictLimit); 
     *dest++ = (BYTE)ctx->compressionLevel;
     maxOutputSize--; // can be lower than 0
-
-  //  printf("LZ5_compress_generic source=%p inputSize=%d dest=%p maxOutputSize=%d cLevel=%d limit=%d", source, inputSize, dest, maxOutputSize, ctx->compressionLevel, limit);  
+    
     if (ctx->params.compressType == LZ5_parser_nochain)
         res = LZ5_compress_nochain(ctxvoid, source, dest, inputSize, maxOutputSize, limit);
     else
         res = LZ5_compress_HC(ctxvoid, source, dest, inputSize, maxOutputSize, limit);
 
-  //  printf(" res=%d\n", res);
+ //   printf("LZ5_compress_generic res=%d\n", res);
     return (res > 0) ? res+1 : res;
 }
 
