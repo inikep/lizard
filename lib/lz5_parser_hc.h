@@ -345,13 +345,9 @@ _Search3:
     }
 
     /* Encode Last Literals */
-    {   int lastRun = (int)(iend - anchor);
-        if ((outputLimited) && (((char*)op - dest) + lastRun + 1 + ((lastRun+255-RUN_MASK_LZ4)/255) > (U32)maxOutputSize)) return 0;  /* Check output limit */
-        if (lastRun>=(int)RUN_MASK_LZ4) { *op++=(RUN_MASK_LZ4<<ML_BITS_LZ4); lastRun-=RUN_MASK_LZ4; for(; lastRun > 254 ; lastRun-=255) *op++ = 255; *op++ = (BYTE) lastRun; }
-        else *op++ = (BYTE)(lastRun<<ML_BITS_LZ4);
-        memcpy(op, anchor, iend - anchor);
-        op += iend-anchor;
-    }
+    ip = iend;
+    if (LZ5_encodeLastLiterals_LZ4(ctx, &ip, &op, &anchor, outputLimited, oend)) return 0;
+
 
     /* End */
     return (int) (((char*)op)-dest);

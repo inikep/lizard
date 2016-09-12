@@ -59,7 +59,7 @@ FORCE_INLINE int LZ5_decompress_LZ4(
 
         /* get literal length */
         token = *ip++;
-        if ((length=(token>>ML_BITS_LZ4)) == RUN_MASK_LZ4) {
+        if ((length=(token & RUN_MASK_LZ4)) == RUN_MASK_LZ4) {
             unsigned s;
             do {
                 s = *ip++;
@@ -112,7 +112,7 @@ FORCE_INLINE int LZ5_decompress_LZ4(
         if ((checkOffset) && (unlikely(match < lowLimit))) { LZ4_DEBUG("lowPrefix[%p]-dictSize[%d]=lowLimit[%p] match[%p]=op[%p]-offset[%d]\n", lowPrefix, (int)dictSize, lowLimit, match, op, (int)offset); goto _output_error; }  /* Error : offset outside buffers */
 
         /* get matchlength */
-        length = token & ML_MASK_LZ4;
+        length = token >> RUN_BITS_LZ4;
         if (length == ML_MASK_LZ4) {
             unsigned s;
             do {
