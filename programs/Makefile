@@ -54,6 +54,11 @@ endif
 VOID = /dev/null
 
 
+ifeq ($(shell $(CC) -v 2>&1 | grep -c "gcc version "), 1)
+#ALIGN_LOOP = -falign-loops=32
+endif
+
+
 # Default test parameters
 TEST_FILES   := COPYING
 FUZZER_TIME  := -T9mn
@@ -68,14 +73,14 @@ bins: lz5 fullbench fuzzer frametest datagen
 all: bins m32
 
 # dependencies
-$(LZ5DIR)/lz5_compress.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress_lz4.h $(LZ5DIR)/lz5_compress_lz5v2.h $(LZ5DIR)/lz5_parser_hc.h $(LZ5DIR)/lz5_parser_nochain.h 
+$(LZ5DIR)/lz5_compress.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress_lz4.h $(LZ5DIR)/lz5_compress_lz5v2.h $(LZ5DIR)/lz5_parser_hashchain.h $(LZ5DIR)/lz5_parser_fast.h $(LZ5DIR)/lz5_parser_nochain.h $(LZ5DIR)/lz5_parser_optimal.h $(LZ5DIR)/lz5_parser_pricefast.h $(LZ5DIR)/lz5_parser_lowestprice.h
 	$(CC) $(FLAGS) $< -c -o $@
 
-$(LZ5DIR)/lz5_compress32.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress_lz4.h $(LZ5DIR)/lz5_compress_lz5v2.h $(LZ5DIR)/lz5_parser_hc.h $(LZ5DIR)/lz5_parser_nochain.h 
+$(LZ5DIR)/lz5_compress32.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress_lz4.h $(LZ5DIR)/lz5_compress_lz5v2.h $(LZ5DIR)/lz5_parser_hashchain.h $(LZ5DIR)/lz5_parser_fast.h $(LZ5DIR)/lz5_parser_nochain.h $(LZ5DIR)/lz5_parser_optimal.h $(LZ5DIR)/lz5_parser_pricefast.h $(LZ5DIR)/lz5_parser_lowestprice.h
 	$(CC) -m32 $(FLAGS) $< -c -o $@
 
 $(LZ5DIR)/lz5_decompress.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_decompress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress_lz4.h $(LZ5DIR)/lz5_decompress_lz5v2.h
-	$(CC) $(FLAGS) $< -c -o $@
+	$(CC) $(FLAGS) $(ALIGN_LOOP) $< -c -o $@
     
 $(LZ5DIR)/lz5_decompress32.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_decompress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress_lz4.h $(LZ5DIR)/lz5_decompress_lz5v2.h
 	$(CC) -m32 $(FLAGS) $< -c -o $@
@@ -122,7 +127,7 @@ clean:
 #------------------------------------------------------------------------
 #make install is validated only for Linux, OSX, kFreeBSD, Hurd and
 #FreeBSD targets
-ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU FreeBSD))
+ifneq (,$(filter Linux Darwin GNU/kFreeBSD GNU FreeBSD MSYS%, $(shell uname)))
 
 install: lz5$(EXT)
 	@echo Installing binaries
@@ -282,6 +287,8 @@ test-frametest: frametest
 test-frametest32: frametest32
 	./frametest32 $(FUZZER_TIME)
 
+#test-mem: CFLAGS = -O2 -g
+#test-mem: FLAGS = $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 test-mem: lz5 datagen fuzzer frametest fullbench
 	@echo "\n ---- valgrind tests : memory analyzer ----"
 	valgrind --leak-check=yes --error-exitcode=1 ./datagen -g50M > $(VOID)

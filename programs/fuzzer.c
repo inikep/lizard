@@ -146,21 +146,21 @@ static void FUZ_fillCompressibleNoiseBuffer(void* buffer, size_t bufferSize, dou
 *   Aggressively pushes memory allocation limits,
 *   and generates patterns which create address space overflow.
 *   only possible in 32-bits mode */
-static int FUZ_AddressOverflow(void)
+static int FUZ_AddressOverflow(U32* seed)
 {
-    char* buffers[MAX_NB_BUFF_I134+1];
+    char* buffers[MAX_NB_BUFF_I134];
     int i, nbBuff=0;
     int highAddress = 0;
 
     DISPLAY("Overflow tests : ");
 
     /* Only possible in 32-bits */
-    if (sizeof(void*)==8)
+ /*   if (sizeof(void*)==8)
     {
         DISPLAY("64 bits mode : no overflow \n");
         fflush(stdout);
         return 0;
-    }
+    }*/
 
     buffers[0] = (char*)malloc(BLOCKSIZE_I134);
     buffers[1] = (char*)malloc(BLOCKSIZE_I134);
@@ -180,42 +180,49 @@ static int FUZ_AddressOverflow(void)
             highAddress=1;
         }
 
-        {   size_t const sizeToGenerateOverflow = (size_t)(- ((size_t)buffers[nbBuff-1]) + 512);
-            int const nbOf255 = (int)((sizeToGenerateOverflow / 255) + 1);
+        {   int const nbOf255 = 1 + (FUZ_rand(seed) % (BLOCKSIZE_I134-1));
             char* const input = buffers[nbBuff-1];
             char* output = buffers[nbBuff];
             int r;
-            input[0] = (char)0xF0;   /* Literal length overflow */
-            input[1] = (char)0xFF;
+            BYTE cLevel = FUZ_rand(seed) % LZ5_MAX_CLEVEL;
+            for(i = 5; i < nbOf255; i++) input[i] = (char)0xff;
+            for(i = 5; i < nbOf255; i+=(FUZ_rand(seed) % 128)) input[i] = (BYTE)(FUZ_rand(seed)%256);
+
+            input[0] = (char)cLevel; /* Compression Level */
+            input[1] = (char)0xF0;   /* Literal length overflow */
             input[2] = (char)0xFF;
             input[3] = (char)0xFF;
-            for(i = 4; i <= nbOf255+4; i++) input[i] = (char)0xff;
-            r = LZ5_decompress_safe(input, output, nbOf255+64, BLOCKSIZE_I134);
-            if (r>0) goto _overflowError;
-            input[0] = (char)0x1F;   /* Match length overflow */
-            input[1] = (char)0x01;
+            input[4] = (char)0xFF;
+            r = LZ5_decompress_safe(input, output, nbOf255, BLOCKSIZE_I134);
+            if (r>0 && r<nbOf255) goto _overflowError;
+
+            input[0] = (char)cLevel; /* Compression Level */
+            input[1] = (char)0x1F;   /* Match length overflow */
             input[2] = (char)0x01;
-            input[3] = (char)0x00;
-            r = LZ5_decompress_safe(input, output, nbOf255+64, BLOCKSIZE_I134);
-            if (r>0) goto _overflowError;
+            input[3] = (char)0x01;
+            input[4] = (char)0x00;
+            r = LZ5_decompress_safe(input, output, nbOf255, BLOCKSIZE_I134);
+            if (r>0 && r<nbOf255) goto _overflowError;
 
             output = buffers[nbBuff-2];   /* Reverse in/out pointer order */
-            input[0] = (char)0xF0;   /* Literal length overflow */
-            input[1] = (char)0xFF;
+            input[0] = (char)cLevel; /* Compression Level */
+            input[1] = (char)0xF0;   /* Literal length overflow */
             input[2] = (char)0xFF;
             input[3] = (char)0xFF;
-            r = LZ5_decompress_safe(input, output, nbOf255+64, BLOCKSIZE_I134);
-            if (r>0) goto _overflowError;
-            input[0] = (char)0x1F;   /* Match length overflow */
-            input[1] = (char)0x01;
+            input[4] = (char)0xFF;
+            r = LZ5_decompress_safe(input, output, nbOf255, BLOCKSIZE_I134);
+            if (r>0 && r<nbOf255) goto _overflowError;
+
+            input[0] = (char)cLevel; /* Compression Level */
+            input[1] = (char)0x1F;   /* Match length overflow */
             input[2] = (char)0x01;
-            input[3] = (char)0x00;
-            r = LZ5_decompress_safe(input, output, nbOf255+64, BLOCKSIZE_I134);
-            if (r>0) goto _overflowError;
+            input[3] = (char)0x01;
+            input[4] = (char)0x00;
+            r = LZ5_decompress_safe(input, output, nbOf255, BLOCKSIZE_I134);
+            if (r>0 && r<nbOf255) goto _overflowError;
         }
     }
 
-    nbBuff++;
 _endOfTests:
     for (i=0 ; i<nbBuff; i++) free(buffers[i]);
     if (!highAddress) DISPLAY("high address not possible \n");
@@ -657,22 +664,21 @@ _output_error:
 #define testCompressedSize (128 KB)
 #define ringBufferSize (8 KB)
 
-static void FUZ_unitTests(void)
+static void FUZ_unitTests(U32 seed)
 {
     const unsigned testNb = 0;
-    const unsigned seed   = 0;
     const unsigned cycleNb= 0;
     char testInput[testInputSize];
     char testCompressed[testCompressedSize];
     char testVerify[testInputSize];
     char ringBuffer[ringBufferSize];
-    U32 randState = 1;
+    U32 randState = seed ^ PRIME3;
 
     /* Init */
     FUZ_fillCompressibleNoiseBuffer(testInput, testInputSize, 0.50, &randState);
 
     /* 32-bits address space overflow test */
-    FUZ_AddressOverflow();
+    FUZ_AddressOverflow(&randState);
 
     /* LZ5 streaming tests */
     {   LZ5_stream_t* statePtr;
@@ -697,7 +703,7 @@ static void FUZ_unitTests(void)
         FUZ_CHECKTEST(result==0, "LZ5_compress_continue() compression failed");
 
         result = LZ5_decompress_safe(testCompressed, testVerify, result, testCompressedSize);
-        FUZ_CHECKTEST(result!=(int)testCompressedSize, "LZ5_decompress_safe() decompression failed");
+        FUZ_CHECKTEST(result!=(int)testCompressedSize, "LZ5_decompress_safe() decompression failed Level 1 (result=%d testCompressedSize=%d)", (int)result, (int)testCompressedSize);
         crcNew = XXH64(testVerify, testCompressedSize, 0);
         FUZ_CHECKTEST(crcOrig!=crcNew, "LZ5_decompress_safe() decompression corruption");
 
@@ -764,7 +770,7 @@ static void FUZ_unitTests(void)
         FUZ_CHECKTEST(result==0, "LZ5_compress_continue() compression failed");
 
         result = LZ5_decompress_safe(testCompressed, testVerify, result, testCompressedSize);
-        FUZ_CHECKTEST(result!=(int)testCompressedSize, "LZ5_decompress_safe() decompression failed");
+        FUZ_CHECKTEST(result!=(int)testCompressedSize, "LZ5_decompress_safe() decompression failed Level 0 (result=%d testCompressedSize=%d)", (int)result, (int)testCompressedSize);
         crcNew = XXH64(testVerify, testCompressedSize, 0);
         FUZ_CHECKTEST(crcOrig!=crcNew, "LZ5_decompress_safe() decompression corruption");
 
@@ -1121,7 +1127,7 @@ int main(int argc, char** argv)
 
     if (proba!=FUZ_COMPRESSIBILITY_DEFAULT) printf("Compressibility : %i%%\n", proba);
 
-    if ((seedset==0) && (testNb==0)) FUZ_unitTests();
+    if (testNb==0) FUZ_unitTests(seed);
 
     if (nbTests<=0) nbTests=1;
 

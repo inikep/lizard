@@ -54,7 +54,6 @@
 #include "lz5io.h"    /* LZ5IO_compressFilename, LZ5IO_decompressFilename, LZ5IO_compressMultipleFilenames */
 #include "lz5_compress.h"      /* LZ5_VERSION_STRING */
 #define LZ5_NO_MEM_FUNCTIONS
-#include "lz5_common.h"
 
 
 /****************************

@@ -602,8 +602,8 @@ int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressi
         prefs.frameInfo.contentChecksumFlag = (LZ5F_contentChecksum_t)CCflag;
         prefs.frameInfo.contentSize = frameContentSize;
         prefs.autoFlush = autoflush;
-        prefs.compressionLevel = FUZ_rand(&randState) % 5;
-        if ((FUZ_rand(&randState) & 0xF) == 1) prefsPtr = NULL;
+        prefs.compressionLevel = FUZ_rand(&randState) % LZ5_MAX_CLEVEL;
+        if ((FUZ_rand(&randState) & 0x1F) == 1) prefsPtr = NULL;
 
         DISPLAYUPDATE(2, "\r%5u   ", testNb);
         crcOrig = XXH64((BYTE*)srcBuffer+srcStart, srcSize, 1);
