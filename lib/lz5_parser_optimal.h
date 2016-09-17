@@ -321,10 +321,12 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
 
                     if (mlt > LZ5_OPT_NUM) break;
                     if (ip + mlt >= iHighLimit) break;
+                    if (matchIndex + mlt >= dictLimit) 
+                        match = base + matchIndex;   /* to prepare for next usage of match[matchLength] */ 
                 }
             }
         }
-        
+
         if (*(ip+mlt) < *(match+mlt)) {
             *ptr0 = delta0;
             ptr0 = &chainTable[(matchIndex*2) & contentMask];
@@ -407,9 +409,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
                 if (matchIndexLO >= dictLimit) {
                     mlen = LZ5_count(ip, base + matchIndexLO, matchlimit);
                 } else {
-                    if ((U32)((dictLimit-1) - matchIndexLO) >= 3) { /* intentional overflow */
-                        mlen = LZ5_count_2segments(ip, dictBase + matchIndexLO, matchlimit, dictEnd, lowPrefixPtr);
-                    }
+                    mlen = LZ5_count_2segments(ip, dictBase + matchIndexLO, matchlimit, dictEnd, lowPrefixPtr);
                 }
             }
             if (mlen >= REPMINMATCH) {
@@ -536,9 +536,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
                     if (matchIndexLO >= dictLimit) {
                         mlen = LZ5_count(inr, base + matchIndexLO, matchlimit);
                     } else {
-                        if ((U32)((dictLimit-1) - matchIndexLO) >= 3) { /* intentional overflow */
-                            mlen = LZ5_count_2segments(inr, dictBase + matchIndexLO, matchlimit, dictEnd, lowPrefixPtr);
-                        }
+                        mlen = LZ5_count_2segments(inr, dictBase + matchIndexLO, matchlimit, dictEnd, lowPrefixPtr);
                     }
                 }
                 if (mlen >= REPMINMATCH && mlen > best_mlen) {
