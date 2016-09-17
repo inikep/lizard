@@ -299,9 +299,10 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
                     matches[mnum].len = (int)mlt;
                     matches[mnum].back = 0;
                     mnum++;
-                }
 
-                if (best_mlen > LZ5_OPT_NUM) break;
+                    if (mlt > LZ5_OPT_NUM) break;
+                    if (ip + mlt >= iHighLimit) break;
+                }
             }
         } else {
             U32 offset = (U32)(ip - (base + matchIndex));
@@ -317,9 +318,10 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
                     matches[mnum].len = (int)mlt;
                     matches[mnum].back = 0;
                     mnum++;
-                }
 
-                if (best_mlen > LZ5_OPT_NUM) break;
+                    if (mlt > LZ5_OPT_NUM) break;
+                    if (ip + mlt >= iHighLimit) break;
+                }
             }
         }
         
