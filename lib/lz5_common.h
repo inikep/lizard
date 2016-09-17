@@ -40,13 +40,13 @@ extern "C" {
 #endif
 
 // TO DO:
-// valgrind: https://travis-ci.org/inikep/lz5/jobs/160624709
+// valgrind error at level 16: https://travis-ci.org/inikep/lz5/jobs/160624709
 // check if extDict (-BD) gives the same ratio
 // divide into 64K blocks
 // 8-bit offsets
 // sl codewords
 // remove if (offset < 8) printf("ERROR 
-//popraw LZ5_COMPRESSBOUND
+// popraw LZ5_COMPRESSBOUND
 
 /*-************************************
 *  Memory routines
@@ -146,7 +146,7 @@ struct LZ5_stream_s
 #define LZ5_CHAINLOG_LZ5v2  LZ5_WINDOWLOG_LZ5v2
 #define LZ5_HASHLOG_LZ5v2   18
 
-#define LZ5_DEFAULT_CLEVEL  9
+#define LZ5_DEFAULT_CLEVEL  16
 
 
 
