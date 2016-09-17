@@ -157,7 +157,7 @@ FORCE_INLINE int LZ5_GetAllMatches (
 #endif
 
     chainTable[current & contentMask] = (U32)(current - matchIndex);
-    *HashPos =  current;
+    *HashPos =  (U32)current;
     ctx->nextToUpdate++;
 
     if (best_mlen < MINMATCH-1) best_mlen = MINMATCH-1;
@@ -234,12 +234,12 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
     const intptr_t maxDistance = (1 << ctx->params.windowLog) - 1;
     const intptr_t current = (ip - base);
     const intptr_t lowLimit = ((intptr_t)ctx->lowLimit + maxDistance >= current) ? (intptr_t)ctx->lowLimit : current - maxDistance;
-    const BYTE* match, *matchDict;
+    const BYTE* match;
     const size_t minMatchLongOff = ctx->params.minMatchLongOff;
     int nbAttempts = ctx->params.searchNum;
     int mnum = 0;
-    U32 *ptr0, *ptr1;
-    intptr_t matchIndex, delta0, delta1;
+    U32 *ptr0, *ptr1, delta0, delta1;
+    intptr_t matchIndex;
     size_t mlt = 0;
     U32* HashPos;
 
@@ -274,21 +274,21 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
 #endif
     
 
-    *HashPos = current;
+    *HashPos = (U32)current;
     ctx->nextToUpdate++;
 
     // check rest of matches
     ptr0 = &chainTable[(current*2+1) & contentMask];
     ptr1 = &chainTable[(current*2) & contentMask];
-    delta0 = delta1 = current - matchIndex;
+    delta0 = delta1 = (U32)(current - matchIndex);
 
     if (best_mlen < MINMATCH-1) best_mlen = MINMATCH-1;
 
     while ((matchIndex < current) && (matchIndex >= lowLimit) && (nbAttempts)) {
         mlt = 0;
         nbAttempts--;
-        match = base + matchIndex;
         if (matchIndex >= dictLimit) {
+            match = base + matchIndex;
             if (MEM_readMINMATCH(match) == MEM_readMINMATCH(ip)) {
                 mlt = MINMATCH + LZ5_count(ip+MINMATCH, match+MINMATCH, iHighLimit);
                 if ((U32)(ip - match) >= LZ5_OPTIMAL_MIN_OFFSET)
@@ -304,15 +304,16 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
                 if (best_mlen > LZ5_OPT_NUM) break;
             }
         } else {
-            matchDict = dictBase + matchIndex;
+            U32 offset = (U32)(ip - (base + matchIndex));
+            match = dictBase + matchIndex;
             if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
-            if (MEM_readMINMATCH(matchDict) == MEM_readMINMATCH(ip)) {
-                mlt = LZ5_count_2segments(ip+MINMATCH, matchDict+MINMATCH, iHighLimit, dictEnd, lowPrefixPtr) + MINMATCH;
-                if ((U32)(ip - match) >= LZ5_OPTIMAL_MIN_OFFSET)
-                if ((mlt >= minMatchLongOff) || ((U32)(ip - match) < LZ5_MAX_16BIT_OFFSET))
+            if (MEM_readMINMATCH(match) == MEM_readMINMATCH(ip)) {
+                mlt = LZ5_count_2segments(ip+MINMATCH, match+MINMATCH, iHighLimit, dictEnd, lowPrefixPtr) + MINMATCH;
+                if (offset >= LZ5_OPTIMAL_MIN_OFFSET)
+                if ((mlt >= minMatchLongOff) || (offset < LZ5_MAX_16BIT_OFFSET))
                 if (mlt > best_mlen) {
                     best_mlen = mlt;
-                    matches[mnum].off = (int)(ip - match);
+                    matches[mnum].off = (int)offset;
                     matches[mnum].len = (int)mlt;
                     matches[mnum].back = 0;
                     mnum++;

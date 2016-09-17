@@ -66,7 +66,7 @@ clean:
 #------------------------------------------------------------------------
 #make install is validated only for Linux, OSX, kFreeBSD, Hurd and
 #FreeBSD targets
-ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU FreeBSD MSYS_NT-10.0))
+ifneq (,$(filter Linux Darwin GNU/kFreeBSD GNU FreeBSD MSYS%, $(shell uname)))
 
 install:
 	@$(MAKE) -C $(LZ5DIR) $@
@@ -92,7 +92,7 @@ clangtest: clean
 	CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) all CC=clang
 
 sanitize: clean
-	CFLAGS="-O3 -g -fsanitize=undefined" $(MAKE) test CC=clang FUZZER_TIME="-T1mn" NB_LOOPS=-i1
+	CFLAGS="-O1 -g -fsanitize=undefined" $(MAKE) test CC=clang FUZZER_TIME="-T1mn" NB_LOOPS=-i1
 
 staticAnalyze: clean
 	CFLAGS=-g scan-build --status-bugs -v $(MAKE) all
