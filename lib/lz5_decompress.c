@@ -38,10 +38,9 @@
 **************************************/
 #include "lz5_compress.h"
 #include "lz5_decompress.h"
-#define LZ5_MEM_FUNCTIONS
 #include "lz5_common.h"
 #include <stdio.h> // printf
-#include <stdint.h> // uintptr_t
+#include <stdint.h> // intptr_t
 
 /*-************************************
 *  Local Structures and types
@@ -51,14 +50,16 @@ typedef enum { endOnOutputSize = 0, endOnInputSize = 1 } endCondition_directive;
 typedef enum { full = 0, partial = 1 } earlyEnd_directive;
 
 #include "lz5_decompress_lz4.h"
-//#include "lz5_decompress_lz5v2.h"
+#ifndef USE_LZ4_ONLY
+    #include "lz5_decompress_lz5v2.h"
+#endif
 
 
 /*-*****************************
 *  Decompression functions
 *******************************/
 FORCE_INLINE int LZ5_decompress_generic(
-                 const char* const source,
+                 const char* source,
                  char* const dest,
                  int inputSize,
                  int outputSize,         /* If endOnInput==endOnInputSize, this value is the max size of Output Buffer. */
@@ -75,23 +76,28 @@ FORCE_INLINE int LZ5_decompress_generic(
     LZ5_parameters params;
     int res, compressionLevel;
 
- //   if (inputSize < 1) return -1;
+    if ((endOnInput) && (inputSize < 1)) { LZ5_LOG_DECOMPRESS("inputSize=%d outputSize=%d partialDecoding=%d endOnInput=%d\n", inputSize, outputSize, partialDecoding, endOnInput); return 0; }
     compressionLevel = *source;
+
     if (compressionLevel == 0 || compressionLevel > LZ5_MAX_CLEVEL)
     {
-        printf("ERROR LZ5_decompress_generic inputSize=%d compressionLevel=%d\n", inputSize, compressionLevel);
+        LZ5_LOG_DECOMPRESS("ERROR LZ5_decompress_generic inputSize=%d compressionLevel=%d\n", inputSize, compressionLevel);
         return -1;
     }
 
- //   printf("LZ5_decompress_generic source=%p inputSize=%d dest=%p outputSize=%d cLevel=%d dict=%d dictSize=%d dictStart=%p partialDecoding=%d endOnInput=%d\n", source, inputSize, dest, outputSize, compressionLevel, dict, (int)dictSize, dictStart, partialDecoding, endOnInput);
+    LZ5_LOG_DECOMPRESS("LZ5_decompress_generic source=%p inputSize=%d dest=%p outputSize=%d cLevel=%d dict=%d dictSize=%d dictStart=%p partialDecoding=%d endOnInput=%d\n", source, inputSize, dest, outputSize, compressionLevel, dict, (int)dictSize, dictStart, partialDecoding, endOnInput);
 
     params = LZ5_defaultParameters[compressionLevel];
     if (params.decompressType == LZ5_coderwords_LZ4)
         res = LZ5_decompress_LZ4(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
     else 
+#ifdef USE_LZ4_ONLY
         res = LZ5_decompress_LZ4(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
-//    printf("LZ5_decompress_generic res=%d\n", res);
+#else
+        res = LZ5_decompress_LZ5v2(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
+#endif
 
+    LZ5_LOG_DECOMPRESS("LZ5_decompress_generic res=%d\n", res);
     return res;
 }
 

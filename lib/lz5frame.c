@@ -52,7 +52,7 @@ You can contact the author at :
 #include "lz5frame_static.h"
 #include "lz5_compress.h"
 #include "lz5_decompress.h"
-#include "lz5_common.h"
+#include "lz5_common.h"  /* LZ5_DICT_SIZE */
 #define XXH_STATIC_LINKING_ONLY
 #include "xxhash.h"
 
@@ -213,7 +213,7 @@ static BYTE LZ5F_headerChecksum (const void* header, size_t length)
 static LZ5F_blockSizeID_t LZ5F_optimalBSID(const LZ5F_blockSizeID_t requestedBSID, const size_t srcSize)
 {
     LZ5F_blockSizeID_t proposedBSID = LZ5F_max64KB;
-    size_t maxBlockSize = 64 KB;
+    size_t maxBlockSize = 256 MB;
  //   printf("1requestedBSID=%d\n", (int)requestedBSID);
 
     while (requestedBSID > proposedBSID)

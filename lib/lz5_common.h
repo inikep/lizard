@@ -39,6 +39,13 @@
 extern "C" {
 #endif
 
+// TO DO:
+// check if extDict (-BD) gives the same ratio
+// divide into 64K blocks
+// 8-bit offsets
+// sl codewords
+// remove if (offset < 8) printf("ERROR 
+//popraw LZ5_COMPRESSBOUND
 
 /*-************************************
 *  Memory routines
@@ -49,38 +56,49 @@ extern "C" {
 #include "lz5_compress.h"      /* LZ5_GCC_VERSION */
 
 
+#define LZ5_LOG_COMPRESS(...) //printf(__VA_ARGS__)
+#define LZ5_LOG_COMPRESS_LZ4(...) //printf(__VA_ARGS__)
+#define LZ5_LOG_COMPRESS_LZ5v2(...) //printf(__VA_ARGS__)
+#define COMPLOG_CODEWORDS_LZ4(...) //printf(__VA_ARGS__)
+#define COMPLOG_CODEWORDS_LZ5v2(...) //printf(__VA_ARGS__)
+
+#define LZ5_LOG_DECOMPRESS(...) //printf(__VA_ARGS__)
+#define LZ5_LOG_DECOMPRESS_LZ4(...) //printf(__VA_ARGS__)
+#define LZ5_LOG_DECOMPRESS_LZ5v2(...) //printf(__VA_ARGS__)
+#define DECOMPLOG_CODEWORDS_LZ5v2(...) //printf(__VA_ARGS__)
+
+
+
 /*-************************************
 *  Common Constants
 **************************************/
 #define MINMATCH 4
-#define OLD_LENGTH_ENCODING
-#if 0
-    #define WILDCOPYLENGTH 8
-    #define LASTLITERALS 5
-#else
-    #define WILDCOPYLENGTH 16
-    #define LASTLITERALS WILDCOPYLENGTH
-#endif
-#define MFLIMIT (WILDCOPYLENGTH+MINMATCH)
-#define LZ5_DICT_SIZE (1 << 16)
+//#define USE_LZ4_ONLY
 
+#define WILDCOPYLENGTH 16
+#define LASTLITERALS WILDCOPYLENGTH
+#define MFLIMIT (WILDCOPYLENGTH+MINMATCH)
+
+/* LZ4 codewords */
 #define ML_BITS_LZ4  4
 #define ML_MASK_LZ4  ((1U<<ML_BITS_LZ4)-1)
 #define RUN_BITS_LZ4 (8-ML_BITS_LZ4)
 #define RUN_MASK_LZ4 ((1U<<RUN_BITS_LZ4)-1)
 
-#define ML_BITS_LZ5v2  4
-#define ML_MASK_LZ5v2  ((1U<<ML_BITS_LZ5v2)-1)
-#define RUN_BITS_LZ5v2 3
-#define RUN_MASK_LZ5v2 ((1U<<RUN_BITS_LZ5v2)-1)
-#define ML_RUN_BITS (ML_BITS_LZ5v2 + RUN_BITS_LZ5v2)
-#define MM_LONGOFF 16
-
+/* LZ5v2 codewords */
+#define ML_BITS_LZ5v2   4
+#define ML_MASK_LZ5v2   ((1U<<ML_BITS_LZ5v2)-1)
+#define RUN_BITS_LZ5v2  3
+#define RUN_MASK_LZ5v2  ((1U<<RUN_BITS_LZ5v2)-1)
+#define ML_RUN_BITS     (ML_BITS_LZ5v2 + RUN_BITS_LZ5v2)
+#define LZ5_LENGTH_SIZE_LZ5v2(len) ((len >= (1<<16)+RUN_MASK_LZ5v2) ? 5 : ((len >= 254+RUN_MASK_LZ5v2) ? 3 : ((len >= RUN_MASK_LZ5v2) ? 1 : 0)))
+#define MM_LONGOFF      16
+#define LZ5_MAX_16BIT_OFFSET (1<<16)
+#define LZ5_INIT_LAST_OFFSET 0
 
 typedef enum { noLimit = 0, limitedOutput = 1 } limitedOutput_directive;
-typedef enum { LZ5_parser_nochain, LZ5_parser_HC } LZ5_compress_type;   /* from faster to stronger */ 
+typedef enum { LZ5_parser_fast, LZ5_parser_noChain, LZ5_parser_hashChain, LZ5_parser_priceFast, LZ5_parser_lowestPrice, LZ5_parser_optimalPrice, LZ5_parser_optimalPriceBT } LZ5_parser_type;   /* from faster to stronger */ 
 typedef enum { LZ5_coderwords_LZ4, LZ5_coderwords_LZ5v2 } LZ5_decompress_type;
-
 typedef struct
 {
     U32 windowLog;     /* largest match distance : impact decompression buffer size */
@@ -89,9 +107,10 @@ typedef struct
     U32 hashLog3;      /* dispatch table : larger == more memory, faster*/
     U32 searchNum;     /* nb of searches : larger == more compression, slower*/
     U32 searchLength;  /* size of matches : larger == faster decompression */
+    U32 minMatchLongOff;  /* min match size with offsets >= 1<<16 */ 
     U32 sufficientLength;  /* used only by optimal parser: size of matches which is acceptable: larger == more compression, slower */
     U32 fullSearch;    /* used only by optimal parser: perform full search of matches: 1 == more compression, slower */
-    LZ5_compress_type compressType;
+    LZ5_parser_type parserType;
     LZ5_decompress_type decompressType;
 } LZ5_parameters; 
 
@@ -104,13 +123,14 @@ struct LZ5_stream_s
     U32   dictLimit;        /* below that point, need extDict */
     U32   lowLimit;         /* below that point, no more dict */
     U32   nextToUpdate;     /* index from which to continue dictionary update */
+    U32   allocatedMemory;
     int   compressionLevel;
     LZ5_parameters params;
     U32   hashTableSize;
     U32   chainTableSize;
     U32*  chainTable;
     U32*  hashTable;
-    U32   last_off;
+    int   last_off;
 };
 
 
@@ -118,27 +138,37 @@ struct LZ5_stream_s
 *  HC Pre-defined compression levels
 ***************************************/
 #define LZ5_WINDOWLOG_LZ4   16
-#define LZ5_WINDOWLOG_LZ5v2 16
-#define LZ5_CHAINLOG        16
-#define LZ5_HASHLOG         (LZ5_CHAINLOG-1)
-#define LZ5_DEFAULT_CLEVEL  4
-#define LZ5_MAX_CLEVEL      10
+#define LZ5_CHAINLOG_LZ4    LZ5_WINDOWLOG_LZ4
+#define LZ5_HASHLOG_LZ4     18
+
+#define LZ5_WINDOWLOG_LZ5v2 22
+#define LZ5_CHAINLOG_LZ5v2  LZ5_WINDOWLOG_LZ5v2
+#define LZ5_HASHLOG_LZ5v2   18
+
+#define LZ5_DEFAULT_CLEVEL  12
+
 
 
 static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1] =
 {
-    /*            windLog,   contentLog,     HashLog,  H3,  Snum, SL, SuffL, FS, Compression function */
-    {                   0,            0,           0,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 0 - never used
-    {   LZ5_WINDOWLOG_LZ4,            0,          12,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 1
-    {   LZ5_WINDOWLOG_LZ4,            0, LZ5_HASHLOG,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 2
-    {   LZ5_WINDOWLOG_LZ4, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     4,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 3
-    {   LZ5_WINDOWLOG_LZ4, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     8,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 4
-    {   LZ5_WINDOWLOG_LZ4, LZ5_CHAINLOG, LZ5_HASHLOG,   0,    16,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 5
-    { LZ5_WINDOWLOG_LZ5v2,            0,          12,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 6
-    { LZ5_WINDOWLOG_LZ5v2,            0, LZ5_HASHLOG,   0,     0,  0,     0,  0, LZ5_parser_nochain, LZ5_coderwords_LZ4 }, // level 7
-    { LZ5_WINDOWLOG_LZ5v2, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     4,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 8
-    { LZ5_WINDOWLOG_LZ5v2, LZ5_CHAINLOG, LZ5_HASHLOG,   0,     8,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 9
-    { LZ5_WINDOWLOG_LZ5v2, LZ5_CHAINLOG, LZ5_HASHLOG,   0,    16,  0,     0,  0, LZ5_parser_HC,      LZ5_coderwords_LZ4 }, // level 10
+    /*            windLog,            contentLog,           HashLog,  H3,  Snum, SL,   MMLongOff, SuffL, FS, Parser function,           Decompressor type  */
+    {                   0,                     0,                 0,   0,     0,  0,  MM_LONGOFF,     0,  0, LZ5_parser_fast,           LZ5_coderwords_LZ4   }, // level 0 - never used
+    {   LZ5_WINDOWLOG_LZ4,                     0,                12,   0,     0,  0,           0,     0,  0, LZ5_parser_fast,           LZ5_coderwords_LZ4   }, // level 1
+    {   LZ5_WINDOWLOG_LZ4,                     0,                18,   0,     0,  0,           0,     0,  0, LZ5_parser_fast,           LZ5_coderwords_LZ4   }, // level 2
+    {   LZ5_WINDOWLOG_LZ4,                     0,                18,   0,     0,  0,           0,     0,  0, LZ5_parser_noChain,        LZ5_coderwords_LZ4   }, // level 3
+    {   LZ5_WINDOWLOG_LZ4,      LZ5_CHAINLOG_LZ4,   LZ5_HASHLOG_LZ4,   0,     2,  5,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 4
+    {   LZ5_WINDOWLOG_LZ4,      LZ5_CHAINLOG_LZ4,   LZ5_HASHLOG_LZ4,   0,     8,  5,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 5
+    { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2,                14,  13,     1,  5,  MM_LONGOFF,     0,  0, LZ5_parser_priceFast,      LZ5_coderwords_LZ5v2 }, // level 6
+    { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2, LZ5_HASHLOG_LZ5v2,  13,     1,  5,  MM_LONGOFF,     0,  0, LZ5_parser_priceFast,      LZ5_coderwords_LZ5v2 }, // level 7
+    { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2, LZ5_HASHLOG_LZ5v2,  13,     1,  5,  MM_LONGOFF,     0,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LZ5v2 }, // level 8
+    { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2,                23,  16,     2,  5,  MM_LONGOFF,     0,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LZ5v2 }, // level 9
+    { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2,                23,  16,     8,  4,  MM_LONGOFF,     0,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LZ5v2 }, // level 10
+    { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2,                23,  16,     8,  4,  MM_LONGOFF,    64,  0, LZ5_parser_optimalPrice,   LZ5_coderwords_LZ5v2 }, // level 11
+    { LZ5_WINDOWLOG_LZ5v2,  LZ5_CHAINLOG_LZ5v2+1,                23,  16,     8,  4,  MM_LONGOFF,    64,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ5v2 }, // level 12
+    { LZ5_WINDOWLOG_LZ5v2,  LZ5_CHAINLOG_LZ5v2+1,                23,  16,   128,  4,  MM_LONGOFF,    64,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ5v2 }, // level 13
+    { LZ5_WINDOWLOG_LZ5v2,  LZ5_CHAINLOG_LZ5v2+1,                28,  24, 1<<10,  4,  MM_LONGOFF, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ5v2 }, // level 14
+//  {                  10,                    10,                10,   0,     0,  4,           0,     0,  0, LZ5_fast          }, // min values
+//  {                  24,                    24,                28,  24, 1<<24,  7,           0, 1<<24,  2, LZ5_optimal_price }, // max values
 };
 
 
@@ -163,7 +193,7 @@ static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1] =
 #  endif   /* __STDC_VERSION__ */
 #endif  /* _MSC_VER */
 
-/* LZ5_GCC_VERSION is defined into lz5_compress.h */
+#define LZ5_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #if (LZ5_GCC_VERSION >= 302) || (__INTEL_COMPILER >= 800) || defined(__clang__)
 #  define expect(expr,value)    (__builtin_expect ((expr),(value)) )
 #else
@@ -173,21 +203,29 @@ static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1] =
 #define likely(expr)     expect((expr) != 0, 1)
 #define unlikely(expr)   expect((expr) != 0, 0)
 
-
-#define ALLOCATOR(n,s) calloc(n,s)
-#define FREEMEM        free
-#define MEM_INIT       memset
-#define MIN(a,b) ((a)<(b) ? (a) : (b))
-
 #define KB *(1 <<10)
 #define MB *(1 <<20)
 #define GB *(1U<<30)
 
+#define ALLOCATOR(n,s) calloc(n,s)
+#define FREEMEM        free
+#define MEM_INIT       memset
+#define LZ5_DICT_SIZE (1 << LZ5_WINDOWLOG_LZ5v2)
+#ifndef MAX
+    #define MAX(a,b) ((a)>(b))?(a):(b)
+#endif
+#ifndef MIN
+	#define MIN(a,b) ((a)<(b)?(a):(b))
+#endif
+
+#if MINMATCH == 3
+    #define MEM_readMINMATCH(ptr) (U32)(MEM_read32(ptr)<<8) 
+#else
+    #define MEM_readMINMATCH(ptr) (U32)(MEM_read32(ptr)) 
+#endif 
 
 
 
-
-#ifdef LZ5_MEM_FUNCTIONS
 
 /*-************************************
 *  Reading and writing into memory
@@ -195,13 +233,13 @@ static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1] =
 #define STEPSIZE sizeof(size_t)
 
 
-static void LZ5_copy8(void* dst, const void* src)
+MEM_STATIC void LZ5_copy8(void* dst, const void* src)
 {
     memcpy(dst,src,8);
 }
 
 /* customized variant of memcpy, which can overwrite up to 7 bytes beyond dstEnd */
-static void LZ5_wildCopy(void* dstPtr, const void* srcPtr, void* dstEnd)
+MEM_STATIC void LZ5_wildCopy(void* dstPtr, const void* srcPtr, void* dstEnd)
 {
     BYTE* d = (BYTE*)dstPtr;
     const BYTE* s = (const BYTE*)srcPtr;
@@ -216,7 +254,7 @@ static void LZ5_wildCopy(void* dstPtr, const void* srcPtr, void* dstEnd)
     do { LZ5_copy8(d,s); d+=8; s+=8; } while (d<e);
 }
 
-static void LZ5_wildCopy16(BYTE* dstPtr, const BYTE* srcPtr, BYTE* dstEnd)
+MEM_STATIC void LZ5_wildCopy16(BYTE* dstPtr, const BYTE* srcPtr, BYTE* dstEnd)
 {
     do {
         LZ5_copy8(dstPtr, srcPtr);
@@ -236,10 +274,36 @@ static void LZ5_wildCopy16(BYTE* dstPtr, const BYTE* srcPtr, BYTE* dstEnd)
 #endif
 
 
+/* **************************************
+*  Function body to include for inlining
+****************************************/
+MEM_STATIC U32 LZ5_highbit32(U32 val)
+{
+#   if defined(_MSC_VER)   /* Visual */
+    unsigned long r=0;
+    _BitScanReverse(&r, val);
+    return (unsigned)r;
+#   elif defined(__GNUC__) && (__GNUC__ >= 3)   /* GCC Intrinsic */
+    return 31 - __builtin_clz(val);
+#   else   /* Software version */
+    static const int DeBruijnClz[32] = { 0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30, 8, 12, 20, 28, 15, 17, 24, 7, 19, 27, 23, 6, 26, 5, 4, 31 };
+    U32 v = val;
+    int r;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    r = DeBruijnClz[(U32)(v * 0x07C4ACDDU) >> 27];
+    return r;
+#   endif
+}
+
+
 /*-************************************
 *  Common functions
 **************************************/
-static unsigned LZ5_NbCommonBytes (register size_t val)
+MEM_STATIC unsigned LZ5_NbCommonBytes (register size_t val)
 {
     if (MEM_isLittleEndian()) {
         if (MEM_64bits()) {
@@ -297,7 +361,7 @@ static unsigned LZ5_NbCommonBytes (register size_t val)
     }
 }
 
-static unsigned LZ5_count(const BYTE* pIn, const BYTE* pMatch, const BYTE* pInLimit)
+MEM_STATIC unsigned LZ5_count(const BYTE* pIn, const BYTE* pMatch, const BYTE* pInLimit)
 {
     const BYTE* const pStart = pIn;
 
@@ -314,9 +378,12 @@ static unsigned LZ5_count(const BYTE* pIn, const BYTE* pMatch, const BYTE* pInLi
     return (unsigned)(pIn - pStart);
 }
 
-#endif
-
-
+/* alias to functions with compressionLevel=1 */
+int LZ5_sizeofState_Level1(void);
+int LZ5_compress_Level1(const char* source, char* dest, int sourceSize, int maxDestSize);
+int LZ5_compress_extState_Level1 (void* state, const char* source, char* dest, int inputSize, int maxDestSize);
+LZ5_stream_t* LZ5_resetStream_Level1 (LZ5_stream_t* streamPtr);
+LZ5_stream_t* LZ5_createStream_Level1(void);
 
 
 #if defined (__cplusplus)

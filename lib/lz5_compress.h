@@ -54,7 +54,6 @@ extern "C" {
 #define LZ5_VERSION_MINOR    0    /* for new (non-breaking) interface capabilities */
 #define LZ5_VERSION_RELEASE  0    /* for tweaks, bug-fixes, or development */
 
-#define LZ5_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #define LZ5_VERSION_NUMBER (LZ5_VERSION_MAJOR *100*100 + LZ5_VERSION_MINOR *100 + LZ5_VERSION_RELEASE)
 int LZ5_versionNumber (void);
 
@@ -66,16 +65,17 @@ const char* LZ5_versionString (void);
 
 typedef struct LZ5_stream_s LZ5_stream_t;
 
+#define LZ5_MAX_CLEVEL      14  /* maximum compression level */
+
 
 /*-************************************
 *  Simple Functions
 **************************************/
 
 int LZ5_compress (const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel); 
-int LZ5_compress_Level1(const char* source, char* dest, int sourceSize, int maxDestSize);
 
 /*
-LZ5_compress_Level1() :
+LZ5_compress() :
     Compresses 'sourceSize' bytes from buffer 'source'
     into already allocated 'dest' buffer of size 'maxDestSize'.
     Compression is guaranteed to succeed if 'maxDestSize' >= LZ5_compressBound(sourceSize).
@@ -103,7 +103,7 @@ LZ5_compressBound() :
     Provides the maximum size that LZ5 compression may output in a "worst case" scenario (input data not compressible)
     This function is primarily useful for memory allocation purposes (destination buffer size).
     Macro LZ5_COMPRESSBOUND() is also provided for compilation-time evaluation (stack memory allocation for example).
-    Note that LZ5_compress_Level1() compress faster when dest buffer size is >= LZ5_compressBound(srcSize)
+    Note that LZ5_compress() compress faster when dest buffer size is >= LZ5_compressBound(srcSize)
         inputSize  : max supported value is LZ5_MAX_INPUT_SIZE
         return : maximum output size in a "worst case" scenario
               or 0, if input size is too large ( > LZ5_MAX_INPUT_SIZE)
@@ -112,17 +112,15 @@ int LZ5_compressBound(int inputSize);
 
 
 /*!
-LZ5_compress_extState_Level1() :
+LZ5_compress_extState() :
     Same compression function, just using an externally allocated memory space to store compression state.
-    Use LZ5_sizeofState_Level1() to know how much memory must be allocated,
+    Use LZ5_sizeofState() to know how much memory must be allocated,
     and allocate it on 8-bytes boundaries (using malloc() typically).
     Then, provide it as 'void* state' to compression function.
 */
 int LZ5_sizeofState(int compressionLevel); 
-int LZ5_sizeofState_Level1(void);
 
 int LZ5_compress_extState(void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel);
-int LZ5_compress_extState_Level1 (void* state, const char* source, char* dest, int inputSize, int maxDestSize);
 
 
 
@@ -130,21 +128,17 @@ int LZ5_compress_extState_Level1 (void* state, const char* source, char* dest, i
 *  Streaming Compression Functions
 ***********************************************/
 
-
-
-/*! LZ5_resetStream_Level1() :
+/*! LZ5_resetStream() :
  *  Use this function to init an allocated `LZ5_stream_t` structure
  */
 LZ5_stream_t* LZ5_resetStream (LZ5_stream_t* streamPtr, int compressionLevel); 
-LZ5_stream_t* LZ5_resetStream_Level1 (LZ5_stream_t* streamPtr);
 
-/*! LZ5_createStream_Level1() will allocate and initialize an `LZ5_stream_t` structure.
+/*! LZ5_createStream() will allocate and initialize an `LZ5_stream_t` structure.
  *  LZ5_freeStream() releases its memory.
  *  In the context of a DLL (liblz5), please use these methods rather than the static struct.
  *  They are more future proof, in case of a change of `LZ5_stream_t` size.
  */
 LZ5_stream_t* LZ5_createStream(int compressionLevel);
-LZ5_stream_t* LZ5_createStream_Level1(void);
 
 int           LZ5_freeStream (LZ5_stream_t* streamPtr);
 
