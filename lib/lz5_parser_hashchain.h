@@ -3,9 +3,11 @@
 #define OPTIMAL_ML (int)((ML_MASK_LZ4-1)+MINMATCH)
 #define GET_MINMATCH(offset) (MINMATCH)
 
-//#define LZ5_HC_HASH_FUNCTION(ip, hashLog) LZ5_hashPtr(ip, hashLog, ctx->params.searchLength)
-#define LZ5_HC_HASH_FUNCTION(ip, hashLog) LZ5_hash5Ptr(ip, hashLog)
-
+#if 1
+    #define LZ5_HC_HASH_FUNCTION(ip, hashLog) LZ5_hashPtr(ip, hashLog, ctx->params.searchLength)
+#else
+    #define LZ5_HC_HASH_FUNCTION(ip, hashLog) LZ5_hash5Ptr(ip, hashLog)
+#endif
 
 /* Update chains up to ip (excluded) */
 FORCE_INLINE void LZ5_Insert (LZ5_stream_t* ctx, const BYTE* ip)

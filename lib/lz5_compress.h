@@ -65,7 +65,7 @@ const char* LZ5_versionString (void);
 
 typedef struct LZ5_stream_s LZ5_stream_t;
 
-#define LZ5_MAX_CLEVEL      14  /* maximum compression level */
+#define LZ5_MAX_CLEVEL      18  /* maximum compression level */
 
 
 /*-************************************
