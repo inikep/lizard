@@ -1,11 +1,20 @@
 #define LZ5_HC_MIN_OFFSET 8
+#define LZ5_HC_LONGOFF_MM 0 /* not used with offsets > 1<<16 */
 #define OPTIMAL_ML (int)((ML_MASK_LZ4-1)+MINMATCH)
+#define GET_MINMATCH(offset) (MINMATCH)
+
+//#define LZ5_HC_HASH_FUNCTION(ip, hashLog) LZ5_hashPtr(ip, hashLog, ctx->params.searchLength)
+#define LZ5_HC_HASH_FUNCTION(ip, hashLog) LZ5_hash5Ptr(ip, hashLog)
+
 
 /* Update chains up to ip (excluded) */
 FORCE_INLINE void LZ5_Insert (LZ5_stream_t* ctx, const BYTE* ip)
 {
     U32* const chainTable = ctx->chainTable;
     U32* const hashTable  = ctx->hashTable;
+#if MINMATCH == 3
+    U32* HashTable3  = ctx->hashTable3;
+#endif 
     const BYTE* const base = ctx->base;
     U32 const target = (U32)(ip - base);
     U32 idx = ctx->nextToUpdate;
@@ -14,16 +23,20 @@ FORCE_INLINE void LZ5_Insert (LZ5_stream_t* ctx, const BYTE* ip)
     const U32 maxDistance = (1 << ctx->params.windowLog) - 1;
 
     while (idx < target) {
-        size_t const h = LZ5_hash4Ptr(base+idx, hashLog);
+        size_t const h = LZ5_hashPtr(base+idx, hashLog, ctx->params.searchLength);
         size_t delta = idx - hashTable[h];
         if (delta>maxDistance) delta = maxDistance;
         DELTANEXT(idx) = (U32)delta;
         hashTable[h] = idx;
+#if MINMATCH == 3
+        HashTable3[LZ5_hash3Ptr(base+idx, ctx->params.hashLog3)] = idx;
+#endif 
         idx++;
     }
 
     ctx->nextToUpdate = target;
 }
+
 
 
 FORCE_INLINE int LZ5_InsertAndFindBestMatch (LZ5_stream_t* ctx,   /* Index table will be updated */
@@ -48,7 +61,7 @@ FORCE_INLINE int LZ5_InsertAndFindBestMatch (LZ5_stream_t* ctx,   /* Index table
 
     /* HC4 match finder */
     LZ5_Insert(ctx, ip);
-    matchIndex = HashTable[LZ5_hash4Ptr(ip, hashLog)];
+    matchIndex = HashTable[LZ5_HC_HASH_FUNCTION(ip, hashLog)];
 
     while ((matchIndex>=lowLimit) && (nbAttempts)) {
         nbAttempts--;
@@ -61,6 +74,9 @@ FORCE_INLINE int LZ5_InsertAndFindBestMatch (LZ5_stream_t* ctx,   /* Index table
                 && (MEM_read32(match) == MEM_read32(ip)))
             {
                 size_t const mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
+#if LZ5_HC_LONGOFF_MM > 0
+                if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - match) < LZ5_MAX_16BIT_OFFSET))
+#endif
                 if (mlt > ml) { ml = mlt; *matchpos = match; }
             }
         } else {
@@ -71,15 +87,9 @@ FORCE_INLINE int LZ5_InsertAndFindBestMatch (LZ5_stream_t* ctx,   /* Index table
 #endif
             if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
             if (MEM_read32(match) == MEM_read32(ip)) {
-#if 1
                 size_t mlt = LZ5_count_2segments(ip+MINMATCH, match+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
-#else
-                size_t mlt;
-                const BYTE* vLimit = ip + (dictLimit - matchIndex);
-                if (vLimit > iLimit) vLimit = iLimit;
-                mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, vLimit) + MINMATCH;
-                if ((ip+mlt == vLimit) && (vLimit < iLimit))
-                    mlt += LZ5_count(ip+mlt, base+dictLimit, iLimit);
+#if LZ5_HC_LONGOFF_MM > 0
+                if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - (base + matchIndex)) < LZ5_MAX_16BIT_OFFSET))
 #endif
                 if (mlt > ml) { ml = mlt; *matchpos = base + matchIndex; }   /* virtual matchpos */
             }
@@ -119,7 +129,7 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatch (
     
     /* First Match */
     LZ5_Insert(ctx, ip);
-    matchIndex = HashTable[LZ5_hash4Ptr(ip, hashLog)];
+    matchIndex = HashTable[LZ5_HC_HASH_FUNCTION(ip, hashLog)];
 
     while ((matchIndex>=lowLimit) && (nbAttempts)) {
         nbAttempts--;
@@ -132,14 +142,12 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatch (
                 if (MEM_read32(match) == MEM_read32(ip)) {
                     int mlt = MINMATCH + LZ5_count(ip+MINMATCH, match+MINMATCH, iHighLimit);
                     int back = 0;
-
-                    while ((ip+back > iLowLimit)
-                           && (match+back > lowPrefixPtr)
-                           && (ip[back-1] == match[back-1]))
-                            back--;
-
+                    while ((ip+back > iLowLimit) && (match+back > lowPrefixPtr) && (ip[back-1] == match[back-1])) back--;
                     mlt -= back;
 
+#if LZ5_HC_LONGOFF_MM > 0
+                    if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - match) < LZ5_MAX_16BIT_OFFSET))
+#endif
                     if (mlt > longest) {
                         longest = (int)mlt;
                         *matchpos = match+back;
@@ -155,18 +163,12 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatch (
             if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
             if (MEM_read32(match) == MEM_read32(ip)) {
                 int back=0;
-#if 1
                 size_t mlt = LZ5_count_2segments(ip+MINMATCH, match+MINMATCH, iHighLimit, dictEnd, lowPrefixPtr) + MINMATCH;
-#else
-                size_t mlt;
-                const BYTE* vLimit = ip + (dictLimit - matchIndex);
-                if (vLimit > iHighLimit) vLimit = iHighLimit;
-                mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, vLimit) + MINMATCH;
-                if ((ip+mlt == vLimit) && (vLimit < iHighLimit))
-                    mlt += LZ5_count(ip+mlt, base+dictLimit, iHighLimit);
-#endif
                 while ((ip+back > iLowLimit) && (matchIndex+back > lowLimit) && (ip[back-1] == match[back-1])) back--;
                 mlt -= back;
+#if LZ5_HC_LONGOFF_MM > 0
+                if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - (base + matchIndex)) < LZ5_MAX_16BIT_OFFSET))
+#endif
                 if ((int)mlt > longest) { longest = (int)mlt; *matchpos = base + matchIndex + back; *startpos = ip+back; }
             }
         }
@@ -179,15 +181,14 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatch (
 }
 
 
-FORCE_INLINE int LZ5_compress_HC (
-     void* const ctxvoid,
-     const char* const source,
-     char* const dest,
-     const int inputSize,
-     const int maxOutputSize,
-     const limitedOutput_directive outputLimited)
+FORCE_INLINE int LZ5_compress_hashChain (
+        LZ5_stream_t* const ctx,
+        const char* const source,
+        char* const dest,
+        const int inputSize,
+        const int maxOutputSize,
+        const limitedOutput_directive outputLimited)
 {
-    LZ5_stream_t* ctx = (LZ5_stream_t*) ctxvoid;
     const BYTE* ip = (const BYTE*) source;
     const BYTE* anchor = ip;
     const BYTE* const iend = ip + inputSize;
@@ -207,8 +208,6 @@ FORCE_INLINE int LZ5_compress_HC (
     const BYTE* ref0;
 
     /* init */
-    ctx->end += inputSize;
-
     ip++;
 
     /* Main Loop */
@@ -257,7 +256,13 @@ _Search3:
             int correction;
             int new_ml = ml;
             if (new_ml > OPTIMAL_ML) new_ml = OPTIMAL_ML;
-            if (ip+new_ml > start2 + ml2 - MINMATCH) new_ml = (int)(start2 - ip) + ml2 - MINMATCH;
+            if (ip+new_ml > start2 + ml2 - GET_MINMATCH((U32)(start2 - ref2))) {
+                new_ml = (int)(start2 - ip) + ml2 - GET_MINMATCH((U32)(start2 - ref2));
+                if (new_ml < GET_MINMATCH((U32)(ip - ref))) { // match2 doesn't fit
+                    if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
+                    continue;
+                }
+            }
             correction = new_ml - (int)(start2 - ip);
             if (correction > 0) {
                 start2 += correction;
@@ -288,7 +293,7 @@ _Search3:
                     start2 += correction;
                     ref2 += correction;
                     ml2 -= correction;
-                    if (ml2 < MINMATCH) {
+                    if (ml2 < GET_MINMATCH((U32)(start2 - ref2))) {
                         start2 = start3;
                         ref2 = ref3;
                         ml2 = ml3;
@@ -320,7 +325,20 @@ _Search3:
             if ((start2 - ip) < (int)ML_MASK_LZ4) {
                 int correction;
                 if (ml > OPTIMAL_ML) ml = OPTIMAL_ML;
-                if (ip + ml > start2 + ml2 - MINMATCH) ml = (int)(start2 - ip) + ml2 - MINMATCH;
+                if (ip + ml > start2 + ml2 - GET_MINMATCH((U32)(start2 - ref2))) {
+                    ml = (int)(start2 - ip) + ml2 - GET_MINMATCH((U32)(start2 - ref2));
+                    if (ml < GET_MINMATCH((U32)(ip - ref))) { // match2 doesn't fit, remove it
+                        if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
+                        ip  = start3;
+                        ref = ref3;
+                        ml  = ml3;
+
+                        start0 = start2;
+                        ref0 = ref2;
+                        ml0 = ml2;
+                        goto _Search2;
+                    }
+                }
                 correction = ml - (int)(start2 - ip);
                 if (correction > 0) {
                     start2 += correction;
@@ -346,9 +364,10 @@ _Search3:
 
     /* Encode Last Literals */
     ip = iend;
-    if (LZ5_encodeLastLiterals_LZ4(ctx, &ip, &op, &anchor, outputLimited, oend)) return 0;
-
+    if (LZ5_encodeLastLiterals_LZ4(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;
 
     /* End */
     return (int) (((char*)op)-dest);
+_output_error:
+    return 0;
 }
