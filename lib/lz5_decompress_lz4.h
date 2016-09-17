@@ -1,5 +1,3 @@
-#define LZ4_DEBUG(...) // printf(__VA_ARGS__)
-
 /*! LZ5_decompress_LZ4() :
  *  This generic decompression function cover all use cases.
  *  It shall be instantiated several times, using different sets of directives
@@ -32,23 +30,19 @@ FORCE_INLINE int LZ5_decompress_LZ4(
     BYTE* oexit = op + targetOutputSize;
     const BYTE* const lowLimit = lowPrefix - dictSize;
     const BYTE* const dictEnd = (const BYTE*)dictStart + dictSize;
-#if 0
-    const unsigned dec32table[] = {4, 1, 2, 1, 4, 4, 4, 4};
-    const int dec64table[] = {0, 0, 0, -1, 0, 1, 2, 3};
-#endif
 
     const int safeDecode = (endOnInput==endOnInputSize);
     const int checkOffset = ((safeDecode) && (dictSize < (int)(LZ5_DICT_SIZE)));
 
     intptr_t length;
-    unsigned temp = *ip++; // skip compression level
-    (void)temp;
+    ip++; // skip compression level
     (void)compressionLevel;
     (void)LZ5_wildCopy;
 
     /* Special cases */
-    if ((partialDecoding) && (oexit > oend-MFLIMIT)) oexit = oend-MFLIMIT;                        /* targetOutputSize too high => decode everything */
-    if ((endOnInput) && (unlikely(outputSize==0))) return ((inputSize==1) && (*ip==0)) ? 0 : -1;  /* Empty output buffer */
+    if (partialDecoding) { if (oexit > oend-MFLIMIT) oexit = oend-MFLIMIT; }  /* targetOutputSize too high => decode everything */
+    else oexit = oend - WILDCOPYLENGTH;
+    if ((endOnInput) && (unlikely(outputSize==0))) return ((inputSize==2) && (*ip==0)) ? 0 : -1;  /* Empty output buffer */
     if ((!endOnInput) && (unlikely(outputSize==0))) return (*ip==0?1:-1);
 
     /* Main Loop : decode sequences */
@@ -59,37 +53,8 @@ FORCE_INLINE int LZ5_decompress_LZ4(
 
         /* get literal length */
         token = *ip++;
-#ifdef OLD_LENGTH_ENCODING
         if ((length=(token & RUN_MASK_LZ4)) == RUN_MASK_LZ4) {
-            unsigned s;
-            do {
-                s = *ip++;
-                length += s;
-            } while ( likely(endOnInput ? ip<iend-RUN_MASK_LZ4 : 1) & (s==255) );
-            if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) { LZ4_DEBUG("1"); goto _output_error; }  /* overflow detection */
-            if ((safeDecode) && unlikely((size_t)(ip+length)<(size_t)(ip))) { LZ4_DEBUG("2"); goto _output_error; }   /* overflow detection */
-        }
-#else
-#if 1
-        if ((length=(token & RUN_MASK_LZ4)) == RUN_MASK_LZ4) {
-            if ((endOnInput) && unlikely(ip > iend - 5) ) { LZ4_DEBUG("0"); goto _output_error; } 
-            if likely(*ip < 254) {
-                length += *ip;
-                ip++;
-            } 
-            else if (*ip == 254) {
-                length += MEM_readLE16(ip+1);
-                ip += 3;
-            } else {
-                length += MEM_readLE32(ip+1);
-                ip += 5;
-            }
-            if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) { LZ4_DEBUG("1"); goto _output_error; }  /* overflow detection */
-            if ((safeDecode) && unlikely((size_t)(ip+length)<(size_t)(ip))) { LZ4_DEBUG("2"); goto _output_error; }   /* overflow detection */
-        }
-#else
-        if ((length=(token & RUN_MASK_LZ4)) == RUN_MASK_LZ4) {
-            if ((endOnInput) && unlikely(ip > iend - 5) ) { LZ4_DEBUG("0"); goto _output_error; } 
+            if ((endOnInput) && unlikely(ip > iend - 5) ) { LZ5_LOG_DECOMPRESS_LZ4("0"); goto _output_error; } 
             length = *ip;
             if unlikely(length >= 254) {
                 if (length == 254) {
@@ -102,23 +67,25 @@ FORCE_INLINE int LZ5_decompress_LZ4(
             }
             length += RUN_MASK_LZ4;
             ip++;
-            if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) { LZ4_DEBUG("1"); goto _output_error; }  /* overflow detection */
-            if ((safeDecode) && unlikely((size_t)(ip+length)<(size_t)(ip))) { LZ4_DEBUG("2"); goto _output_error; }   /* overflow detection */
+            if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) { LZ5_LOG_DECOMPRESS_LZ4("1"); goto _output_error; }  /* overflow detection */
+            if ((safeDecode) && unlikely((size_t)(ip+length)<(size_t)(ip))) { LZ5_LOG_DECOMPRESS_LZ4("2"); goto _output_error; }   /* overflow detection */
         }
-#endif
-#endif
 
         /* copy literals */
         cpy = op + length;
-        if ( ((endOnInput) && ((cpy>(partialDecoding?oexit:oend-WILDCOPYLENGTH)) || (ip+length>iend-(2+1+LASTLITERALS))) )
-            || ((!endOnInput) && (cpy>oend-WILDCOPYLENGTH)) )
+#if 0
+        if ( ((endOnInput) && ((cpy>oexit) || (ip + length > iend - (2 + WILDCOPYLENGTH))) )
+            || ((!endOnInput) && (cpy>oexit)) )
+#else
+        if ((cpy>oexit) || ((endOnInput) && (ip + length > iend - (2 + WILDCOPYLENGTH))))
+#endif
         {
             if (partialDecoding) {
-                if (cpy > oend) { LZ4_DEBUG("3"); goto _output_error; }                           /* Error : write attempt beyond end of output buffer */
-                if ((endOnInput) && (ip+length > iend)) { LZ4_DEBUG("4"); goto _output_error; }   /* Error : read attempt beyond end of input buffer */
+                if (cpy > oend) { LZ5_LOG_DECOMPRESS_LZ4("3"); goto _output_error; }                           /* Error : write attempt beyond end of output buffer */
+                if ((endOnInput) && (ip+length > iend)) { LZ5_LOG_DECOMPRESS_LZ4("4"); goto _output_error; }   /* Error : read attempt beyond end of input buffer */
             } else {
-                if ((!endOnInput) && (cpy != oend)) { LZ4_DEBUG("5"); goto _output_error; }       /* Error : block decoding must stop exactly there */
-                if ((endOnInput) && ((ip+length != iend) || (cpy > oend))) { LZ4_DEBUG("6"); goto _output_error; }   /* Error : input must be consumed */
+                if ((!endOnInput) && (cpy != oend)) { LZ5_LOG_DECOMPRESS_LZ4("5"); goto _output_error; }       /* Error : block decoding must stop exactly there */
+                if ((endOnInput) && ((ip+length != iend) || (cpy > oend))) { LZ5_LOG_DECOMPRESS_LZ4("6"); goto _output_error; }   /* Error : input must be consumed */
             }
             memcpy(op, ip, length);
             ip += length;
@@ -144,26 +111,14 @@ FORCE_INLINE int LZ5_decompress_LZ4(
         ip += 2;
 
         match = op - offset;
-        if ((checkOffset) && (unlikely(match < lowLimit))) { LZ4_DEBUG("lowPrefix[%p]-dictSize[%d]=lowLimit[%p] match[%p]=op[%p]-offset[%d]\n", lowPrefix, (int)dictSize, lowLimit, match, op, (int)offset); goto _output_error; }  /* Error : offset outside buffers */
+        if ((checkOffset) && (unlikely(match < lowLimit))) { LZ5_LOG_DECOMPRESS_LZ4("lowPrefix[%p]-dictSize[%d]=lowLimit[%p] match[%p]=op[%p]-offset[%d]\n", lowPrefix, (int)dictSize, lowLimit, match, op, (int)offset); goto _output_error; }  /* Error : offset outside buffers */
 
         /* get matchlength */
         length = token >> RUN_BITS_LZ4;
-#if 1 //def OLD_LENGTH_ENCODING
         if (length == ML_MASK_LZ4) {
-            unsigned s;
-            do {
-                s = *ip++;
-                if ((endOnInput) && (ip > iend-LASTLITERALS)) { LZ4_DEBUG("8"); goto _output_error; }
-                length += s;
-            } while (s==255);
-            if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)op)) { LZ4_DEBUG("9"); goto _output_error; }   /* overflow detection */
-        }
-        length += MINMATCH;
-#else
-        if (length == ML_MASK_LZ4) {
-            if ((endOnInput) && unlikely(ip > iend - 5) ) { LZ4_DEBUG("0"); goto _output_error; } 
+            if ((endOnInput) && unlikely(ip > iend - 5) ) { LZ5_LOG_DECOMPRESS_LZ4("0"); goto _output_error; } 
             length = *ip;
-            if (length >= 254) {
+            if unlikely(length >= 254) {
                 if (length == 254) {
                     length = MEM_readLE16(ip+1);
                     ip += 2;
@@ -172,15 +127,15 @@ FORCE_INLINE int LZ5_decompress_LZ4(
                     ip += 4;
                 }
             }
-            length += ML_MASK_LZ4 + MINMATCH;
+            length += ML_MASK_LZ4;
             ip++;
-            if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) { LZ4_DEBUG("9"); goto _output_error; }  /* overflow detection */
+            if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) { LZ5_LOG_DECOMPRESS_LZ4("9"); goto _output_error; }  /* overflow detection */
         }
-#endif
+        length += MINMATCH;
 
         /* check external dictionary */
         if ((dict==usingExtDict) && (match < lowPrefix)) {
-            if (unlikely(op + length + LASTLITERALS > oend)) { LZ4_DEBUG("10"); goto _output_error; }  /* doesn't respect parsing restriction */
+            if (unlikely(op + length > oend - WILDCOPYLENGTH)) { LZ5_LOG_DECOMPRESS_LZ4("10"); goto _output_error; }  /* doesn't respect parsing restriction */
 
             if (length <= (intptr_t)(lowPrefix - match)) {
                 /* match can be copied as a single segment from external dictionary */
@@ -204,22 +159,12 @@ FORCE_INLINE int LZ5_decompress_LZ4(
         }
 
         /* copy match within block */
-        if (unlikely(match < lowLimit || op + length + WILDCOPYLENGTH > oend)) { LZ4_DEBUG("1match=%p lowLimit=%p\n", match, lowLimit); goto _output_error; }   /* Error : offset outside buffers */
         cpy = op + length;
+        if (unlikely(cpy > oend - WILDCOPYLENGTH)) { LZ5_LOG_DECOMPRESS_LZ4("1match=%p lowLimit=%p\n", match, lowLimit); goto _output_error; }   /* Error : offset outside buffers */
         LZ5_copy8(op, match);
         LZ5_copy8(op+8, match+8);
-#if 0
-        if (length > 16)
-        {
-            LZ5_copy8(op+16, match+16);
-            LZ5_copy8(op+24, match+24);
-            if (length > 32)
-                LZ5_wildCopy16(op + 32, match + 32, cpy);
-        }
-#else
         if (length > 16)
             LZ5_wildCopy16(op + 16, match + 16, cpy);
-#endif
         op = cpy;
     }
 
@@ -231,7 +176,7 @@ FORCE_INLINE int LZ5_decompress_LZ4(
 
     /* Overflow error detected */
 _output_error:
-    LZ4_DEBUG("_output_error=%d\n", (int) (-(((const char*)ip)-source))-1);
-    LZ4_DEBUG("cpy=%p oend=%p ip+length[%d]=%p iend=%p\n", cpy, oend, (int)length, ip+length, iend);
+    LZ5_LOG_DECOMPRESS_LZ4("_output_error=%d\n", (int) (-(((const char*)ip)-source))-1);
+    LZ5_LOG_DECOMPRESS_LZ4("cpy=%p oend=%p ip+length[%d]=%p iend=%p\n", cpy, oend, (int)length, ip+length, iend);
     return (int) (-(((const char*)ip)-source))-1;
 }
