@@ -287,8 +287,8 @@ test-frametest: frametest
 test-frametest32: frametest32
 	./frametest32 $(FUZZER_TIME)
 
-test-mem: CFLAGS = -O2 -g
-test-mem: FLAGS = $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+#test-mem: CFLAGS = -O2 -g
+#test-mem: FLAGS = $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 test-mem: lz5 datagen fuzzer frametest fullbench
 	@echo "\n ---- valgrind tests : memory analyzer ----"
 	valgrind --leak-check=yes --error-exitcode=1 ./datagen -g50M > $(VOID)
