@@ -285,6 +285,7 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
     if (best_mlen < MINMATCH-1) best_mlen = MINMATCH-1;
 
     while ((matchIndex < current) && (matchIndex >= lowLimit) && (nbAttempts)) {
+        BYTE cur, prev;
         mlt = 0;
         nbAttempts--;
         if (matchIndex >= dictLimit) {
@@ -321,13 +322,18 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
 
                     if (mlt > LZ5_OPT_NUM) break;
                     if (ip + mlt >= iHighLimit) break;
-                    if (matchIndex + mlt >= dictLimit) 
-                        match = base + matchIndex;   /* to prepare for next usage of match[matchLength] */ 
                 }
+
+                if (matchIndex + (int)mlt >= dictLimit) 
+                    match = base + matchIndex;   /* to prepare for next usage of match[mlt] */ 
             }
         }
 
-        if (*(ip+mlt) < *(match+mlt)) {
+        cur = ip[mlt];
+        
+        prev = match[mlt];
+
+        if (cur < prev) {
             *ptr0 = delta0;
             ptr0 = &chainTable[(matchIndex*2) & contentMask];
             if (*ptr0 == (U32)-1) break;
