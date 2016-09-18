@@ -180,9 +180,9 @@ FORCE_INLINE int LZ5_GetAllMatches (
                         matches[mnum].len = (int)mlt;
                         matches[mnum].back = -back;
                         mnum++;
-                    }
 
-                    if (best_mlen > LZ5_OPT_NUM) break;
+                        if (best_mlen > LZ5_OPT_NUM) break;
+                    }
                 }
             } else {
                 matchDict = dictBase + matchIndex;
@@ -201,9 +201,9 @@ FORCE_INLINE int LZ5_GetAllMatches (
                         matches[mnum].len = (int)mlt;
                         matches[mnum].back = -back;
                         mnum++;
+                        
+                        if (best_mlen > LZ5_OPT_NUM) break;
                     }
-
-                    if (best_mlen > LZ5_OPT_NUM) break;
                 }
             }
         }
@@ -285,7 +285,6 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
     if (best_mlen < MINMATCH-1) best_mlen = MINMATCH-1;
 
     while ((matchIndex < current) && (matchIndex >= lowLimit) && (nbAttempts)) {
-        BYTE cur, prev;
         mlt = 0;
         nbAttempts--;
         if (matchIndex >= dictLimit) {
@@ -329,11 +328,7 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
             }
         }
 
-        cur = ip[mlt];
-        
-        prev = match[mlt];
-
-        if (cur < prev) {
+        if (ip[mlt] < match[mlt]) {
             *ptr0 = delta0;
             ptr0 = &chainTable[(matchIndex*2) & contentMask];
             if (*ptr0 == (U32)-1) break;

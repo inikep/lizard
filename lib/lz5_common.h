@@ -146,7 +146,7 @@ struct LZ5_stream_s
 #define LZ5_CHAINLOG_LZ5v2  LZ5_WINDOWLOG_LZ5v2
 #define LZ5_HASHLOG_LZ5v2   18
 
-#define LZ5_DEFAULT_CLEVEL  16
+#define LZ5_DEFAULT_CLEVEL  15 // LZ5_parser_optimalPrice
 
 
 
