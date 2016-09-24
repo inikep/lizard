@@ -227,8 +227,9 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel)
     if (!ctx)
     {
         ctx = (LZ5_stream_t*)malloc(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize);
-        if (!ctx) return 0;
+        if (!ctx) { printf("ERROR: Cannot allocate %d MB\n", (int)(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize)>>20); return 0; }
         ctx->allocatedMemory = sizeof(LZ5_stream_t) + hashTableSize + chainTableSize;
+      //  printf("malloc from=%p to=%p hashTable=%p hashEnd=%p chainTable=%p chainEnd=%p\n", ctx, ((BYTE*)ctx)+sizeof(LZ5_stream_t) + hashTableSize + chainTableSize, ctx->hashTable, ((BYTE*)ctx->hashTable) + hashTableSize, ctx->chainTable, ((BYTE*)ctx->chainTable)+chainTableSize);
     }
     
     ctx->hashTable = (U32*)ctx + sizeof(LZ5_stream_t)/4;
@@ -237,7 +238,6 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel)
     ctx->chainTableSize = chainTableSize;
     ctx->params = params;
     ctx->compressionLevel = (unsigned)compressionLevel;
- //   printf("malloc from=%p to=%p hashTable=%p hashEnd=%p chainTable=%p chainEnd=%p\n", ctx, ((BYTE*)ctx)+sizeof(LZ5_stream_t) + hashTableSize + chainTableSize, ctx->hashTable, ((BYTE*)ctx->hashTable) + hashTableSize, ctx->chainTable, ((BYTE*)ctx->chainTable)+chainTableSize);
 
     return ctx;
 }
@@ -275,8 +275,10 @@ LZ5_stream_t* LZ5_resetStream(LZ5_stream_t* ctx, int compressionLevel)
 
 int LZ5_freeStream(LZ5_stream_t* ctx) 
 { 
-//    printf("LZ5_freeStream ctx=%p ctx->compressionLevel=%d\n", ctx, ctx->compressionLevel);
-    free(ctx); 
+    if (ctx) {
+     //   printf("LZ5_freeStream ctx=%p ctx->compressionLevel=%d\n", ctx, ctx->compressionLevel);
+        free(ctx);
+    }
     return 0; 
 }
 
@@ -339,46 +341,59 @@ FORCE_INLINE int LZ5_compress_generic (
 {
     LZ5_stream_t* ctx = (LZ5_stream_t*) ctxvoid;
     size_t dictSize = (size_t)(ctx->end - ctx->base) - ctx->dictLimit;
-    int res;
+    const BYTE* ip = (const BYTE*) source;
+    BYTE* op = (BYTE*) dest;
+    BYTE* const oend = op + maxOutputSize;
+    int res, total = 1;
 
     (void)dictSize;
     LZ5_LOG_COMPRESS("LZ5_compress_generic source=%p inputSize=%d dest=%p maxOutputSize=%d cLevel=%d limit=%d dictBase=%p dictSize=%d\n", source, inputSize, dest, maxOutputSize, ctx->compressionLevel, limit, ctx->dictBase, (int)dictSize); 
-    *dest++ = (BYTE)ctx->compressionLevel;
+    *op++ = (BYTE)ctx->compressionLevel;
     maxOutputSize--; // can be lower than 0
     ctx->last_off = LZ5_INIT_LAST_OFFSET; /* reset last offset */
     ctx->tokenPart = 0;
-
-    switch(ctx->params.parserType)
+    ctx->end += inputSize;
+    
+  //  while (inputSize > 0)
     {
-    default:
-    case LZ5_parser_fast:
-        res = LZ5_compress_fast(ctx, source, dest, inputSize, maxOutputSize, limit); break;
-    case LZ5_parser_noChain:
-        res = LZ5_compress_noChain(ctx, source, dest, inputSize, maxOutputSize, limit); break;
-    case LZ5_parser_hashChain:
-        res = LZ5_compress_hashChain(ctx, source, dest, inputSize, maxOutputSize, limit); break;
+        int inputPart = inputSize; //MIN(LZ5_BLOCK_SIZE, inputSize);
+
+        switch(ctx->params.parserType)
+        {
+        default:
+        case LZ5_parser_fast:
+            res = LZ5_compress_fast(ctx, ip, ip+inputPart, op, oend, limit); break;
+        case LZ5_parser_noChain:
+            res = LZ5_compress_noChain(ctx, ip, ip+inputPart, op, oend, limit); break;
+        case LZ5_parser_hashChain:
+            res = LZ5_compress_hashChain(ctx, ip, ip+inputPart, op, oend, limit); break;
 #ifndef USE_LZ4_ONLY
-    case LZ5_parser_priceFast:
-        res = LZ5_compress_priceFast(ctx, source, dest, inputSize, maxOutputSize, limit); break;
-    case LZ5_parser_lowestPrice:
-        res = LZ5_compress_lowestPrice(ctx, source, dest, inputSize, maxOutputSize, limit); break;
-    case LZ5_parser_optimalPrice:
-    case LZ5_parser_optimalPriceBT:
-        res = LZ5_compress_optimalPrice(ctx, source, dest, inputSize, maxOutputSize, limit); break;
+        case LZ5_parser_priceFast:
+            res = LZ5_compress_priceFast(ctx, ip, ip+inputPart, op, oend, limit); break;
+        case LZ5_parser_lowestPrice:
+            res = LZ5_compress_lowestPrice(ctx, ip, ip+inputPart, op, oend, limit); break;
+        case LZ5_parser_optimalPrice:
+        case LZ5_parser_optimalPriceBT:
+            res = LZ5_compress_optimalPrice(ctx, ip, ip+inputPart, op, oend, limit); break;
 #else
-    case LZ5_parser_priceFast:
-    case LZ5_parser_lowestPrice:
-    case LZ5_parser_optimalPrice:
-    case LZ5_parser_optimalPriceBT:
-        res = 0;
+        case LZ5_parser_priceFast:
+        case LZ5_parser_lowestPrice:
+        case LZ5_parser_optimalPrice:
+        case LZ5_parser_optimalPriceBT:
+            res = 0;
 #endif
+        }
+        // printf("res=%d/%d \n", res, inputSize);
+        if (res <= 0) return res;
+
+       // ip += inputPart;
+       // op += res;
+        total += res;
+      //  inputSize -= inputPart;
     }
 
-    ctx->end += inputSize;
-   // if (res > 0) ctx->end += inputSize;
-    LZ5_LOG_COMPRESS("LZ5_compress_generic res=%d\n", res);
-
-    return (res > 0) ? res+1 : res;
+    LZ5_LOG_COMPRESS("LZ5_compress_generic res=%d\n", total);
+    return total;
 }
 
 

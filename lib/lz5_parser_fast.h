@@ -35,31 +35,28 @@ static U32 LZ5_getPosition(const BYTE* p, U32* hashTable, int hashLog)
 
 
 static const U32 LZ5_skipTrigger = 6;  /* Increase this value ==> compression run slower on incompressible data */
-static const int LZ5_minLength = (MFLIMIT+1);
+static const U32 LZ5_minLength = (MFLIMIT+1);
 
 
 FORCE_INLINE int LZ5_compress_fast(
-         LZ5_stream_t* const ctx,
-         const char* const source,
-         char* const dest,
-         const int inputSize,
-         const int maxOutputSize,
-         const limitedOutput_directive outputLimited)
+        LZ5_stream_t* const ctx,
+        const BYTE* ip,
+        const BYTE* const iend,
+        BYTE* op,
+        BYTE* const oend,
+        const limitedOutput_directive outputLimited)
 {
     const U32 acceleration = 1;
-    const BYTE* ip = (const BYTE*) source;
     const BYTE* base = ctx->base;
     const U32 lowLimit = ctx->lowLimit;
     const U32 dictLimit = ctx->dictLimit;
     const BYTE* const lowPrefixPtr = base + dictLimit;
     const BYTE* const dictBase = ctx->dictBase;
     const BYTE* const dictEnd = dictBase + dictLimit;
-    const BYTE* anchor = (const BYTE*) source;
-    const BYTE* const iend = ip + inputSize;
     const BYTE* const mflimit = iend - MFLIMIT;
     const BYTE* const matchlimit = iend - LASTLITERALS;
-    BYTE* op = (BYTE*) dest;
-    BYTE* const oend = op + maxOutputSize;
+    const BYTE* anchor = ip;
+    BYTE* dest = op;
 
     size_t forwardH, matchIndex;
     const int hashLog = ctx->params.hashLog;
@@ -69,9 +66,9 @@ FORCE_INLINE int LZ5_compress_fast(
  //   fprintf(stderr, "ip=%d base=%p lowPrefixPtr=%p dictBase=%d lowLimit=%p op=%p\n", ip, base, lowPrefixPtr, lowLimit, dictBase, op);
 
     /* Init conditions */
-    if ((U32)inputSize > (U32)LZ5_MAX_INPUT_SIZE) goto _output_error;   /* Unsupported inputSize, too large (or negative) */
+    if ((U32)(iend-ip) > (U32)LZ5_MAX_INPUT_SIZE) goto _output_error;   /* Unsupported inputSize, too large (or negative) */
 
-    if (inputSize < LZ5_minLength) goto _last_literals;                  /* Input too small, no compression (all literals) */
+    if ((U32)(iend-ip) < LZ5_minLength) goto _last_literals;                  /* Input too small, no compression (all literals) */
 
     /* First Byte */
     LZ5_putPosition(ip, ctx->hashTable, base, hashLog);
@@ -202,7 +199,7 @@ _last_literals:
     if (LZ5_encodeLastLiterals_LZ4(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;
 
     /* End */
-    return (int) (((char*)op)-dest);
+    return (int)(op-dest);
 _output_error:
     return 0;
 }

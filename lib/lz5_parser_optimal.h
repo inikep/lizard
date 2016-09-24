@@ -3,92 +3,8 @@
 #define LZ5_LOG_ENCODE(fmt, ...) //printf(fmt, __VA_ARGS__) 
 
 #define LZ5_OPTIMAL_MIN_OFFSET  8
-#define LZ5_24BIT_OFFSET_LOAD   price += LZ5_highbit32(offset)
 #define LZ5_OPT_NUM             (1<<12) 
 #define REPMINMATCH             1
-#define LZ5_MAX_PRICE           (1<<28)
-
-
-FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, size_t litLength, U32 offset, size_t matchLength)
-{
-    size_t price = 8; // ctx->flagsPtr++;
-    (void)ctx;
-
-    if (litLength > 0 || offset < LZ5_MAX_16BIT_OFFSET) {
-        /* Encode Literal length */
-        if (litLength>=(int)RUN_MASK_LZ5v2) {  
-            size_t len = litLength - RUN_MASK_LZ5v2; 
-            if (len >= 255) price += 24;
-            else price += 8;
-        }
-    
-        price += 8*litLength;  /* Copy Literals */
-        if (offset >= LZ5_MAX_16BIT_OFFSET)
-            price += 8;
-    }
-
-    /* Encode Offset */
-    if (offset >= LZ5_MAX_16BIT_OFFSET) { // 24-bit offset
-        if (matchLength < 16) return LZ5_MAX_PRICE; // error
-        if (matchLength - MM_LONGOFF >= 31) {
-            size_t len = matchLength - MM_LONGOFF - 31;
-            if (len >= 255) price += 24;
-            else price += 8;
-        }
-
-        price += 24; //ctx->offset24Ptr += 3;
-        LZ5_24BIT_OFFSET_LOAD;
-    } else {
-        if (offset) {
-            if (matchLength < MINMATCH) return LZ5_MAX_PRICE; // error
-            price += 16; // ctx->offset16Ptr += 2;
-        }
-
-        /* Encode MatchLength */
-        if (matchLength>=(int)ML_MASK_LZ5v2) 
-        {   size_t len = matchLength - ML_MASK_LZ5v2; 
-            if (len >= 255) price += 24;
-            else price += 8;
-        }
-    }
-    return price;
-}
-
-
-FORCE_INLINE size_t LZ5_get_price_LZ4(LZ5_stream_t* const ctx, size_t litLength, U32 offset, size_t matchLength)
-{
-    size_t price = 8; // (*op)++;
-    (void)ctx;
-    (void)offset;
-
-    /* Encode Literal length */
-    if (litLength >= RUN_MASK_LZ4) 
-    {
-        size_t len = litLength - RUN_MASK_LZ4;
-        if (len >= (1<<16)) price += 40;
-        else if (len >= 254) price += 24;
-        else price += 8;
-    }
-
-    price += 8*litLength;  /* Copy Literals */
-
-    /* Encode Offset */
-    if (offset) {
-        price += 16; // *op+=2;
-     
-        /* Encode MatchLength */
-        if (matchLength < MINMATCH) return 1<<16;//LZ5_MAX_PRICE; // error
-        matchLength -= MINMATCH;
-        if (matchLength >= ML_MASK_LZ4) {
-            matchLength -= ML_MASK_LZ4;
-            if (matchLength >= (1<<16)) price += 40;
-            else if (matchLength >= 254) price += 24;
-            else price += 8;
-        }
-    }
-
-    return price;
-}
 
 
 FORCE_INLINE size_t LZ5_get_price(LZ5_stream_t* const ctx, size_t litLength, U32 offset, size_t matchLength)
@@ -410,10 +326,10 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
 
 FORCE_INLINE int LZ5_compress_optimalPrice(
         LZ5_stream_t* const ctx,
-        const char* const source,
-        char* const dest,
-        const int inputSize,
-        const int maxOutputSize,
+        const BYTE* ip,
+        const BYTE* const iend,
+        BYTE* op,
+        BYTE* const oend,
         const limitedOutput_directive outputLimited)
 {
     LZ5_optimal_t opt[LZ5_OPT_NUM + 4];
@@ -422,13 +338,10 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
     size_t res, cur, cur2, skip_num = 0;
     size_t i, llen, litlen, mlen, best_mlen, price, offset, best_off, match_num, last_pos;
 
-    const BYTE* ip = (const BYTE*) source;
     const BYTE* anchor = ip;
-    const BYTE* const iend = ip + inputSize;
     const BYTE* const mflimit = iend - MFLIMIT;
     const BYTE* const matchlimit = (iend - LASTLITERALS);
-    BYTE* op = (BYTE*) dest;
-    BYTE* const oend = op + maxOutputSize;
+    BYTE* dest = op;
     const BYTE* const base = ctx->base;
     const BYTE* const dictBase = ctx->dictBase;
     const intptr_t dictLimit = ctx->dictLimit;
@@ -751,7 +664,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
     if (LZ5_encodeLastLiterals(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;
 
     /* End */
-    return (int) (((char*)op)-dest);
+    return (int)(op-dest);
 _output_error:
     return 0;
 }

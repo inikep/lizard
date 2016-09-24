@@ -185,20 +185,16 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatch (
 
 FORCE_INLINE int LZ5_compress_hashChain (
         LZ5_stream_t* const ctx,
-        const char* const source,
-        char* const dest,
-        const int inputSize,
-        const int maxOutputSize,
+        const BYTE* ip,
+        const BYTE* const iend,
+        BYTE* op,
+        BYTE* const oend,
         const limitedOutput_directive outputLimited)
 {
-    const BYTE* ip = (const BYTE*) source;
     const BYTE* anchor = ip;
-    const BYTE* const iend = ip + inputSize;
     const BYTE* const mflimit = iend - MFLIMIT;
     const BYTE* const matchlimit = (iend - LASTLITERALS);
-
-    BYTE* op = (BYTE*) dest;
-    BYTE* const oend = op + maxOutputSize;
+    BYTE* dest = op;
 
     int   ml, ml2, ml3, ml0;
     const BYTE* ref = NULL;
@@ -369,7 +365,7 @@ _Search3:
     if (LZ5_encodeLastLiterals_LZ4(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;
 
     /* End */
-    return (int) (((char*)op)-dest);
+    return (int)(op-dest);
 _output_error:
     return 0;
 }
