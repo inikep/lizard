@@ -181,7 +181,7 @@ test-lz5-sparse: lz5 datagen
 	@echo "\n Compatibility with Append :"
 	./datagen -P100 -g1M > tmp1M
 	cat tmp1M tmp1M > tmp2M
-	./lz5 -B5 -v tmp1M tmpC
+	./lz5 -8B5 -v tmp1M tmpC
 	./lz5 -d -v tmpC tmpR
 	./lz5 -d -v tmpC >> tmpR
 	ls -ls tmp*
@@ -195,9 +195,9 @@ test-lz5-contentSize: lz5 datagen
 	./lz5 -v --content-size tmp | ./lz5 -d > tmp2
 	diff -s tmp tmp2
 	# test large size [2-4] GB
-	@./datagen -g3G -P100 | ./lz5 | ./lz5 --decompress --force --sparse - tmp
+	@./datagen -g3G -P100 | ./lz5 -4 | ./lz5 --decompress --force --sparse - tmp
 	@ls -ls tmp
-	./lz5 --quiet --content-size tmp | ./lz5 --verbose --decompress --force --sparse - tmp2
+	./lz5 -5 --quiet --content-size tmp | ./lz5 --verbose --decompress --force --sparse - tmp2
 	@ls -ls tmp2
 	@rm tmp*
 
@@ -257,7 +257,7 @@ test-interop-32-64: lz5 lz5c32 datagen
 	./datagen         | ./lz5c32        | ./lz5    -t
 	./datagen -g1M    | ./lz5    -7B5   | ./lz5c32 -t
 	./datagen -g256MB | ./lz5c32 -5B4D  | ./lz5    -t
-	./datagen -g1G -P90 | ./lz5         | ./lz5c32 -t
+	./datagen -g1G -P90 | ./lz5  -6     | ./lz5c32 -t
 	./datagen -g6GB   | ./lz5c32 -2BD   | ./lz5    -t
 
 test-lz5c32-basic: lz5c32 datagen
@@ -293,12 +293,12 @@ test-mem: lz5 datagen fuzzer frametest fullbench
 	@echo "\n ---- valgrind tests : memory analyzer ----"
 	valgrind --leak-check=yes --error-exitcode=1 ./datagen -g50M > $(VOID)
 	./datagen -g16KB > tmp
-	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -9 -BD -f tmp $(VOID)
+	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -8 -BD -f tmp $(VOID)
 	./datagen -g16KB -s2 > tmp2
 	./datagen -g16KB -s3 > tmp3
 	valgrind --leak-check=yes --error-exitcode=1 ./lz5 --force --multiple tmp tmp2 tmp3
 	./datagen -g16MB > tmp
-	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -9 -B5D -f tmp tmp2
+	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -7 -B5D -f tmp tmp2
 	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -t tmp2
 	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -bi1 tmp
 	valgrind --leak-check=yes --error-exitcode=1 ./fullbench -i1 tmp tmp2
