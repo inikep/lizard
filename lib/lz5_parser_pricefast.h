@@ -236,7 +236,7 @@ _Search:
         }
 
 _Encode:
-        if (LZ5_encodeSequence(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) goto _output_error;
+        if (LZ5_encodeSequence_LZ5v2(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) goto _output_error;
 
         if (ml2)
         {
@@ -248,7 +248,7 @@ _Encode:
 
     /* Encode Last Literals */
     ip = iend;
-    if (LZ5_encodeLastLiterals(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;
+    if (LZ5_encodeLastLiterals_LZ5v2(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;
 
     /* End */
     return (int) (((char*)op)-dest);

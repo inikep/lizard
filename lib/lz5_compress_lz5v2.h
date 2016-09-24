@@ -131,3 +131,49 @@ FORCE_INLINE int LZ5_encodeLastLiterals_LZ5v2 (
     *op += length;
     return 0;
 }
+
+
+FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, size_t litLength, U32 offset, size_t matchLength)
+{
+    size_t price = 8; // ctx->flagsPtr++;
+    (void)ctx;
+
+    if (litLength > 0 || offset < LZ5_MAX_16BIT_OFFSET) {
+        /* Encode Literal length */
+        if (litLength>=(int)RUN_MASK_LZ5v2) {  
+            size_t len = litLength - RUN_MASK_LZ5v2; 
+            if (len >= 255) price += 24;
+            else price += 8;
+        }
+    
+        price += 8*litLength;  /* Copy Literals */
+        if (offset >= LZ5_MAX_16BIT_OFFSET)
+            price += 8;
+    }
+
+    /* Encode Offset */
+    if (offset >= LZ5_MAX_16BIT_OFFSET) { // 24-bit offset
+        if (matchLength < 16) return LZ5_MAX_PRICE; // error
+        if (matchLength - MM_LONGOFF >= 31) {
+            size_t len = matchLength - MM_LONGOFF - 31;
+            if (len >= 255) price += 24;
+            else price += 8;
+        }
+
+        price += 24; //ctx->offset24Ptr += 3;
+        LZ5_24BIT_OFFSET_LOAD;
+    } else {
+        if (offset) {
+            if (matchLength < MINMATCH) return LZ5_MAX_PRICE; // error
+            price += 16; // ctx->offset16Ptr += 2;
+        }
+
+        /* Encode MatchLength */
+        if (matchLength>=(int)ML_MASK_LZ5v2) 
+        {   size_t len = matchLength - ML_MASK_LZ5v2; 
+            if (len >= 255) price += 24;
+            else price += 8;
+        }
+    }
+    return price;
+}

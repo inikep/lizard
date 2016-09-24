@@ -7,13 +7,12 @@
 #define LZ5_OPT_NUM             (1<<12) 
 #define REPMINMATCH             1
 #define LZ5_MAX_PRICE           (1<<28)
-#define GET_MINMATCH_OPT(offset) (((offset) >= LZ5_MAX_16BIT_OFFSET) ? MM_LONGOFF : REPMINMATCH)
 
 
-FORCE_INLINE size_t LZ5_get_price(const BYTE* ip, size_t litLength, U32 offset, size_t matchLength)
+FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, size_t litLength, U32 offset, size_t matchLength)
 {
     size_t price = 8; // ctx->flagsPtr++;
-    (void)ip;
+    (void)ctx;
 
     if (litLength > 0 || offset < LZ5_MAX_16BIT_OFFSET) {
         /* Encode Literal length */
@@ -54,6 +53,52 @@ FORCE_INLINE size_t LZ5_get_price(const BYTE* ip, size_t litLength, U32 offset, 
     }
     return price;
 }
+
+
+FORCE_INLINE size_t LZ5_get_price_LZ4(LZ5_stream_t* const ctx, size_t litLength, U32 offset, size_t matchLength)
+{
+    size_t price = 8; // (*op)++;
+    (void)ctx;
+    (void)offset;
+
+    /* Encode Literal length */
+    if (litLength >= RUN_MASK_LZ4) 
+    {
+        size_t len = litLength - RUN_MASK_LZ4;
+        if (len >= (1<<16)) price += 40;
+        else if (len >= 254) price += 24;
+        else price += 8;
+    }
+
+    price += 8*litLength;  /* Copy Literals */
+
+    /* Encode Offset */
+    if (offset) {
+        price += 16; // *op+=2;
+     
+        /* Encode MatchLength */
+        if (matchLength < MINMATCH) return 1<<16;//LZ5_MAX_PRICE; // error
+        matchLength -= MINMATCH;
+        if (matchLength >= ML_MASK_LZ4) {
+            matchLength -= ML_MASK_LZ4;
+            if (matchLength >= (1<<16)) price += 40;
+            else if (matchLength >= 254) price += 24;
+            else price += 8;
+        }
+    }
+
+    return price;
+}
+
+
+FORCE_INLINE size_t LZ5_get_price(LZ5_stream_t* const ctx, size_t litLength, U32 offset, size_t matchLength)
+{
+    if (ctx->params.decompressType == LZ5_coderwords_LZ4)
+        return LZ5_get_price_LZ4(ctx, litLength, offset, matchLength);
+
+    return LZ5_get_price_LZ5v2(ctx, litLength, offset, matchLength);
+}
+
 
 
 typedef struct
@@ -180,9 +225,9 @@ FORCE_INLINE int LZ5_GetAllMatches (
                         matches[mnum].len = (int)mlt;
                         matches[mnum].back = -back;
                         mnum++;
-                    }
 
-                    if (best_mlen > LZ5_OPT_NUM) break;
+                        if (best_mlen > LZ5_OPT_NUM) break;
+                    }
                 }
             } else {
                 matchDict = dictBase + matchIndex;
@@ -201,9 +246,9 @@ FORCE_INLINE int LZ5_GetAllMatches (
                         matches[mnum].len = (int)mlt;
                         matches[mnum].back = -back;
                         mnum++;
+                        
+                        if (best_mlen > LZ5_OPT_NUM) break;
                     }
-
-                    if (best_mlen > LZ5_OPT_NUM) break;
                 }
             }
         }
@@ -299,9 +344,10 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
                     matches[mnum].len = (int)mlt;
                     matches[mnum].back = 0;
                     mnum++;
-                }
 
-                if (best_mlen > LZ5_OPT_NUM) break;
+                    if (mlt > LZ5_OPT_NUM) break;
+                    if (ip + mlt >= iHighLimit) break;
+                }
             }
         } else {
             U32 offset = (U32)(ip - (base + matchIndex));
@@ -317,13 +363,17 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
                     matches[mnum].len = (int)mlt;
                     matches[mnum].back = 0;
                     mnum++;
+
+                    if (mlt > LZ5_OPT_NUM) break;
+                    if (ip + mlt >= iHighLimit) break;
                 }
 
-                if (best_mlen > LZ5_OPT_NUM) break;
+                if (matchIndex + (int)mlt >= dictLimit) 
+                    match = base + matchIndex;   /* to prepare for next usage of match[mlt] */ 
             }
         }
-        
-        if (*(ip+mlt) < *(match+mlt)) {
+
+        if (ip[mlt] < match[mlt]) {
             *ptr0 = delta0;
             ptr0 = &chainTable[(matchIndex*2) & contentMask];
             if (*ptr0 == (U32)-1) break;
@@ -390,6 +440,8 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
     const size_t sufficient_len = ctx->params.sufficientLength;
     const int faster_get_matches = (ctx->params.fullSearch == 0); 
     const size_t minMatchLongOff = ctx->params.minMatchLongOff;
+    const int lz5OptimalMinOffset = (ctx->params.decompressType == LZ5_coderwords_LZ4) ? (1<<30) : LZ5_OPTIMAL_MIN_OFFSET;
+    const size_t repMinMatch = (ctx->params.decompressType == LZ5_coderwords_LZ4) ? MINMATCH : REPMINMATCH;
 
     /* Main Loop */
     while (ip < mflimit) {
@@ -398,16 +450,15 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
         llen = ip - anchor;
 
         /* check rep code */
-        if (ctx->last_off >= LZ5_OPTIMAL_MIN_OFFSET) {
+
+        if (ctx->last_off >= lz5OptimalMinOffset) {
             intptr_t matchIndexLO = (ip - ctx->last_off) - base;
             mlen = 0;
             if ((matchIndexLO >= lowLimit) && (base + matchIndexLO + maxDistance >= ip)) {
                 if (matchIndexLO >= dictLimit) {
                     mlen = LZ5_count(ip, base + matchIndexLO, matchlimit);
                 } else {
-                    if ((U32)((dictLimit-1) - matchIndexLO) >= 3) { /* intentional overflow */
-                        mlen = LZ5_count_2segments(ip, dictBase + matchIndexLO, matchlimit, dictEnd, lowPrefixPtr);
-                    }
+                    mlen = LZ5_count_2segments(ip, dictBase + matchIndexLO, matchlimit, dictEnd, lowPrefixPtr);
                 }
             }
             if (mlen >= REPMINMATCH) {
@@ -419,7 +470,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
                 do
                 {
                     litlen = 0;
-                    price = LZ5_get_price(ip, llen, 0, mlen);
+                    price = LZ5_get_price(ctx, llen, 0, mlen);
                     if (mlen > last_pos || price < (size_t)opt[mlen].price)
                         SET_PRICE(mlen, mlen, 0, litlen, price);
                     mlen--;
@@ -461,7 +512,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
             LZ5_LOG_PARSER("%d: start Found mlen=%d off=%d best_mlen=%d last_pos=%d\n", (int)(ip-source), matches[i].len, matches[i].off, best_mlen, last_pos);
             while (mlen <= best_mlen){
                 litlen = 0;
-                price = LZ5_get_price(ip, llen + litlen, matches[i].off, mlen);
+                price = LZ5_get_price(ctx, llen + litlen, matches[i].off, mlen);
 
                 if ((mlen >= minMatchLongOff) || (matches[i].off < LZ5_MAX_16BIT_OFFSET))
                 if (mlen > last_pos || price < (size_t)opt[mlen].price)
@@ -470,7 +521,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
             }
         }
 
-        if (last_pos < REPMINMATCH) { ip++; continue; }
+        if (last_pos < repMinMatch) { ip++; continue; }
 
         opt[0].rep = ctx->last_off;
         opt[0].mlen = 1;
@@ -485,16 +536,16 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
                 litlen = opt[cur-1].litlen + 1;
                 
                 if (cur != litlen) {
-                    price = opt[cur - litlen].price + LZ5_get_price(inr, litlen, 0, 0);
+                    price = opt[cur - litlen].price + LZ5_get_price(ctx, litlen, 0, 0);
                     LZ5_LOG_PRICE("%d: TRY1 opt[%d].price=%d price=%d cur=%d litlen=%d\n", (int)(inr-source), cur - litlen, opt[cur - litlen].price, price, cur, litlen);
                 } else {
-                    price = LZ5_get_price(inr, llen + litlen, 0, 0);
+                    price = LZ5_get_price(ctx, llen + litlen, 0, 0);
                     LZ5_LOG_PRICE("%d: TRY2 price=%d cur=%d litlen=%d llen=%d\n", (int)(inr-source), price, cur, litlen, llen);
                 }
             } else {
                 litlen = 1;
-                price = opt[cur - 1].price + LZ5_get_price(inr, litlen, 0, 0);
-                LZ5_LOG_PRICE("%d: TRY3 price=%d cur=%d litlen=%d litonly=%d\n", (int)(inr-source), price, cur, litlen, LZ5_get_price(inr, litlen, 0, 0));
+                price = opt[cur - 1].price + LZ5_get_price(ctx, litlen, 0, 0);
+                LZ5_LOG_PRICE("%d: TRY3 price=%d cur=%d litlen=%d litonly=%d\n", (int)(inr-source), price, cur, litlen, LZ5_get_price(ctx, litlen, 0, 0));
             }
            
             mlen = 1;
@@ -527,16 +578,14 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
             // best_mlen = 0;
 
             /* check rep code */
-            if (opt[cur].rep >= LZ5_OPTIMAL_MIN_OFFSET) {
+            if (opt[cur].rep >= lz5OptimalMinOffset) {
                 intptr_t matchIndexLO = (inr - opt[cur].rep) - base;
                 mlen = 0;
                 if ((matchIndexLO >= lowLimit) && (base + matchIndexLO + maxDistance >= inr)) {
                     if (matchIndexLO >= dictLimit) {
                         mlen = LZ5_count(inr, base + matchIndexLO, matchlimit);
                     } else {
-                        if ((U32)((dictLimit-1) - matchIndexLO) >= 3) { /* intentional overflow */
-                            mlen = LZ5_count_2segments(inr, dictBase + matchIndexLO, matchlimit, dictEnd, lowPrefixPtr);
-                        }
+                        mlen = LZ5_count_2segments(inr, dictBase + matchIndexLO, matchlimit, dictEnd, lowPrefixPtr);
                     }
                 }
                 if (mlen >= REPMINMATCH && mlen > best_mlen) {
@@ -556,16 +605,16 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
                         litlen = opt[cur].litlen;
 
                         if (cur != litlen) {
-                            price = opt[cur - litlen].price + LZ5_get_price(inr, litlen, 0, mlen);
+                            price = opt[cur - litlen].price + LZ5_get_price(ctx, litlen, 0, mlen);
                             LZ5_LOG_PRICE("%d: TRY1 opt[%d].price=%d price=%d cur=%d litlen=%d\n", (int)(inr-source), cur - litlen, opt[cur - litlen].price, price, cur, litlen);
                         } else {
-                            price = LZ5_get_price(inr, llen + litlen, 0, mlen);
+                            price = LZ5_get_price(ctx, llen + litlen, 0, mlen);
                             LZ5_LOG_PRICE("%d: TRY2 price=%d cur=%d litlen=%d llen=%d\n", (int)(inr-source), price, cur, litlen, llen);
                         }
                     } else {
                         litlen = 0;
-                        price = opt[cur].price + LZ5_get_price(inr, litlen, 0, mlen);
-                        LZ5_LOG_PRICE("%d: TRY3 price=%d cur=%d litlen=%d getprice=%d\n", (int)(inr-source), price, cur, litlen, LZ5_get_price(inr, litlen, 0, mlen - MINMATCH));
+                        price = opt[cur].price + LZ5_get_price(ctx, litlen, 0, mlen);
+                        LZ5_LOG_PRICE("%d: TRY3 price=%d cur=%d litlen=%d getprice=%d\n", (int)(inr-source), price, cur, litlen, LZ5_get_price(ctx, litlen, 0, mlen - MINMATCH));
                     }
 
                     best_mlen = mlen;
@@ -627,12 +676,12 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
                         litlen = opt[cur2].litlen;
 
                         if (cur2 != litlen)
-                            price = opt[cur2 - litlen].price + LZ5_get_price(inr, litlen, matches[i].off, mlen);
+                            price = opt[cur2 - litlen].price + LZ5_get_price(ctx, litlen, matches[i].off, mlen);
                         else
-                            price = LZ5_get_price(inr, llen + litlen, matches[i].off, mlen);
+                            price = LZ5_get_price(ctx, llen + litlen, matches[i].off, mlen);
                     } else {
                         litlen = 0;
-                        price = opt[cur2].price + LZ5_get_price(inr, litlen, matches[i].off, mlen);
+                        price = opt[cur2].price + LZ5_get_price(ctx, litlen, matches[i].off, mlen);
                     }
 
                     LZ5_LOG_PARSER("%d: Found2 pred=%d mlen=%d best_mlen=%d off=%d price=%d litlen=%d price[%d]=%d\n", (int)(inr-source), matches[i].back, mlen, best_mlen, matches[i].off, price, litlen, cur - litlen, opt[cur - litlen].price);

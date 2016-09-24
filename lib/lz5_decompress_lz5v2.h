@@ -159,7 +159,7 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
         else
         if (token < 31)
         {
-            if ((endOnInput) && unlikely(ip > iend - 3) ) { LZ5_LOG_DECOMPRESS_LZ4("9"); goto _output_error; } 
+            if ((endOnInput) && unlikely(ip > iend - 3) ) { LZ5_LOG_DECOMPRESS_LZ5v2("9"); goto _output_error; } 
             length = token + MM_LONGOFF;
             last_off = -(intptr_t)MEM_readLE24(ip); 
             ip += 3;
@@ -167,7 +167,7 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
         }
         else // token == 31
         { 
-            if ((endOnInput) && unlikely(ip > iend - 8) ) { LZ5_LOG_DECOMPRESS_LZ4("10"); goto _output_error; } 
+            if ((endOnInput) && unlikely(ip > iend - 8) ) { LZ5_LOG_DECOMPRESS_LZ5v2("10"); goto _output_error; } 
             length = *ip;
             if unlikely(length >= 254) {
                 if (length == 254) {

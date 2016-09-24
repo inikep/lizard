@@ -346,6 +346,7 @@ FORCE_INLINE int LZ5_compress_generic (
     *dest++ = (BYTE)ctx->compressionLevel;
     maxOutputSize--; // can be lower than 0
     ctx->last_off = LZ5_INIT_LAST_OFFSET; /* reset last offset */
+    ctx->tokenPart = 0;
 
     switch(ctx->params.parserType)
     {

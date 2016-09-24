@@ -19,7 +19,7 @@ FORCE_INLINE size_t LZ5_more_profitable(size_t best_off, size_t best_common, siz
     if (best_off == last_off) best_off = 0;
 
     return LZ5_MATCH_COST(common, off) + LZ5_LIT_COST(sum - common) <= LZ5_MATCH_COST(best_common, best_off) + LZ5_LIT_COST(sum - best_common);
-// return LZ5_get_price(NULL, 0, off, common) + LZ5_get_price(NULL, sum - common, 0, 0) <= LZ5_get_price(NULL, 0, best_off, best_common) + LZ5_get_price(NULL, sum - best_common, 0, 0);
+// return LZ5_get_price_LZ5v2(NULL, 0, off, common) + LZ5_get_price_LZ5v2(NULL, sum - common, 0, 0) <= LZ5_get_price_LZ5v2(NULL, 0, best_off, best_common) + LZ5_get_price_LZ5v2(NULL, sum - best_common, 0, 0);
 } 
 
 
@@ -28,7 +28,7 @@ FORCE_INLINE size_t LZ5_better_price(size_t best_off, size_t best_common, size_t
     if (best_off == last_off) best_off = 0;
     if (off == last_off) off = 0; // rep code
     return LZ5_MATCH_COST(common, (off == last_off) ? 0 : off) < LZ5_MATCH_COST(best_common, best_off) + LZ5_LIT_COST(common - best_common);
-  //  return LZ5_get_price(NULL, 0, off, common) < LZ5_get_price(NULL, 0, best_off, best_common) + LZ5_get_price(NULL, common - best_common, 0, 0);
+  //  return LZ5_get_price_LZ5v2(NULL, 0, off, common) < LZ5_get_price_LZ5v2(NULL, 0, best_off, best_common) + LZ5_get_price_LZ5v2(NULL, common - best_common, 0, 0);
 }
 
 
@@ -332,14 +332,14 @@ _Search:
             int common0 = (int)(pos - ip);
             if (common0 >= MINMATCH)
             {
-                price = (int)LZ5_get_price(ip, ip - anchor, (off0 == ctx->last_off) ? 0 : off0, common0);
+                price = (int)LZ5_get_price_LZ5v2(ctx, ip - anchor, (off0 == ctx->last_off) ? 0 : off0, common0);
                 
                 {
                     int common1 = (int)(start2 + ml2 - pos);
                     if (common1 >= MINMATCH)
-                        price += LZ5_get_price(ip, 0, (off1 == off0) ? 0 : (off1), common1);
+                        price += LZ5_get_price_LZ5v2(ctx, 0, (off1 == off0) ? 0 : (off1), common1);
                     else
-                        price += LZ5_get_price(ip, common1, 0, 0);
+                        price += LZ5_get_price_LZ5v2(ctx, common1, 0, 0);
                 }
 
                 if (price < best_price)
@@ -350,7 +350,7 @@ _Search:
             }
             else
             {
-                price = LZ5_get_price(start2, start2 - anchor, (off1 == ctx->last_off) ? 0 : off1, ml2);
+                price = LZ5_get_price_LZ5v2(ctx, start2 - anchor, (off1 == ctx->last_off) ? 0 : off1, ml2);
 
                 if (price < best_price)
                     best_pos = pos;
@@ -382,12 +382,12 @@ _Encode:
         }
 
      //   if ((ml < minMatchLongOff) && ((U32)(ip-ref) >= LZ5_MAX_16BIT_OFFSET)) { printf("LZ5_encodeSequence ml=%d off=%d\n", ml, (U32)(ip-ref)); exit(0); }
-        if (LZ5_encodeSequence(ctx, &ip, &op, &anchor, ml, ((ip - ref == ctx->last_off) ? ip : ref), outputLimited, oend)) return 0;
+        if (LZ5_encodeSequence_LZ5v2(ctx, &ip, &op, &anchor, ml, ((ip - ref == ctx->last_off) ? ip : ref), outputLimited, oend)) return 0;
     }
 
     /* Encode Last Literals */
     ip = iend;
-    if (LZ5_encodeLastLiterals(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;
+    if (LZ5_encodeLastLiterals_LZ5v2(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;
 
     /* End */
     return (int) (((char*)op)-dest);
