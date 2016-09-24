@@ -86,3 +86,40 @@ FORCE_INLINE int LZ5_encodeLastLiterals_LZ4 (
     *op += length;
     return 0;
 }
+
+
+FORCE_INLINE size_t LZ5_get_price_LZ4(LZ5_stream_t* const ctx, size_t litLength, U32 offset, size_t matchLength)
+{
+    size_t price = 8; // (*op)++;
+    (void)ctx;
+    (void)offset;
+
+    /* Encode Literal length */
+    if (litLength >= RUN_MASK_LZ4) 
+    {
+        size_t len = litLength - RUN_MASK_LZ4;
+        if (len >= (1<<16)) price += 40;
+        else if (len >= 254) price += 24;
+        else price += 8;
+    }
+
+    price += 8*litLength;  /* Copy Literals */
+
+    /* Encode Offset */
+    if (offset) {
+        price += 16; // *op+=2;
+     
+        /* Encode MatchLength */
+        if (matchLength < MINMATCH) return 1<<16;//LZ5_MAX_PRICE; // error
+        matchLength -= MINMATCH;
+        if (matchLength >= ML_MASK_LZ4) {
+            matchLength -= ML_MASK_LZ4;
+            if (matchLength >= (1<<16)) price += 40;
+            else if (matchLength >= 254) price += 24;
+            else price += 8;
+        }
+    }
+
+    return price;
+}
+

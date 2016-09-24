@@ -11,6 +11,11 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
     U32 offset = (U32)(*ip - match);
     size_t length = (size_t)(*ip - *anchor);
     BYTE* token = (*op)++;
+#ifdef USE_8BIT_CODEWORDS
+    int off8bit = (offset >= 8 && offset < LZ5_MAX_8BIT_OFFSET);
+#else
+    int off8bit = 0;
+#endif
     (void) ctx;
 
     if (length > 0 || offset < LZ5_MAX_16BIT_OFFSET) {
@@ -30,7 +35,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
         LZ5_wildCopy(*op, *anchor, (*op) + length);
         *op += length;
 
-        if (offset >= LZ5_MAX_16BIT_OFFSET) {
+        if (off8bit || offset >= LZ5_MAX_16BIT_OFFSET) {
             COMPLOG_CODEWORDS_LZ5v2("T32+ literal=%u match=%u offset=%d\n", (U32)length, 0, 0);
             *token+=(1<<ML_RUN_BITS);
             token = (*op)++;
@@ -38,15 +43,41 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
     }
 
     /* Encode Offset */
+#ifdef USE_8BIT_CODEWORDS
+    if (off8bit) 
+    {
+        if (matchLength < MINMATCH) { printf("matchLength[%d] < MINMATCH  offset=%d\n", (int)matchLength, (int)ctx->last_off); exit(1); }
+
+        if ((limitedOutputBuffer) && (*op > oend - 6 /*LZ5_LENGTH_SIZE_LZ5v2(length)*/)) { LZ5_LOG_COMPRESS_LZ5v2("encodeSequence overflow2\n"); return 1; }   /* Check output limit */
+        if (matchLength - MINMATCH >= SHORT_OFF_COUNT) 
+        {
+            size_t len = matchLength - MINMATCH - SHORT_OFF_COUNT;
+            *token = LAST_SHORT_OFF;
+            if (len >= (1<<16)) { *(*op) = 255;  MEM_writeLE32(*op+1, (U32)(len));  *op += 5; }
+            else if (len >= 254) { *(*op) = 254;  MEM_writeLE16(*op+1, (U16)(len));  *op += 3; }
+            else *(*op)++ = (BYTE)len; 
+            COMPLOG_CODEWORDS_LZ5v2("8BIT16+ literal=%u match=%u offset=%d\n", 0, (U32)matchLength, offset);
+        }
+        else
+        {
+            COMPLOG_CODEWORDS_LZ5v2("8BIT0-15 literal=%u match=%u offset=%d\n", 0, (U32)matchLength, offset);
+            *token = (BYTE)(FIRST_SHORT_OFF + matchLength - MINMATCH);
+        }
+
+        *(*op)++ = (BYTE)offset;
+        ctx->last_off = offset;
+    }
+    else
+#endif
     if (offset >= LZ5_MAX_16BIT_OFFSET)  // 24-bit offset
     {
         if (matchLength < MM_LONGOFF) printf("ERROR matchLength=%d/%d\n", (int)matchLength, MM_LONGOFF), exit(0);
 
         if ((limitedOutputBuffer) && (*op > oend - 8 /*LZ5_LENGTH_SIZE_LZ5v2(length)*/)) { LZ5_LOG_COMPRESS_LZ5v2("encodeSequence overflow2\n"); return 1; }   /* Check output limit */
-        if (matchLength - MM_LONGOFF >= 31) 
+        if (matchLength - MM_LONGOFF >= LAST_LONG_OFF) 
         {
-            size_t len = matchLength - MM_LONGOFF - 31;
-            *token = 31;
+            size_t len = matchLength - MM_LONGOFF - LAST_LONG_OFF;
+            *token = LAST_LONG_OFF;
             if (len >= (1<<16)) { *(*op) = 255;  MEM_writeLE32(*op+1, (U32)(len));  *op += 5; }
             else if (len >= 254) { *(*op) = 254;  MEM_writeLE16(*op+1, (U16)(len));  *op += 3; }
             else *(*op)++ = (BYTE)len; 
@@ -135,6 +166,11 @@ FORCE_INLINE int LZ5_encodeLastLiterals_LZ5v2 (
 
 FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, size_t litLength, U32 offset, size_t matchLength)
 {
+#ifdef USE_8BIT_CODEWORDS
+    int off8bit = (offset >= 8 && offset < LZ5_MAX_8BIT_OFFSET);
+#else
+    int off8bit = 0;
+#endif
     size_t price = 8; // ctx->flagsPtr++;
     (void)ctx;
 
@@ -142,25 +178,41 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, size_t litLengt
         /* Encode Literal length */
         if (litLength>=(int)RUN_MASK_LZ5v2) {  
             size_t len = litLength - RUN_MASK_LZ5v2; 
-            if (len >= 255) price += 24;
+            if (len >= (1<<16)) price += 40;
+            else if (len >= 254) price += 24;
             else price += 8;
         }
     
         price += 8*litLength;  /* Copy Literals */
-        if (offset >= LZ5_MAX_16BIT_OFFSET)
+        if (off8bit || offset >= LZ5_MAX_16BIT_OFFSET)
             price += 8;
     }
 
     /* Encode Offset */
-    if (offset >= LZ5_MAX_16BIT_OFFSET) { // 24-bit offset
-        if (matchLength < 16) return LZ5_MAX_PRICE; // error
-        if (matchLength - MM_LONGOFF >= 31) {
-            size_t len = matchLength - MM_LONGOFF - 31;
-            if (len >= 255) price += 24;
+#ifdef USE_8BIT_CODEWORDS
+    if (off8bit) 
+    {
+        if (matchLength < MINMATCH) return LZ5_MAX_PRICE; // error
+        if (matchLength - MINMATCH >= SHORT_OFF_COUNT) 
+        {
+            size_t len = matchLength - MINMATCH - SHORT_OFF_COUNT;
+            if (len >= (1<<16)) price += 40;
+            else if (len >= 254) price += 24;
             else price += 8;
         }
-
-        price += 24; //ctx->offset24Ptr += 3;
+        price += 8; // *(*op)++ = (BYTE)offset;
+    }
+    else
+#endif
+    if (offset >= LZ5_MAX_16BIT_OFFSET) { // 24-bit offset
+        if (matchLength < 16) return LZ5_MAX_PRICE; // error
+        if (matchLength - MM_LONGOFF >= LAST_LONG_OFF) {
+            size_t len = matchLength - MM_LONGOFF - LAST_LONG_OFF;
+            if (len >= (1<<16)) price += 40;
+            else if (len >= 254) price += 24;
+            else price += 8;
+        }
+        price += 24; // *op += 3;
         LZ5_24BIT_OFFSET_LOAD;
     } else {
         if (offset) {
@@ -171,9 +223,11 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, size_t litLengt
         /* Encode MatchLength */
         if (matchLength>=(int)ML_MASK_LZ5v2) 
         {   size_t len = matchLength - ML_MASK_LZ5v2; 
-            if (len >= 255) price += 24;
+            if (len >= (1<<16)) price += 40;
+            else if (len >= 254) price += 24;
             else price += 8;
         }
     }
     return price;
 }
+

@@ -60,7 +60,7 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
     while (1) {
         unsigned token;
         const BYTE* match;
-     //   intptr_t litLength;
+    //    intptr_t litLength;
 
         /* get literal length */
         token = *ip++;
@@ -102,7 +102,7 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
                 break;     /* Necessarily EOF, due to parsing restrictions */
             }
 
-         //   litLength = length;
+         //  litLength = length;
 
     #if 1
             LZ5_wildCopy16(op, ip, cpy);
@@ -157,7 +157,7 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
             DECOMPLOG_CODEWORDS_LZ5v2("T32+ literal=%u match=%u offset=%d ipos=%d opos=%d\n", (U32)litLength, (U32)length, (int)-last_off, (U32)((const char*)ip-source), (U32)((char*)op-dest));
         }
         else
-        if (token < 31)
+        if (token < LAST_LONG_OFF)
         {
             if ((endOnInput) && unlikely(ip > iend - 3) ) { LZ5_LOG_DECOMPRESS_LZ5v2("9"); goto _output_error; } 
             length = token + MM_LONGOFF;
@@ -165,7 +165,10 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
             ip += 3;
             DECOMPLOG_CODEWORDS_LZ5v2("T0-30 literal=%u match=%u offset=%d\n", 0, (U32)length, (int)-last_off);
         }
-        else // token == 31
+        else 
+#ifdef USE_8BIT_CODEWORDS
+        if (token == LAST_LONG_OFF)
+#endif
         { 
             if ((endOnInput) && unlikely(ip > iend - 8) ) { LZ5_LOG_DECOMPRESS_LZ5v2("10"); goto _output_error; } 
             length = *ip;
@@ -180,12 +183,41 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
                 if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) { LZ5_LOG_DECOMPRESS_LZ5v2("8"); goto _output_error; }  /* overflow detection */
             }
             ip++;
-            length += 31 + MM_LONGOFF;
+            length += LAST_LONG_OFF + MM_LONGOFF;
 
             last_off = -(intptr_t)MEM_readLE24(ip); 
             ip += 3;
             DECOMPLOG_CODEWORDS_LZ5v2("1match=%p lowLimit=%p\n", match, lowLimit);
         }
+#ifdef USE_8BIT_CODEWORDS
+        else
+        if (token < LAST_SHORT_OFF)
+        {
+            if ((endOnInput) && unlikely(ip > iend - 1) ) { LZ5_LOG_DECOMPRESS_LZ5v2("9"); goto _output_error; } 
+            length = token + MINMATCH - FIRST_SHORT_OFF;
+            last_off = -(intptr_t)(BYTE)(*ip++);
+            DECOMPLOG_CODEWORDS_LZ5v2("8BIT0-15 literal=%u match=%u offset=%d\n", 0, (U32)length, (int)-last_off);
+        }
+        else // if (token == LAST_SHORT_OFF)
+        { 
+            if ((endOnInput) && unlikely(ip > iend - 6) ) { LZ5_LOG_DECOMPRESS_LZ5v2("10"); goto _output_error; } 
+            length = *ip;
+            if unlikely(length >= 254) {
+                if (length == 254) {
+                    length = MEM_readLE16(ip+1);
+                    ip += 2;
+                } else {
+                    length = MEM_readLE32(ip+1);
+                    ip += 4;
+                }
+                if ((safeDecode) && unlikely((size_t)(op+length)<(size_t)(op))) { LZ5_LOG_DECOMPRESS_LZ5v2("8"); goto _output_error; }  /* overflow detection */
+            }
+            ip++;
+            length += SHORT_OFF_COUNT + MINMATCH;
+            last_off = -(intptr_t)(BYTE)(*ip++);
+            DECOMPLOG_CODEWORDS_LZ5v2("8BIT16+ 1match=%p lowLimit=%p\n", match, lowLimit);
+        }
+#endif
 
         match = op + last_off;
         if ((checkOffset) && ((unlikely((uintptr_t)(-last_off) > (uintptr_t)op) || (match < lowLimit)))) { LZ5_LOG_DECOMPRESS_LZ5v2("lowPrefix[%p]-dictSize[%d]=lowLimit[%p] match[%p]=op[%p]-last_off[%d]\n", lowPrefix, (int)dictSize, lowLimit, match, op, (int)last_off); goto _output_error; }  /* Error : offset outside buffers */

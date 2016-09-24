@@ -40,9 +40,6 @@ extern "C" {
 #endif
 
 // TO DO:
-// LZ4 opt parser
-// divide into 64K blocks
-// 8-bit offsets
 // sl codewords
 // remove if (offset < 8) printf("ERROR 
 // improve LZ5_COMPRESSBOUND
@@ -57,15 +54,18 @@ extern "C" {
 
 
 #define LZ5_LOG_COMPRESS(...) //printf(__VA_ARGS__)
-#define LZ5_LOG_COMPRESS_LZ4(...) //printf(__VA_ARGS__)
-#define LZ5_LOG_COMPRESS_LZ5v2(...) //printf(__VA_ARGS__)
-#define COMPLOG_CODEWORDS_LZ4(...) //printf(__VA_ARGS__)
-#define COMPLOG_CODEWORDS_LZ5v2(...) //printf(__VA_ARGS__)
-
 #define LZ5_LOG_DECOMPRESS(...) //printf(__VA_ARGS__)
+
+#define LZ5_LOG_COMPRESS_LZ4(...) //printf(__VA_ARGS__)
+#define COMPLOG_CODEWORDS_LZ4(...) //printf(__VA_ARGS__)
 #define LZ5_LOG_DECOMPRESS_LZ4(...) //printf(__VA_ARGS__)
-#define LZ5_LOG_DECOMPRESS_LZ5v2(...) //printf(__VA_ARGS__)
+#define DECOMPLOG_CODEWORDS_LZ4(...) //printf(__VA_ARGS__)
+
+#define LZ5_LOG_COMPRESS_LZ5v2(...) //printf(__VA_ARGS__)
+#define COMPLOG_CODEWORDS_LZ5v2(...) //printf(__VA_ARGS__)
 #define DECOMPLOG_CODEWORDS_LZ5v2(...) //printf(__VA_ARGS__)
+#define LZ5_LOG_DECOMPRESS_LZ5v2(...) //printf(__VA_ARGS__)
+
 
 
 
@@ -74,10 +74,17 @@ extern "C" {
 **************************************/
 #define MINMATCH 4
 //#define USE_LZ4_ONLY
+//#define USE_8BIT_CODEWORDS
 
 #define WILDCOPYLENGTH 16
 #define LASTLITERALS WILDCOPYLENGTH
 #define MFLIMIT (WILDCOPYLENGTH+MINMATCH)
+
+#define LZ5_MAX_PRICE           (1<<28)
+#define LZ5_INIT_LAST_OFFSET    0
+#define LZ5_MAX_16BIT_OFFSET    (1<<16)
+#define MM_LONGOFF              16
+#define LZ5_BLOCK_SIZE          (1<<16)
 
 /* LZ4 codewords */
 #define ML_BITS_LZ4  4
@@ -91,10 +98,18 @@ extern "C" {
 #define RUN_BITS_LZ5v2  3
 #define RUN_MASK_LZ5v2  ((1U<<RUN_BITS_LZ5v2)-1)
 #define ML_RUN_BITS     (ML_BITS_LZ5v2 + RUN_BITS_LZ5v2)
+#define LZ5_24BIT_OFFSET_LOAD   price += LZ5_highbit32(offset)
 #define LZ5_LENGTH_SIZE_LZ5v2(len) ((len >= (1<<16)+RUN_MASK_LZ5v2) ? 5 : ((len >= 254+RUN_MASK_LZ5v2) ? 3 : ((len >= RUN_MASK_LZ5v2) ? 1 : 0)))
-#define MM_LONGOFF      16
-#define LZ5_MAX_16BIT_OFFSET (1<<16)
-#define LZ5_INIT_LAST_OFFSET 0
+
+#ifdef USE_8BIT_CODEWORDS
+    #define LZ5_MAX_8BIT_OFFSET (1<<8)
+    #define LAST_LONG_OFF 15
+    #define FIRST_SHORT_OFF 16
+    #define LAST_SHORT_OFF 31
+    #define SHORT_OFF_COUNT (LAST_SHORT_OFF-FIRST_SHORT_OFF)
+#else
+    #define LAST_LONG_OFF 31
+#endif
 
 typedef enum { noLimit = 0, limitedOutput = 1 } limitedOutput_directive;
 typedef enum { LZ5_parser_fast, LZ5_parser_noChain, LZ5_parser_hashChain, LZ5_parser_priceFast, LZ5_parser_lowestPrice, LZ5_parser_optimalPrice, LZ5_parser_optimalPriceBT } LZ5_parser_type;   /* from faster to stronger */ 
@@ -131,6 +146,8 @@ struct LZ5_stream_s
     U32*  chainTable;
     U32*  hashTable;
     int   last_off;
+    BYTE* tokenPtr;
+    int   tokenPart;
 };
 
 
@@ -145,7 +162,7 @@ struct LZ5_stream_s
 #define LZ5_CHAINLOG_LZ5v2  LZ5_WINDOWLOG_LZ5v2
 #define LZ5_HASHLOG_LZ5v2   18
 
-#define LZ5_DEFAULT_CLEVEL  9
+#define LZ5_DEFAULT_CLEVEL  8
 
 
 static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1] =
@@ -169,7 +186,7 @@ static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1] =
     { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2,                23,  16,     8,  4,  MM_LONGOFF,    64,  0, LZ5_parser_optimalPrice,   LZ5_coderwords_LZ5v2 }, // level 15
     { LZ5_WINDOWLOG_LZ5v2,  LZ5_CHAINLOG_LZ5v2+1,                23,  16,     8,  4,  MM_LONGOFF,    64,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ5v2 }, // level 16
     { LZ5_WINDOWLOG_LZ5v2,  LZ5_CHAINLOG_LZ5v2+1,                23,  16,   128,  4,  MM_LONGOFF,    64,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ5v2 }, // level 17
-    { LZ5_WINDOWLOG_LZ5v2,  LZ5_CHAINLOG_LZ5v2+1,                28,  24, 1<<10,  4,  MM_LONGOFF, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ5v2 }, // level 18
+    {                  24,                    25,                28,  24, 1<<10,  4,  MM_LONGOFF, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ5v2 }, // level 18
 //  {                  10,                    10,                10,   0,     0,  4,           0,     0,  0, LZ5_fast          }, // min values
 //  {                  24,                    24,                28,  24, 1<<24,  7,           0, 1<<24,  2, LZ5_optimal_price }, // max values
 };
@@ -213,7 +230,7 @@ static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1] =
 #define ALLOCATOR(n,s) calloc(n,s)
 #define FREEMEM        free
 #define MEM_INIT       memset
-#define LZ5_DICT_SIZE (1 << LZ5_WINDOWLOG_LZ5v2)
+#define LZ5_DICT_SIZE (1 << 24)
 #ifndef MAX
     #define MAX(a,b) ((a)>(b))?(a):(b)
 #endif
