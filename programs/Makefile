@@ -239,10 +239,10 @@ test-lz5-basic: lz5 datagen
 	./datagen         | ./lz5        | ./lz5 -t
 	./datagen -g1M    | ./lz5 -6B1D  | ./lz5 -t
 	./datagen -g6M -P99 | ./lz5 -9BD | ./lz5 -t
-	./datagen -g17M   | ./lz5 -9v    | ./lz5 -t
+	./datagen -g17M   | ./lz5 -8v    | ./lz5 -t
 	./datagen -g33M   | ./lz5 --no-frame-crc | ./lz5 -t
 	./datagen -g256MB | ./lz5 -4B4D  | ./lz5 -t
-	./datagen -g6GB   | ./lz5 -0B5D  | ./lz5 -t
+	./datagen -g6GB   | ./lz5 -2B5D  | ./lz5 -t
 	./datagen -g6GB   | ./lz5 -1B3D  | ./lz5 -t
 	@rm tmp*
 
@@ -255,8 +255,8 @@ test-interop-32-64: lz5 lz5c32 datagen
 	./datagen -g16KB  | ./lz5c32 -9     | ./lz5    -t
 	./datagen -P10    | ./lz5    -9B4   | ./lz5c32 -t
 	./datagen         | ./lz5c32        | ./lz5    -t
-	./datagen -g1M    | ./lz5    -6B5   | ./lz5c32 -t
-	./datagen -g256MB | ./lz5c32 -3B4D  | ./lz5    -t
+	./datagen -g1M    | ./lz5    -7B5   | ./lz5c32 -t
+	./datagen -g256MB | ./lz5c32 -5B4D  | ./lz5    -t
 	./datagen -g1G -P90 | ./lz5         | ./lz5c32 -t
 	./datagen -g6GB   | ./lz5c32 -2BD   | ./lz5    -t
 
@@ -265,7 +265,7 @@ test-lz5c32-basic: lz5c32 datagen
 	./datagen -g16KB  | ./lz5c32 -9      | ./lz5c32 -t
 	./datagen         | ./lz5c32         | ./lz5c32 -t
 	./datagen -g256MB | ./lz5c32 -1B4D   | ./lz5c32 -t
-	./datagen -g6GB   | ./lz5c32 -0B5D   | ./lz5c32 -t
+	./datagen -g6GB   | ./lz5c32 -3B5D   | ./lz5c32 -t
 
 test-lz5c32: test-lz5c32-basic test-interop-32-64
 

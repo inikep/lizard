@@ -1,4 +1,4 @@
-﻿# LZ4LZ5reaming API Example : Double Buffer
+# LZ5 streaming API Example : Double Buffer
 by *Takayuki Matsuoka*
 
 `blockStreaming_doubleBuffer.c` is LZ5 Straming API example which implements double buffer (de)compression.

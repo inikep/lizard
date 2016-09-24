@@ -2,6 +2,17 @@ language: c
 matrix:
   fast_finish: true
   include:
+    # OS X Mavericks
+    - os: osx
+      env: Ubu="OS X Mavericks" PARAMS='-C programs test-lz5 CC=clang MOREFLAGS="-Werror -Wconversion -Wno-sign-conversion"' COMPILER=clang
+    # 14.04 LTS Server Edition 64 bit
+    - env: Ubu="14.04" PARAMS=sanitize COMPILER=clang
+      dist: trusty
+      sudo: required
+      addons:
+        apt:
+          packages:
+            - valgrind
     - env: Ubu="14.04" PARAMS='-C programs test-mem' COMPILER=cc
       dist: trusty
       sudo: required
@@ -33,9 +44,6 @@ matrix:
           packages:
             - libc6-dev-i386
             - gcc-multilib
-    # OS X Mavericks
-    - os: osx
-      env: Ubu="OS X Mavericks" PARAMS='-C programs test-lz5 CC=clang MOREFLAGS="-Werror -Wconversion -Wno-sign-conversion"' COMPILER=clang
     # Container-based 12.04 LTS Server Edition 64 bit (doesn't support 32-bit includes)
     - os: linux
       sudo: false
@@ -68,13 +76,6 @@ matrix:
       sudo: false
       env: Ubu="12.04cont" PARAMS='-C programs test-frametest' COMPILER=cc
     # 14.04 LTS Server Edition 64 bit
-    - env: Ubu="14.04" PARAMS=sanitize COMPILER=clang
-      dist: trusty
-      sudo: required
-      addons:
-        apt:
-          packages:
-            - valgrind
     - env: Ubu="14.04" PARAMS=staticAnalyze COMPILER=clang
       dist: trusty
       sudo: required

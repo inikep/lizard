@@ -1,4 +1,4 @@
-﻿# LZ4LZ5reaming API Example : Line by Line Text Compression
+# LZ5 streaming API Example : Line by Line Text Compression
 by *Takayuki Matsuoka*
 
 `blockStreaming_lineByLine.c` is LZ5 Straming API example which implements line by line incremental (de)compression.
