@@ -55,6 +55,7 @@ You can contact the author at :
 #include "lz5_common.h"  /* LZ5_DICT_SIZE */
 #define XXH_STATIC_LINKING_ONLY
 #include "xxhash.h"
+#include <stdio.h>
 
 
 
@@ -291,20 +292,25 @@ size_t LZ5F_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuf
         return (size_t)-LZ5F_ERROR_dstMaxSize_tooSmall;
 
     errorCode = LZ5F_compressBegin(&cctxI, dstBuffer, dstMaxSize, &prefs);  /* write header */
-    if (LZ5F_isError(errorCode)) return errorCode;
+    if (LZ5F_isError(errorCode)) goto error;
     dstPtr += errorCode;   /* header size */
 
     errorCode = LZ5F_compressUpdate(&cctxI, dstPtr, dstEnd-dstPtr, srcBuffer, srcSize, &options);
-    if (LZ5F_isError(errorCode)) return errorCode;
+    if (LZ5F_isError(errorCode)) goto error;
     dstPtr += errorCode;
 
     errorCode = LZ5F_compressEnd(&cctxI, dstPtr, dstEnd-dstPtr, &options);   /* flush last block, and generate suffix */
-    if (LZ5F_isError(errorCode)) return errorCode;
+    if (LZ5F_isError(errorCode)) goto error;
     dstPtr += errorCode;
 
     LZ5_freeStream(cctxI.lz5CtxPtr);
-
+    FREEMEM(cctxI.tmpBuff);
     return (dstPtr - dstStart);
+error:
+   // printf("LZ5F_compressFrame errorCode=%d\n", (int)errorCode);
+    LZ5_freeStream(cctxI.lz5CtxPtr);
+    FREEMEM(cctxI.tmpBuff);
+    return errorCode;
 }
 
 
@@ -389,7 +395,7 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
         cctxPtr->maxBufferSize = requiredBuffSize;
         FREEMEM(cctxPtr->tmpBuff);
         cctxPtr->tmpBuff = (BYTE*)ALLOCATOR(1, requiredBuffSize);
-        if (cctxPtr->tmpBuff == NULL) return (size_t)-LZ5F_ERROR_allocation_failed;
+        if (cctxPtr->tmpBuff == NULL) { printf("ERROR in LZ5F_compressBegin: Cannot allocate %d MB\n", (int)(requiredBuffSize>>20)); return (size_t)-LZ5F_ERROR_allocation_failed; }
     }
     cctxPtr->tmpIn = cctxPtr->tmpBuff;
     cctxPtr->tmpInSize = 0;
