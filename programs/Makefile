@@ -70,7 +70,7 @@ all: bins m32
 lz5: $(LZ5DIR)/lz5.o $(LZ5DIR)/lz5hc.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash.o bench.o lz5io.o lz5cli.o datagen.o
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-lz5_32: $(LZ5DIR)/lz5.c $(LZ5DIR)/lz5hc.c $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash.c bench.c lz5io.c lz5cli.c
+lz5_32: $(LZ5DIR)/lz5.c $(LZ5DIR)/lz5hc.c $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash.c bench.c lz5io.c lz5cli.c datagen.c
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
 fullbench: $(LZ5DIR)/lz5.o $(LZ5DIR)/lz5hc.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash.o fullbench.o

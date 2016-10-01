@@ -31,4 +31,4 @@ void BMK_SetBlockSize(size_t bsize);
 void BMK_SetNbIterations(unsigned nbLoops);
 
 
-#endif   /* BENCH_H_1212 */ 
+#endif   /* BENCH_H_1212 */

@@ -7,7 +7,6 @@ contrib/
 debian/
 examples/
 versionsTest/
-visual/
 
 # Archives
 *.zip 
@@ -30,6 +29,3 @@ visual/
 *.exe
 *.out
 *.app
-
-# Visual Studio files
-projects/VS2010
