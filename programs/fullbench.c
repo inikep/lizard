@@ -278,20 +278,6 @@ static int local_LZ5_compress_continue_limitedOutput(const char* in, char* out, 
 
 
 /* decompression functions */
-static int local_LZ5_decompress_fast(const char* in, char* out, int inSize, int outSize)
-{
-    (void)inSize;
-    LZ5_decompress_fast(in, out, outSize);
-    return outSize;
-}
-
-static int local_LZ5_decompress_fast_usingDict(const char* in, char* out, int inSize, int outSize)
-{
-    (void)inSize;
-    LZ5_decompress_fast_usingDict(in, out, outSize, out - 65536, 65536);
-    return outSize;
-}
-
 static int local_LZ5_decompress_safe_usingDict(const char* in, char* out, int inSize, int outSize)
 {
     (void)inSize;
@@ -541,8 +527,6 @@ int fullSpeedBench(const char** fileNamesTable, int nbFiles)
             switch(dAlgNb)
             {
             case 0: DISPLAY("Decompression functions : \n"); continue;
-            case 1: decompressionFunction = local_LZ5_decompress_fast; dName = "LZ5_decompress_fast"; break;
-            case 3: decompressionFunction = local_LZ5_decompress_fast_usingDict; dName = "LZ5_decompress_fast_usingDict"; break;
             case 4: decompressionFunction = LZ5_decompress_safe; dName = "LZ5_decompress_safe"; break;
             case 6: decompressionFunction = local_LZ5_decompress_safe_usingDict; dName = "LZ5_decompress_safe_usingDict"; break;
             case 7: decompressionFunction = local_LZ5_decompress_safe_partial; dName = "LZ5_decompress_safe_partial"; break;

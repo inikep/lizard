@@ -373,26 +373,6 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
 
         crcOrig = XXH32(block, blockSize, 0);
 
-        /* Test decoding with output size being exactly what's necessary => must work */
-        FUZ_DISPLAYTEST;
-        ret = LZ5_decompress_fast(compressedBuffer, decodedBuffer, blockSize);
-        FUZ_CHECKTEST(ret<0, "LZ5_decompress_fast failed despite correct space");
-        FUZ_CHECKTEST(ret!=compressedSize, "LZ5_decompress_fast failed : did not fully read compressed data");
-        crcCheck = XXH32(decodedBuffer, blockSize, 0);
-        FUZ_CHECKTEST(crcCheck!=crcOrig, "LZ5_decompress_fast corrupted decoded data");
-
-        /* Test decoding with one byte missing => must fail */
-        FUZ_DISPLAYTEST;
-        decodedBuffer[blockSize-1] = 0;
-        ret = LZ5_decompress_fast(compressedBuffer, decodedBuffer, blockSize-1);
-        FUZ_CHECKTEST(ret>=0, "LZ5_decompress_fast should have failed, due to Output Size being too small");
-        FUZ_CHECKTEST(decodedBuffer[blockSize-1], "LZ5_decompress_fast overrun specified output buffer");
-
-        /* Test decoding with one byte too much => must fail */
-        FUZ_DISPLAYTEST;
-        ret = LZ5_decompress_fast(compressedBuffer, decodedBuffer, blockSize+1);
-        FUZ_CHECKTEST(ret>=0, "LZ5_decompress_fast should have failed, due to Output Size being too large");
-
         /* Test decoding with output size exactly what's necessary => must work */
         FUZ_DISPLAYTEST;
         decodedBuffer[blockSize] = 0;
@@ -515,26 +495,6 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
             LZ5_freeStream(LZ5_stream);
         }
 
-        /* Decompress with dictionary as prefix */
-        FUZ_DISPLAYTEST;
-        memcpy(decodedBuffer, dict, dictSize);
-        ret = LZ5_decompress_fast_usingDict(compressedBuffer, decodedBuffer+dictSize, blockSize, decodedBuffer, dictSize);
-        FUZ_CHECKTEST(ret!=blockContinueCompressedSize, "LZ5_decompress_fast_usingDict did not read all compressed block input");
-        crcCheck = XXH32(decodedBuffer+dictSize, blockSize, 0);
-        if (crcCheck!=crcOrig) {
-            int i=0;
-            while (block[i]==decodedBuffer[i]) i++;
-            printf("Wrong Byte at position %i/%i\n", i, blockSize);
-
-        }
-        FUZ_CHECKTEST(crcCheck!=crcOrig, "LZ5_decompress_fast_usingDict corrupted decoded data (dict %i)", dictSize);
-
-        FUZ_DISPLAYTEST;
-        ret = LZ5_decompress_safe_usingDict(compressedBuffer, decodedBuffer+dictSize, blockContinueCompressedSize, blockSize, decodedBuffer, dictSize);
-        FUZ_CHECKTEST(ret!=blockSize, "1LZ5_decompress_safe_usingDict did not regenerate original data ret[%d]!=blockSize[%d]", (int)ret, (int)blockSize);
-        crcCheck = XXH32(decodedBuffer+dictSize, blockSize, 0);
-        FUZ_CHECKTEST(crcCheck!=crcOrig, "LZ5_decompress_safe_usingDict corrupted decoded data");
-
         /* Compress using External dictionary */
         FUZ_DISPLAYTEST;
         dict -= (FUZ_rand(&randState) & 0xF) + 1;   /* Separation, so it is an ExtDict */
@@ -554,17 +514,6 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
         FUZ_CHECKTEST(ret!=blockContinueCompressedSize, "LZ5_compress_limitedOutput_compressed size is different (%i != %i)", ret, blockContinueCompressedSize);
         FUZ_CHECKTEST(ret<=0, "LZ5_compress_continue should work : enough size available within output buffer");
 
-        /* Decompress with dictionary as external */
-        FUZ_DISPLAYTEST;
-        decodedBuffer[blockSize] = 0;
-        ret = LZ5_decompress_fast_usingDict(compressedBuffer, decodedBuffer, blockSize, dict, dictSize);
-        FUZ_CHECKTEST(ret!=blockContinueCompressedSize, "LZ5_decompress_fast_usingDict did not read all compressed block input");
-        FUZ_CHECKTEST(decodedBuffer[blockSize], "LZ5_decompress_fast_usingDict overrun specified output buffer size")
-            crcCheck = XXH32(decodedBuffer, blockSize, 0);
-        if (crcCheck!=crcOrig)
-            FUZ_findDiff(block, decodedBuffer);
-        FUZ_CHECKTEST(crcCheck!=crcOrig, "LZ5_decompress_fast_usingDict corrupted decoded data (dict %i)", dictSize);
-
         FUZ_DISPLAYTEST;
         decodedBuffer[blockSize] = 0;
         ret = LZ5_decompress_safe_usingDict(compressedBuffer, decodedBuffer, blockContinueCompressedSize, blockSize, dict, dictSize);
@@ -572,12 +521,6 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
         FUZ_CHECKTEST(decodedBuffer[blockSize], "LZ5_decompress_safe_usingDict overrun specified output buffer size")
             crcCheck = XXH32(decodedBuffer, blockSize, 0);
         FUZ_CHECKTEST(crcCheck!=crcOrig, "LZ5_decompress_safe_usingDict corrupted decoded data");
-
-        FUZ_DISPLAYTEST;
-        decodedBuffer[blockSize-1] = 0;
-        ret = LZ5_decompress_fast_usingDict(compressedBuffer, decodedBuffer, blockSize-1, dict, dictSize);
-        FUZ_CHECKTEST(ret>=0, "LZ5_decompress_fast_usingDict should have failed : wrong original size (-1 byte)");
-        FUZ_CHECKTEST(decodedBuffer[blockSize-1], "LZ5_decompress_fast_usingDict overrun specified output buffer size");
 
         FUZ_DISPLAYTEST;
         decodedBuffer[blockSize-1] = 0;

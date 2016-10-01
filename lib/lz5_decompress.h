@@ -61,19 +61,6 @@ int LZ5_decompress_safe (const char* source, char* dest, int compressedSize, int
 
 
 /*!
-LZ5_decompress_fast() :
-    originalSize : is the original and therefore uncompressed size
-    return : the number of bytes read from the source buffer (in other words, the compressed size)
-             If the source stream is detected malformed, the function will stop decoding and return a negative result.
-             Destination buffer must be already allocated. Its size must be a minimum of 'originalSize' bytes.
-    note : This function fully respect memory boundaries for properly formed compressed data.
-           It is a bit faster than LZ5_decompress_safe().
-           However, it does not provide any protection against intentionally modified data stream (malicious input).
-           Use this function in trusted environment only (data to decode comes from a trusted source).
-*/
-int LZ5_decompress_fast (const char* source, char* dest, int originalSize);
-
-/*!
 LZ5_decompress_safe_partial() :
     This function decompress a compressed block of size 'compressedSize' at position 'source'
     into destination buffer 'dest' of size 'maxDecompressedSize'.
@@ -137,7 +124,6 @@ int LZ5_setStreamDecode (LZ5_streamDecode_t* LZ5_streamDecode, const char* dicti
     and indicate where it is saved using LZ5_setStreamDecode()
 */
 int LZ5_decompress_safe_continue (LZ5_streamDecode_t* LZ5_streamDecode, const char* source, char* dest, int compressedSize, int maxDecompressedSize);
-int LZ5_decompress_fast_continue (LZ5_streamDecode_t* LZ5_streamDecode, const char* source, char* dest, int originalSize);
 
 
 /*
@@ -148,8 +134,6 @@ Advanced decoding functions :
     They are stand-alone. They don't need nor update an LZ5_streamDecode_t structure.
 */
 int LZ5_decompress_safe_usingDict (const char* source, char* dest, int compressedSize, int maxDecompressedSize, const char* dictStart, int dictSize);
-int LZ5_decompress_fast_usingDict (const char* source, char* dest, int originalSize, const char* dictStart, int dictSize);
-
 
 
 #if defined (__cplusplus)
