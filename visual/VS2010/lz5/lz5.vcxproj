@@ -27,6 +27,7 @@
     <ClInclude Include="..\..\..\lib\xxhash.h" />
     <ClInclude Include="..\..\..\programs\bench.h" />
     <ClInclude Include="..\..\..\programs\lz5io.h" />
+    <ClInclude Include="..\..\..\programs\datagen.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\lib\lz5.c" />
@@ -36,6 +37,7 @@
     <ClCompile Include="..\..\..\programs\bench.c" />
     <ClCompile Include="..\..\..\programs\lz5cli.c" />
     <ClCompile Include="..\..\..\programs\lz5io.c" />
+    <ClCompile Include="..\..\..\programs\datagen.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E30329AC-0057-4FE0-8FDA-7F650D398C4C}</ProjectGuid>
