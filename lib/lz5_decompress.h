@@ -39,7 +39,7 @@
 extern "C" {
 #endif
 
-#include "mem.h"     /* U32 */
+#include "entropy/mem.h"     /* U32 */
 
 
 /*-************************************

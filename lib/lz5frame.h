@@ -70,7 +70,7 @@ const char* LZ5F_getErrorName(LZ5F_errorCode_t code);   /* return error code str
 
 typedef enum {
     LZ5F_default=0,
-    LZ5F_max64KB=1,
+    LZ5F_max128KB=1,
     LZ5F_max256KB=2,
     LZ5F_max1MB=3,
     LZ5F_max4MB=4,

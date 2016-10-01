@@ -70,7 +70,7 @@ default: liblz5
 
 all: liblz5
 
-liblz5: *.c
+liblz5: *.c xxhash/*.c
 	@echo compiling static library
 	@$(CC) $(FLAGS) -c $^
 	@$(AR) rcs $@.a *.o

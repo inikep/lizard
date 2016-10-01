@@ -54,7 +54,7 @@ You can contact the author at :
 #include "lz5_decompress.h"
 #include "lz5_common.h"  /* LZ5_DICT_SIZE */
 #define XXH_STATIC_LINKING_ONLY
-#include "xxhash.h"
+#include "xxhash/xxhash.h"
 #include <stdio.h>
 
 
@@ -116,7 +116,7 @@ static void LZ5F_writeLE64 (BYTE* dstPtr, U64 value64)
 #define LZ5F_MAGIC_SKIPPABLE_START 0x184D2A50U
 #define LZ5F_MAGICNUMBER 0x184D2205U
 #define LZ5F_BLOCKUNCOMPRESSED_FLAG 0x80000000U
-#define LZ5F_BLOCKSIZEID_DEFAULT LZ5F_max64KB
+#define LZ5F_BLOCKSIZEID_DEFAULT LZ5F_max128KB
 
 static const size_t minFHSize = 7;
 static const size_t maxFHSize = 15;
@@ -190,7 +190,7 @@ const char* LZ5F_getErrorName(LZ5F_errorCode_t code)
 **************************************/
 static size_t LZ5F_getBlockSize(unsigned blockSizeID)
 {
-    static const size_t blockSizes[7] = { 64 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
+    static const size_t blockSizes[7] = { 128 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
 
     if (blockSizeID == 0) blockSizeID = LZ5F_BLOCKSIZEID_DEFAULT;
     blockSizeID -= 1;
@@ -213,7 +213,7 @@ static BYTE LZ5F_headerChecksum (const void* header, size_t length)
 **************************************/
 static LZ5F_blockSizeID_t LZ5F_optimalBSID(const LZ5F_blockSizeID_t requestedBSID, const size_t srcSize)
 {
-    LZ5F_blockSizeID_t proposedBSID = LZ5F_max64KB;
+    LZ5F_blockSizeID_t proposedBSID = LZ5F_max128KB;
     size_t maxBlockSize = 256 MB;
  //   printf("1requestedBSID=%d\n", (int)requestedBSID);
 

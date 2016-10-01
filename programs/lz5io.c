@@ -181,7 +181,7 @@ int LZ5IO_setOverwrite(int yes)
 /* blockSizeID : valid values : 1-7 */
 int LZ5IO_setBlockSizeID(int bsid)
 {
-    static const int blockSizeTable[] = { 64 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
+    static const int blockSizeTable[] = { 128 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
     if ((bsid < minBlockSizeID) || (bsid > maxBlockSizeID)) return -1;
     g_blockSizeId = bsid;
     return blockSizeTable[g_blockSizeId-minBlockSizeID];
@@ -651,7 +651,7 @@ typedef struct {
     LZ5F_decompressionContext_t dCtx;
 } dRess_t;
 
-static const size_t LZ5IO_dBufferSize = 64 KB;
+static const size_t LZ5IO_dBufferSize = 128 KB;
 static unsigned g_magicRead = 0;
 
 

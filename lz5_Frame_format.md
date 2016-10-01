@@ -184,9 +184,9 @@ This information is intended to help the decoder allocate memory.
 Size here refers to the original (uncompressed) data size.
 Block Maximum Size is one value among the following table :
 
-|  0  |   1   |    2   |   3  |   4  |   5   |   6   |   7    | 
-| --- | ----- | ------ | ---- | ---- | ----- | ----- | ------ | 
-| N/A | 64 KB | 256 KB | 1 MB | 4 MB | 16 MB | 64 MB | 256 MB |
+|  0  |   1    |    2   |   3  |   4  |   5   |   6   |   7    | 
+| --- | ------ | ------ | ---- | ---- | ----- | ----- | ------ | 
+| N/A | 128 KB | 256 KB | 1 MB | 4 MB | 16 MB | 64 MB | 256 MB |
 
     
 The decoder may refuse to allocate block sizes above a (system-specific) size.
