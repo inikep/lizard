@@ -156,7 +156,7 @@
     <ClInclude Include="..\..\..\lib\lz5frame.h" />
     <ClInclude Include="..\..\..\lib\lz5frame_static.h" />
     <ClInclude Include="..\..\..\lib\lz5_common.h" />
-    <ClInclude Include="..\..\..\lib\xxhash.h" />
+    <ClInclude Include="..\..\..\lib\xxhash\xxhash.h" />
     <ClInclude Include="..\..\..\programs\bench.h" />
     <ClInclude Include="..\..\..\programs\datagen.h" />
     <ClInclude Include="..\..\..\programs\lz5io.h" />

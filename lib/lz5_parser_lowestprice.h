@@ -1,10 +1,5 @@
 #define LZ5_LOWESTPRICE_MIN_OFFSET 8
 
-#define LZ5_LEN_COST(len)       LZ5_LENGTH_SIZE_LZ5v2(len)
-
-FORCE_INLINE size_t LZ5_LIT_COST(size_t len){ return ((len)<<3)+LZ5_LEN_COST(len); }
-FORCE_INLINE size_t LZ5_MATCH_COST(size_t mlen, size_t offset) { return LZ5_LEN_COST(mlen) + ((offset == 0) ? 8 : (offset<LZ5_MAX_16BIT_OFFSET ? 24 : 32)); }
-
 
 FORCE_INLINE size_t LZ5_more_profitable(size_t best_off, size_t best_common, size_t off, size_t common, size_t literals, size_t last_off)
 {
@@ -18,8 +13,7 @@ FORCE_INLINE size_t LZ5_more_profitable(size_t best_off, size_t best_common, siz
     if (off == last_off) off = 0; // rep code
     if (best_off == last_off) best_off = 0;
 
-    return LZ5_MATCH_COST(common, off) + LZ5_LIT_COST(sum - common) <= LZ5_MATCH_COST(best_common, best_off) + LZ5_LIT_COST(sum - best_common);
-// return LZ5_get_price_LZ5v2(NULL, 0, off, common) + LZ5_get_price_LZ5v2(NULL, sum - common, 0, 0) <= LZ5_get_price_LZ5v2(NULL, 0, best_off, best_common) + LZ5_get_price_LZ5v2(NULL, sum - best_common, 0, 0);
+    return LZ5_get_price_LZ5v2(NULL, 0, (U32)off, common) + LZ5_get_price_LZ5v2(NULL, sum - common, 0, 0) <= LZ5_get_price_LZ5v2(NULL, 0, (U32)best_off, best_common) + LZ5_get_price_LZ5v2(NULL, sum - best_common, 0, 0);
 } 
 
 
@@ -27,8 +21,8 @@ FORCE_INLINE size_t LZ5_better_price(size_t best_off, size_t best_common, size_t
 {
     if (best_off == last_off) best_off = 0;
     if (off == last_off) off = 0; // rep code
-    return LZ5_MATCH_COST(common, (off == last_off) ? 0 : off) < LZ5_MATCH_COST(best_common, best_off) + LZ5_LIT_COST(common - best_common);
-  //  return LZ5_get_price_LZ5v2(NULL, 0, off, common) < LZ5_get_price_LZ5v2(NULL, 0, best_off, best_common) + LZ5_get_price_LZ5v2(NULL, common - best_common, 0, 0);
+
+    return LZ5_get_price_LZ5v2(NULL, 0, (U32)off, common) < LZ5_get_price_LZ5v2(NULL, 0, (U32)best_off, best_common) + LZ5_get_price_LZ5v2(NULL, common - best_common, 0, 0);
 }
 
 

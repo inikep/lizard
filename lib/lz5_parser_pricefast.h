@@ -67,7 +67,7 @@ FORCE_INLINE int LZ5_FindMatchFast(LZ5_stream_t* ctx, intptr_t matchIndex, intpt
                 if (*(match+ml) == *(ip+ml) && (MEM_read32(match) == MEM_read32(ip))) {
                     mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
                     if ((mlt >= minMatchLongOff) || ((U32)(ip - match) < LZ5_MAX_16BIT_OFFSET))
-                    if (!ml || (mlt > ml && LZ5_better_price((ip - *matchpos), ml, (ip - match), mlt, ctx->last_off)))
+                    if (!ml || (mlt > ml)) // && LZ5_better_price((ip - *matchpos), ml, (ip - match), mlt, ctx->last_off)))
                     { ml = mlt; *matchpos = match; }
                 }
             } else {
@@ -77,7 +77,7 @@ FORCE_INLINE int LZ5_FindMatchFast(LZ5_stream_t* ctx, intptr_t matchIndex, intpt
                 if (MEM_read32(matchDict) == MEM_read32(ip)) {
                     mlt = LZ5_count_2segments(ip+MINMATCH, matchDict+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
                     if ((mlt >= minMatchLongOff) || ((U32)(ip - match) < LZ5_MAX_16BIT_OFFSET))
-                    if (!ml || (mlt > ml && LZ5_better_price((ip - *matchpos), ml, (U32)(ip - match), mlt, ctx->last_off)))
+                    if (!ml || (mlt > ml)) // && LZ5_better_price((ip - *matchpos), ml, (U32)(ip - match), mlt, ctx->last_off)))
                     { ml = mlt; *matchpos = match; }   /* virtual matchpos */
                 }
             }
