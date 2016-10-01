@@ -133,15 +133,11 @@ FORCE_INLINE int LZ5_FindMatchFaster (LZ5_stream_t* ctx, U32 matchIndex,  /* Ind
 FORCE_INLINE int LZ5_compress_priceFast(
         LZ5_stream_t* const ctx,
         const BYTE* ip,
-        const BYTE* const iend,
-        BYTE* op,
-        BYTE* const oend,
-        const limitedOutput_directive outputLimited)
+        const BYTE* const iend)
 {
     const BYTE* anchor = ip;
     const BYTE* const mflimit = iend - MFLIMIT;
     const BYTE* const matchlimit = (iend - LASTLITERALS);
-    BYTE* dest = op;
 
     size_t ml, ml2=0;
     const BYTE* ref=NULL;
@@ -233,7 +229,7 @@ _Search:
         }
 
 _Encode:
-        if (LZ5_encodeSequence_LZ5v2(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) goto _output_error;
+        if (LZ5_encodeSequence_LZ5v2(ctx, &ip, &anchor, ml, ref)) goto _output_error;
 
         if (ml2)
         {
@@ -245,10 +241,10 @@ _Encode:
 
     /* Encode Last Literals */
     ip = iend;
-    if (LZ5_encodeLastLiterals_LZ5v2(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;
+    if (LZ5_encodeLastLiterals_LZ5v2(ctx, &ip, &anchor)) goto _output_error;
 
     /* End */
-    return (int) (op-dest);
+    return 1;
 _output_error:
     return 0;
 }

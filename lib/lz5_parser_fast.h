@@ -41,10 +41,7 @@ static const U32 LZ5_minLength = (MFLIMIT+1);
 FORCE_INLINE int LZ5_compress_fast(
         LZ5_stream_t* const ctx,
         const BYTE* ip,
-        const BYTE* const iend,
-        BYTE* op,
-        BYTE* const oend,
-        const limitedOutput_directive outputLimited)
+        const BYTE* const iend)
 {
     const U32 acceleration = 1;
     const BYTE* base = ctx->base;
@@ -56,7 +53,6 @@ FORCE_INLINE int LZ5_compress_fast(
     const BYTE* const mflimit = iend - MFLIMIT;
     const BYTE* const matchlimit = iend - LASTLITERALS;
     const BYTE* anchor = ip;
-    BYTE* dest = op;
 
     size_t forwardH, matchIndex;
     const int hashLog = ctx->params.hashLog;
@@ -146,7 +142,7 @@ FORCE_INLINE int LZ5_compress_fast(
         }
 
 _next_match:
-        if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, matchLength+MINMATCH, match, outputLimited, oend)) goto _output_error;
+        if (LZ5_encodeSequence_LZ4(ctx, &ip, &anchor, matchLength+MINMATCH, match)) goto _output_error;
         
         /* Test end of chunk */
         if (ip > mflimit) break;
@@ -196,10 +192,10 @@ _next_match:
 _last_literals:
     /* Encode Last Literals */
     ip = iend;
-    if (LZ5_encodeLastLiterals_LZ4(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;
+    if (LZ5_encodeLastLiterals_LZ4(ctx, &ip, &anchor)) goto _output_error;
 
     /* End */
-    return (int)(op-dest);
+    return 1;
 _output_error:
     return 0;
 }

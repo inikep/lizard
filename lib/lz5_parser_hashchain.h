@@ -186,15 +186,11 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatch (
 FORCE_INLINE int LZ5_compress_hashChain (
         LZ5_stream_t* const ctx,
         const BYTE* ip,
-        const BYTE* const iend,
-        BYTE* op,
-        BYTE* const oend,
-        const limitedOutput_directive outputLimited)
+        const BYTE* const iend)
 {
     const BYTE* anchor = ip;
     const BYTE* const mflimit = iend - MFLIMIT;
     const BYTE* const matchlimit = (iend - LASTLITERALS);
-    BYTE* dest = op;
 
     int   ml, ml2, ml3, ml0;
     const BYTE* ref = NULL;
@@ -224,7 +220,7 @@ _Search2:
         else ml2 = ml;
 
         if (ml2 == ml) { /* No better match */
-            if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
+            if (LZ5_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
             continue;
         }
 
@@ -257,7 +253,7 @@ _Search3:
             if (ip+new_ml > start2 + ml2 - GET_MINMATCH((U32)(start2 - ref2))) {
                 new_ml = (int)(start2 - ip) + ml2 - GET_MINMATCH((U32)(start2 - ref2));
                 if (new_ml < GET_MINMATCH((U32)(ip - ref))) { // match2 doesn't fit
-                    if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
+                    if (LZ5_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
                     continue;
                 }
             }
@@ -278,9 +274,9 @@ _Search3:
             /* ip & ref are known; Now for ml */
             if (start2 < ip+ml)  ml = (int)(start2 - ip);
             /* Now, encode 2 sequences */
-            if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
+            if (LZ5_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
             ip = start2;
-            if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, ml2, ref2, outputLimited, oend)) return 0;
+            if (LZ5_encodeSequence_LZ4(ctx, &ip, &anchor, ml2, ref2)) return 0;
             continue;
         }
 
@@ -298,7 +294,7 @@ _Search3:
                     }
                 }
 
-                if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
+                if (LZ5_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
                 ip  = start3;
                 ref = ref3;
                 ml  = ml3;
@@ -326,7 +322,7 @@ _Search3:
                 if (ip + ml > start2 + ml2 - GET_MINMATCH((U32)(start2 - ref2))) {
                     ml = (int)(start2 - ip) + ml2 - GET_MINMATCH((U32)(start2 - ref2));
                     if (ml < GET_MINMATCH((U32)(ip - ref))) { // match2 doesn't fit, remove it
-                        if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
+                        if (LZ5_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
                         ip  = start3;
                         ref = ref3;
                         ml  = ml3;
@@ -347,7 +343,7 @@ _Search3:
                 ml = (int)(start2 - ip);
             }
         }
-        if (LZ5_encodeSequence_LZ4(ctx, &ip, &op, &anchor, ml, ref, outputLimited, oend)) return 0;
+        if (LZ5_encodeSequence_LZ4(ctx, &ip, &anchor, ml, ref)) return 0;
 
         ip = start2;
         ref = ref2;
@@ -362,10 +358,10 @@ _Search3:
 
     /* Encode Last Literals */
     ip = iend;
-    if (LZ5_encodeLastLiterals_LZ4(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;
+    if (LZ5_encodeLastLiterals_LZ4(ctx, &ip, &anchor)) goto _output_error;
 
     /* End */
-    return (int)(op-dest);
+    return 1;
 _output_error:
     return 0;
 }

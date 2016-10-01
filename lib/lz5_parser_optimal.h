@@ -327,10 +327,7 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
 FORCE_INLINE int LZ5_compress_optimalPrice(
         LZ5_stream_t* const ctx,
         const BYTE* ip,
-        const BYTE* const iend,
-        BYTE* op,
-        BYTE* const oend,
-        const limitedOutput_directive outputLimited)
+        const BYTE* const iend)
 {
     LZ5_optimal_t opt[LZ5_OPT_NUM + 4];
     LZ5_match_t matches[LZ5_OPT_NUM + 1];
@@ -341,7 +338,6 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
     const BYTE* anchor = ip;
     const BYTE* const mflimit = iend - MFLIMIT;
     const BYTE* const matchlimit = (iend - LASTLITERALS);
-    BYTE* dest = op;
     const BYTE* const base = ctx->base;
     const BYTE* const dictBase = ctx->dictBase;
     const intptr_t dictLimit = ctx->dictLimit;
@@ -652,7 +648,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
             cur += mlen;
 
             LZ5_LOG_ENCODE("%d: ENCODE literals=%d off=%d mlen=%d ", (int)(ip-source), (int)(ip-anchor), (int)(offset), mlen);
-            res = LZ5_encodeSequence(ctx, &ip, &op, &anchor, mlen, ip - offset, outputLimited, oend);
+            res = LZ5_encodeSequence(ctx, &ip, &anchor, mlen, ip - offset);
             if (res) return 0; 
 
             LZ5_LOG_PARSER("%d: offset=%d rep=%d\n", (int)(ip-source), offset, ctx->last_off);
@@ -661,10 +657,10 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
 
     /* Encode Last Literals */
     ip = iend;
-    if (LZ5_encodeLastLiterals(ctx, &ip, &op, &anchor, outputLimited, oend)) goto _output_error;
+    if (LZ5_encodeLastLiterals(ctx, &ip, &anchor)) goto _output_error;
 
     /* End */
-    return (int)(op-dest);
+    return 1;
 _output_error:
     return 0;
 }
