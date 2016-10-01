@@ -139,6 +139,7 @@ static int usage(void)
     DISPLAY( "Arguments :\n");
     DISPLAY( " -0       : Fast compression (default) \n");
     DISPLAY( " -1...-%d : High compression; higher number == more compression but slower\n", LZ5_MAX_CLEVEL);
+    DISPLAY( " -l#    : use Huffman compressions of streams\n");
     DISPLAY( " -d     : decompression (default for %s extension)\n", LZ5_EXTENSION);
     DISPLAY( " -z     : force compression\n");
     DISPLAY( " -f     : overwrite output without prompting \n");
@@ -158,7 +159,6 @@ static int usage_advanced(void)
     DISPLAY( " -c     : force write to standard output, even if it is the console\n");
     DISPLAY( " -t     : test compressed file integrity\n");
     DISPLAY( " -m     : multiple input files (implies automatic output filenames)\n");
-    DISPLAY( " -l     : compress using Legacy format (Linux kernel compression)\n");
     DISPLAY( " -B#    : Block size [1-7] = 64KB, 256KB, 1MB, 4MB, 16MB, 64MB, 256MB (default : 4 = 4MB)\n");
     DISPLAY( " -BD    : Block dependency (improve compression ratio)\n");
     /* DISPLAY( " -BX    : enable block checksum (default:disabled)\n");   *//* Option currently inactive */
@@ -255,6 +255,7 @@ static unsigned readU32FromChar(const char** stringPtr)
 int main(int argc, const char** argv)
 {
     int i,
+        huffType=0,
         cLevel=0,
         cLevelLast=0,
         decode=0,
@@ -337,6 +338,12 @@ int main(int argc, const char** argv)
                 case 'e':
                     argument++;
                     cLevelLast = readU32FromChar(&argument);
+                    argument--;
+                    break;
+
+                case 'l':
+                    argument++;
+                    huffType = readU32FromChar(&argument);
                     argument--;
                     break;
 
@@ -455,7 +462,7 @@ int main(int argc, const char** argv)
 
     /* Check if benchmark is selected */
     if (bench) {
-        int bmkResult = BMK_benchFiles(inFileNames, ifnIdx, cLevel, cLevelLast);
+        int bmkResult = BMK_benchFiles(inFileNames, ifnIdx, cLevel, cLevelLast, huffType);
         free((void*)inFileNames);
         return bmkResult;
     }
