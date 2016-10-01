@@ -37,18 +37,13 @@
  *                 This is the recommended function for decompressing data.  It is considered safe because the caller specifies
  *                 both the size of the compresssed buffer to read as well as the maximum size of the output (decompressed) buffer
  *                 instead of just the latter.
- *               LZ5_decompress_fast
- *                 Again, despite its name it's not a "fast" version of decompression.  It simply frees the caller of sending the
- *                 size of the compressed buffer (it will simply be read-to-end, hence it's non-safety).
  *               LZ5_decompress_generic
  *                 This is the generic function that both of the LZ5_decompress_* functions above end up calling.  Calling this
  *                 directly is not advised, period.  Furthermore, it is a static inline function in lz5_compress.c, so there isn't a symbol
  *                 exposed for anyone using lz5_compress.h to utilize.
  *
  *               Special Note About Decompression:
- *               Using the LZ5_decompress_safe() function protects against malicious (user) input.  If you are using data from a
- *               trusted source, or if your program is the producer (P) as well as its consumer (C) in a PC or MPMC setup, you can
- *               safely use the LZ5_decompress_fast function
+ *               Using the LZ5_decompress_safe() function protects against malicious (user) input. 
  */
 
 /* Since lz5 compiles with c99 and not gnu/std99 we need to enable POSIX linking for time.h structs and functions. */
@@ -75,11 +70,8 @@
 
 /* Create a crude set of test IDs so we can switch on them later  (Can't switch() on a char[] or char*). */
 #define ID__LZ5_COMPRESS_DEFAULT        1
-#define ID__LZ5_COMPRESS_FAST           2
-#define ID__LZ5_COMPRESS_FAST_EXTSTATE  3
 #define ID__LZ5_COMPRESS_GENERIC        4
 #define ID__LZ5_DECOMPRESS_SAFE         5
-#define ID__LZ5_DECOMPRESS_FAST         6
 
 
 
@@ -140,19 +132,6 @@ uint64_t bench(
         LZ5_compress_Level1(src, dst, src_size, max_dst_size);
       break;
 
-    case ID__LZ5_COMPRESS_FAST_EXTSTATE:
-      printf("Starting benchmark for function: LZ5_compress_extState_Level1()\n");
-      for(int junk=0; junk<warm_up; junk++)
-        rv = LZ5_compress_extState_Level1(state, src, dst, src_size, max_dst_size);
-      if (rv < 1)
-        run_screaming("Couldn't run LZ5_compress_extState_Level1()... error code received is in exit code.", rv);
-      if (memcmp(known_good_dst, dst, max_dst_size) != 0)
-        run_screaming("According to memcmp(), the compressed dst we got doesn't match the known_good_dst... ruh roh.", 1);
-      clock_gettime(CLOCK_MONOTONIC, &start);
-      for (int i=1; i<=iterations; i++)
-        LZ5_compress_extState_Level1(state, src, dst, src_size, max_dst_size);
-      break;
-
 //    Disabled until LZ5_compress_generic() is exposed in the header.
 //    case ID__LZ5_COMPRESS_GENERIC:
 //      printf("Starting benchmark for function: LZ5_compress_generic()\n");
@@ -184,19 +163,6 @@ uint64_t bench(
       clock_gettime(CLOCK_MONOTONIC, &start);
       for (int i=1; i<=iterations; i++)
         LZ5_decompress_safe(src, dst, comp_size, src_size);
-      break;
-
-    case ID__LZ5_DECOMPRESS_FAST:
-      printf("Starting benchmark for function: LZ5_decompress_fast()\n");
-      for(int junk=0; junk<warm_up; junk++)
-        rv = LZ5_decompress_fast(src, dst, src_size);
-      if (rv < 1)
-        run_screaming("Couldn't run LZ5_decompress_fast()... error code received is in exit code.", rv);
-      if (memcmp(known_good_dst, dst, src_size) != 0)
-        run_screaming("According to memcmp(), the compressed dst we got doesn't match the known_good_dst... ruh roh.", 1);
-      clock_gettime(CLOCK_MONOTONIC, &start);
-      for (int i=1; i<=iterations; i++)
-        LZ5_decompress_fast(src, dst, src_size);
       break;
 
     default:
@@ -301,20 +267,14 @@ int main(int argc, char **argv) {
   memset(dst, 0, max_dst_size);
   printf("\nStarting suite A:  Normal compressible text.\n");
   uint64_t time_taken__default       = bench(known_good_dst, ID__LZ5_COMPRESS_DEFAULT,       iterations, src,            dst,   src_size, max_dst_size, src_comp_size);
-  uint64_t time_taken__fast          = bench(known_good_dst, ID__LZ5_COMPRESS_FAST,          iterations, src,            dst,   src_size, max_dst_size, src_comp_size);
-  uint64_t time_taken__fast_extstate = bench(known_good_dst, ID__LZ5_COMPRESS_FAST_EXTSTATE, iterations, src,            dst,   src_size, max_dst_size, src_comp_size);
   //uint64_t time_taken__generic       = bench(known_good_dst, ID__LZ5_COMPRESS_GENERIC,       iterations, src,            dst,   src_size, max_dst_size, src_comp_size);
   uint64_t time_taken__decomp_safe   = bench(src,            ID__LZ5_DECOMPRESS_SAFE,        iterations, known_good_dst, dst_d, src_size, max_dst_size, src_comp_size);
-  uint64_t time_taken__decomp_fast   = bench(src,            ID__LZ5_DECOMPRESS_FAST,        iterations, known_good_dst, dst_d, src_size, max_dst_size, src_comp_size);
   // Suite B - Highly Compressible
   memset(dst, 0, max_dst_size);
   printf("\nStarting suite B:  Highly compressible text.\n");
   uint64_t time_taken_hc__default       = bench(known_good_hc_dst, ID__LZ5_COMPRESS_DEFAULT,       iterations, hc_src,            dst,   src_size, max_dst_size, hc_src_comp_size);
-  uint64_t time_taken_hc__fast          = bench(known_good_hc_dst, ID__LZ5_COMPRESS_FAST,          iterations, hc_src,            dst,   src_size, max_dst_size, hc_src_comp_size);
-  uint64_t time_taken_hc__fast_extstate = bench(known_good_hc_dst, ID__LZ5_COMPRESS_FAST_EXTSTATE, iterations, hc_src,            dst,   src_size, max_dst_size, hc_src_comp_size);
   //uint64_t time_taken_hc__generic       = bench(known_good_hc_dst, ID__LZ5_COMPRESS_GENERIC,       iterations, hc_src,            dst,   src_size, max_dst_size, hc_src_comp_size);
   uint64_t time_taken_hc__decomp_safe   = bench(hc_src,            ID__LZ5_DECOMPRESS_SAFE,        iterations, known_good_hc_dst, dst_d, src_size, max_dst_size, hc_src_comp_size);
-  uint64_t time_taken_hc__decomp_fast   = bench(hc_src,            ID__LZ5_DECOMPRESS_FAST,        iterations, known_good_hc_dst, dst_d, src_size, max_dst_size, hc_src_comp_size);
 
   // Report and leave.
   setlocale(LC_ALL, "");
@@ -330,14 +290,12 @@ int main(int argc, char **argv) {
   printf(format, "Normal Text", "LZ5_compress_extState_Level1()", (double)time_taken__fast_extstate / BILLION, (int)(iterations / ((double)time_taken__fast_extstate /BILLION)), time_taken__fast_extstate / iterations, (double)time_taken__fast_extstate * 100 / time_taken__default);
   //printf(format, "Normal Text", "LZ5_compress_generic()",       (double)time_taken__generic       / BILLION, (int)(iterations / ((double)time_taken__generic       /BILLION)), time_taken__generic       / iterations, (double)time_taken__generic       * 100 / time_taken__default);
   printf(format, "Normal Text", "LZ5_decompress_safe()",        (double)time_taken__decomp_safe   / BILLION, (int)(iterations / ((double)time_taken__decomp_safe   /BILLION)), time_taken__decomp_safe   / iterations, (double)time_taken__decomp_safe   * 100 / time_taken__default);
-  printf(format, "Normal Text", "LZ5_decompress_fast()",        (double)time_taken__decomp_fast   / BILLION, (int)(iterations / ((double)time_taken__decomp_fast   /BILLION)), time_taken__decomp_fast   / iterations, (double)time_taken__decomp_fast   * 100 / time_taken__default);
   printf(header_format, "", "", "", "", "", "");
   printf(format, "Compressible", "LZ5_compress_Level1()",       (double)time_taken_hc__default       / BILLION, (int)(iterations / ((double)time_taken_hc__default       /BILLION)), time_taken_hc__default       / iterations, (double)time_taken_hc__default       * 100 / time_taken_hc__default);
   printf(format, "Compressible", "LZ5_compress_fast()",          (double)time_taken_hc__fast          / BILLION, (int)(iterations / ((double)time_taken_hc__fast          /BILLION)), time_taken_hc__fast          / iterations, (double)time_taken_hc__fast          * 100 / time_taken_hc__default);
   printf(format, "Compressible", "LZ5_compress_extState_Level1()", (double)time_taken_hc__fast_extstate / BILLION, (int)(iterations / ((double)time_taken_hc__fast_extstate /BILLION)), time_taken_hc__fast_extstate / iterations, (double)time_taken_hc__fast_extstate * 100 / time_taken_hc__default);
   //printf(format, "Compressible", "LZ5_compress_generic()",       (double)time_taken_hc__generic       / BILLION, (int)(iterations / ((double)time_taken_hc__generic       /BILLION)), time_taken_hc__generic       / iterations, (double)time_taken_hc__generic       * 100 / time_taken_hc__default);
   printf(format, "Compressible", "LZ5_decompress_safe()",        (double)time_taken_hc__decomp_safe   / BILLION, (int)(iterations / ((double)time_taken_hc__decomp_safe   /BILLION)), time_taken_hc__decomp_safe   / iterations, (double)time_taken_hc__decomp_safe   * 100 / time_taken_hc__default);
-  printf(format, "Compressible", "LZ5_decompress_fast()",        (double)time_taken_hc__decomp_fast   / BILLION, (int)(iterations / ((double)time_taken_hc__decomp_fast   /BILLION)), time_taken_hc__decomp_fast   / iterations, (double)time_taken_hc__decomp_fast   * 100 / time_taken_hc__default);
   printf("%s", separator);
   printf("\n");
   printf("All done, ran %d iterations per test.\n", iterations);

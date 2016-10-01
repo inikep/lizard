@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "lz5_compress.h"
+#include "lz5_common.h"
 #include "lz5_decompress.h"
 
 

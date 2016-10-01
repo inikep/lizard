@@ -33,6 +33,7 @@ FLAGS  := -I../lib $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)
 TESTFILE= Makefile
 LZ5DIR := ../lib
 LZ5 = ../programs/lz5
+#ENTROPY_FILES := $(LZ5DIR)/entropy/*.c
 
 
 # Define *.exe as extension for Windows systems
@@ -49,28 +50,28 @@ default: all
 
 all: printVersion doubleBuffer ringBuffer ringBufferHC lineCompress frameCompress
 
-printVersion: $(LZ5DIR)/lz5_compress.c printVersion.c
+printVersion: $(LZ5DIR)/lz5_compress.c printVersion.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-doubleBuffer: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c blockStreaming_doubleBuffer.c
+doubleBuffer: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c blockStreaming_doubleBuffer.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-ringBuffer  : $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c blockStreaming_ringBuffer.c
+ringBuffer  : $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c blockStreaming_ringBuffer.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-ringBufferHC: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c HCStreaming_ringBuffer.c
+ringBufferHC: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c HCStreaming_ringBuffer.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-lineCompress: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c blockStreaming_lineByLine.c
+lineCompress: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c blockStreaming_lineByLine.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
 frameCompress: frameCompress.c
 	$(CC)      $(FLAGS) $^ -o $@$(EXT) -L$(LZ5DIR) -llz5
 
-compressFunctions: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c compress_functions.c
+compressFunctions: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c compress_functions.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT) -lrt
 
-simpleBuffer: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c simple_buffer.c
+simpleBuffer: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c simple_buffer.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
 test : all
