@@ -29,7 +29,7 @@ EDIR = .
 EXE = lz5.exe
 LNK = lz5
 LDIR = lib
-LSRC = lib/lz5_compress.c lib/lz5frame.c lib/xxhash.c
+LSRC = lib/lz5_compress.c lib/lz5frame.c lib/xxhash/xxhash.c
 INC = $(LSRC:.c=.h)
 LOBJ = $(LSRC:.c=.o)
 LSDEPS = $(LSRC:.c=.d)

@@ -33,6 +33,7 @@
 # ##########################################################################
 
 DESTDIR ?=
+CC      ?= gcc
 PREFIX  ?= /usr/local
 BINDIR  := $(PREFIX)/bin
 MANDIR  := $(PREFIX)/share/man/man1
@@ -43,7 +44,7 @@ CFLAGS  += -Wall -Wextra -Wundef -Wcast-qual -Wcast-align -Wshadow -Wswitch-enum
 CFLAGS  += $(MOREFLAGS)
 CPPFLAGS:= -I$(LZ5DIR) -DXXH_NAMESPACE=LZ5_
 FLAGS   := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
-
+ENTROPY_FILES := $(LZ5DIR)/entropy/*.c
 
 # Define *.exe as extension for Windows systems
 ifneq (,$(filter Windows%,$(OS)))
@@ -79,35 +80,45 @@ $(LZ5DIR)/lz5_compress.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_compress.h $(LZ
 $(LZ5DIR)/lz5_compress32.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress_lz4.h $(LZ5DIR)/lz5_compress_lz5v2.h $(LZ5DIR)/lz5_parser_hashchain.h $(LZ5DIR)/lz5_parser_fast.h $(LZ5DIR)/lz5_parser_nochain.h $(LZ5DIR)/lz5_parser_optimal.h $(LZ5DIR)/lz5_parser_pricefast.h $(LZ5DIR)/lz5_parser_lowestprice.h
 	$(CC) -m32 $(FLAGS) $< -c -o $@
 
-$(LZ5DIR)/lz5_decompress.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_decompress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress_lz4.h $(LZ5DIR)/lz5_decompress_lz5v2.h
+$(LZ5DIR)/lz5_compress_huf.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress_lz4.h $(LZ5DIR)/lz5_compress_lz5v2.h $(LZ5DIR)/lz5_parser_hashchain.h $(LZ5DIR)/lz5_parser_fast.h $(LZ5DIR)/lz5_parser_nochain.h $(LZ5DIR)/lz5_parser_optimal.h $(LZ5DIR)/lz5_parser_pricefast.h $(LZ5DIR)/lz5_parser_lowestprice.h
+	$(CC) -DLZ5_USE_HUFFMAN $(FLAGS) $< -c -o $@
+
+$(LZ5DIR)/lz5_decompress.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_decompress.h $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress_lz4.h $(LZ5DIR)/lz5_decompress_lz5v2.h
 	$(CC) $(FLAGS) $(ALIGN_LOOP) $< -c -o $@
-    
-$(LZ5DIR)/lz5_decompress32.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_decompress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress_lz4.h $(LZ5DIR)/lz5_decompress_lz5v2.h
+
+$(LZ5DIR)/lz5_decompress32.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_decompress.h $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress_lz4.h $(LZ5DIR)/lz5_decompress_lz5v2.h
 	$(CC) -m32 $(FLAGS) $< -c -o $@
 
+$(LZ5DIR)/lz5_decompress_huf.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_decompress.h $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress_lz4.h $(LZ5DIR)/lz5_decompress_lz5v2.h
+	$(CC) -DLZ5_USE_HUFFMAN $(FLAGS) $(ALIGN_LOOP) $< -c -o $@
 
-lz5: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash.o bench.o lz5io.o lz5cli.o datagen.o
+
+
+lz5: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o bench.o lz5io.o lz5cli.o datagen.o
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-lz5c32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash.c bench.c lz5io.c lz5cli.c datagen.c
+lz5huf: $(LZ5DIR)/lz5_decompress_huf.o $(LZ5DIR)/lz5_compress_huf.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o bench.o lz5io.o lz5cli.o datagen.o $(ENTROPY_FILES)
+	$(CC) $(FLAGS) $^ -o $@$(EXT)
+
+lz5c32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash/xxhash.c bench.c lz5io.c lz5cli.c datagen.c
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
-fullbench  : $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash.o fullbench.c
+fullbench  : $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o fullbench.c
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-fullbench32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash.c fullbench.c
+fullbench32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash/xxhash.c fullbench.c
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
-fuzzer  : $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/xxhash.o fuzzer.c
+fuzzer  : $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/xxhash/xxhash.o fuzzer.c
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-fuzzer32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/xxhash.c fuzzer.c
+fuzzer32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/xxhash/xxhash.c fuzzer.c
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
-frametest: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/xxhash.o frametest.c
+frametest: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/xxhash/xxhash.o frametest.c
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-frametest32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/xxhash.c frametest.c
+frametest32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/xxhash/xxhash.c frametest.c
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
 datagen : datagen.o datagencli.c

@@ -62,7 +62,7 @@ extern "C" {
 #include <stdio.h>      /* fprintf */
 #include <sys/types.h>  /* stat */
 #include <sys/stat.h>   /* stat */
-#include "mem.h"        /* U32, U64 */
+#include "entropy/mem.h"        /* U32, U64 */
 
 
 /* *************************************

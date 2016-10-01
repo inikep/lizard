@@ -12,3 +12,4 @@ fuzzer32
 
 # tests files
 tmp*
+_*

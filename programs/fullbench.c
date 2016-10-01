@@ -58,7 +58,7 @@
 #include "lz5_common.h"  /* LZ5_compress_Level1, LZ5_createStream_Level1 */
 #include "lz5frame.h"
 
-#include "xxhash.h"
+#include "xxhash/xxhash.h"
 
 
 /**************************************

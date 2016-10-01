@@ -41,7 +41,7 @@
 #include "lz5frame_static.h"
 #include "lz5_compress.h"        /* LZ5_VERSION_STRING */
 #define XXH_STATIC_LINKING_ONLY
-#include "xxhash.h"     /* XXH64 */
+#include "xxhash/xxhash.h"     /* XXH64 */
 
 
 /*-************************************
@@ -310,8 +310,8 @@ int basicTests(U32 seed, double compressibility)
         if (LZ5F_isError(errorCode)) goto _output_error;
     }
 
-    DISPLAYLEVEL(3, "Using 64 KB block : \n");
-    prefs.frameInfo.blockSizeID = LZ5F_max64KB;
+    DISPLAYLEVEL(3, "Using 128 KB block : \n");
+    prefs.frameInfo.blockSizeID = LZ5F_max128KB;
     prefs.frameInfo.contentChecksumFlag = LZ5F_contentChecksumEnabled;
     cSize = LZ5F_compressFrame(compressedBuffer, LZ5F_compressFrameBound(testSize, &prefs), CNBuffer, testSize, &prefs);
     if (LZ5F_isError(cSize)) goto _output_error;

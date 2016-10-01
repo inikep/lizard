@@ -49,7 +49,7 @@
 #include "lz5_decompress.h"
 #include "lz5_common.h"
 #define XXH_STATIC_LINKING_ONLY
-#include "xxhash.h"
+#include "xxhash/xxhash.h"
 
 
 
@@ -420,6 +420,7 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
         // Test decoding with input size being one byte too large => must fail
         FUZ_DISPLAYTEST;
         decodedBuffer[blockSize] = 0;
+        compressedBuffer[compressedSize] = 0; /* valgrind */
         ret = LZ5_decompress_safe(compressedBuffer, decodedBuffer, compressedSize+1, blockSize);
         FUZ_CHECKTEST(ret>=0, "LZ5_decompress_safe should have failed, due to input size being too large");
         FUZ_CHECKTEST(decodedBuffer[blockSize], "LZ5_decompress_safe overrun specified output buffer size");

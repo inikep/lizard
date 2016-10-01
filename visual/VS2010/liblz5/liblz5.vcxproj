@@ -152,7 +152,7 @@
     <ClInclude Include="..\..\..\lib\lz5frame.h" />
     <ClInclude Include="..\..\..\lib\lz5frame_static.h" />
     <ClInclude Include="..\..\..\lib\lz5_common.h" />
-    <ClInclude Include="..\..\..\lib\xxhash.h" />
+    <ClInclude Include="..\..\..\lib\xxhash\xxhash.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\lib\lz5_compress.c" />
