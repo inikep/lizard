@@ -42,8 +42,14 @@
 #include <stdint.h> // intptr_t
 #include "lz5_compress_lz4.h"
 #ifndef USE_LZ4_ONLY
-    #include "lz5_compress_lz5v2.h"
+    #ifdef LZ5_USE_TEST
+        #include "test/lz5_common_test.h"
+        #include "test/lz5_compress_test.h"
+    #else
+        #include "lz5_compress_lz5v2.h"
+    #endif
 #endif
+#include "entropy/huf.h"
 
 
 /* *************************************
@@ -51,6 +57,8 @@
 ***************************************/
 #define LZ5_TRANSFORM_LEVEL 1
 #define DELTANEXT(p)        chainTable[(p) & contentMask]
+#define LZ5_MINIMAL_HUFF_GAIN(comprSize) (comprSize + (comprSize/10) + 512)
+#define LZ5_MINIMAL_BLOCK_GAIN(comprSize) (comprSize + (comprSize>>5) + 512)
 
 
 /*-************************************
@@ -120,23 +128,143 @@ static size_t LZ5_count_2segments(const BYTE* ip, const BYTE* match, const BYTE*
 }
 
 
+void LZ5_initBlock(LZ5_stream_t* ctx)
+{
+    ctx->offset16Ptr = ctx->offset16Base;
+    ctx->offset24Ptr = ctx->offset24Base;
+    ctx->lenPtr      = ctx->lenBase;
+    ctx->literalsPtr = ctx->literalsBase;
+    ctx->flagsPtr = ctx->flagsBase;
+    ctx->last_off = LZ5_INIT_LAST_OFFSET; /* reset last offset */
+}
+
+
+FORCE_INLINE int LZ5_writeStream(int useHuff, LZ5_stream_t* ctx, BYTE* streamPtr, uint32_t streamLen, BYTE** op, BYTE* oend)
+{
+    if (useHuff && streamLen > 1024) {
+#ifdef LZ5_USE_HUFFMAN
+        int useHuffBuf;
+        if (*op + 6 > oend) { LZ5_LOG_COMPRESS("*op[%p] + 6 > oend[%p]\n", *op, oend); return -1; }
+
+        useHuffBuf = ((size_t)(oend - (*op + 6)) < HUF_compressBound(streamLen)); 
+        if (useHuffBuf) {
+            if (streamLen > LZ5_BLOCK_SIZE) { LZ5_LOG_COMPRESS("streamLen[%d] > LZ5_BLOCK_SIZE\n", streamLen); return -1; }
+            ctx->comprStreamLen = (U32)HUF_compress(ctx->huffBase, ctx->huffEnd - ctx->huffBase, streamPtr, streamLen);
+        } else {
+            ctx->comprStreamLen = (U32)HUF_compress(*op + 6, oend - (*op + 6), streamPtr, streamLen);
+        }
+
+        if (!HUF_isError(ctx->comprStreamLen)) {
+            if (ctx->comprStreamLen > 0 && (LZ5_MINIMAL_HUFF_GAIN(ctx->comprStreamLen) < streamLen)) { /* compressible */
+                MEM_writeLE24(*op, streamLen);
+                MEM_writeLE24(*op+3, ctx->comprStreamLen);
+                if (useHuffBuf) {
+                    if ((size_t)(oend - (*op + 6)) < ctx->comprStreamLen) { LZ5_LOG_COMPRESS("*op[%p] oend[%p] comprStreamLen[%d]\n", *op, oend, (int)ctx->comprStreamLen); return -1; }
+                    memcpy(*op + 6, ctx->huffBase, ctx->comprStreamLen);
+                }
+                *op += ctx->comprStreamLen + 6;
+                LZ5_LOG_COMPRESS("HUF_compress streamLen=%d comprStreamLen=%d\n", (int)streamLen, (int)ctx->comprStreamLen);
+                return 1;
+            } else { LZ5_LOG_COMPRESS("HUF_compress ERROR comprStreamLen=%d streamLen=%d\n", (int)ctx->comprStreamLen, (int)streamLen); }
+        } else { LZ5_LOG_COMPRESS("HUF_compress ERROR %d: %s\n", (int)ctx->comprStreamLen, HUF_getErrorName(ctx->comprStreamLen)); }
+#else
+        LZ5_LOG_COMPRESS("compiled without LZ5_USE_HUFFMAN\n");
+        (void)ctx;
+        return -1; 
+#endif
+    } else ctx->comprStreamLen = 0;
+
+    if (*op + 3 + streamLen > oend) { LZ5_LOG_COMPRESS("*op[%p] + 3 + streamLen[%d] > oend[%p]\n", *op, streamLen, oend); return -1; }
+    MEM_writeLE24(*op, streamLen);
+    *op += 3;
+    memcpy(*op, streamPtr, streamLen);
+    *op += streamLen;
+    LZ5_LOG_COMPRESS("Uncompressed streamLen=%d\n", (int)streamLen);
+    return 0;
+}
+
+
+int LZ5_writeBlock(LZ5_stream_t* ctx, const BYTE* ip, uint32_t inputSize, BYTE** op, BYTE* oend)
+{
+    int res;
+    uint32_t flagsLen = (uint32_t)(ctx->flagsPtr - ctx->flagsBase);
+    uint32_t literalsLen = (uint32_t)(ctx->literalsPtr - ctx->literalsBase);
+    uint32_t lenLen = (uint32_t)(ctx->lenPtr - ctx->lenBase);
+    uint32_t offset16Len = (uint32_t)(ctx->offset16Ptr - ctx->offset16Base);
+    uint32_t offset24Len = (uint32_t)(ctx->offset24Ptr - ctx->offset24Base);
+    uint32_t sum = flagsLen + literalsLen + lenLen + offset16Len + offset24Len;
+#ifdef LZ5_USE_LOGS
+    uint32_t comprFlagsLen, comprLiteralsLen;
+#endif
+
+    BYTE* start = *op;
+    
+    if ((literalsLen < WILDCOPYLENGTH) || (sum+5*3+1 > inputSize)) goto _write_uncompressed;
+
+    *start = 0;
+    *op += 1;
+
+    res = LZ5_writeStream(0, ctx, ctx->lenBase, lenLen, op, oend);
+    if (res < 0) goto _output_error; else *start += (BYTE)(res*LZ5_FLAG_LEN);
+
+    res = LZ5_writeStream(ctx->huffType&LZ5_FLAG_OFF16LEN, ctx, ctx->offset16Base, offset16Len, op, oend);
+    if (res < 0) goto _output_error; else *start += (BYTE)(res*LZ5_FLAG_OFF16LEN);
+
+    res = LZ5_writeStream(ctx->huffType&LZ5_FLAG_OFF24LEN, ctx, ctx->offset24Base, offset24Len, op, oend);
+    if (res < 0) goto _output_error; else *start += (BYTE)(res*LZ5_FLAG_OFF24LEN);
+
+    res = LZ5_writeStream(ctx->huffType&LZ5_FLAG_FLAGS, ctx, ctx->flagsBase, flagsLen, op, oend);
+    if (res < 0) goto _output_error; else *start += (BYTE)(res*LZ5_FLAG_FLAGS);
+#ifdef LZ5_USE_LOGS
+    comprFlagsLen = ctx->comprStreamLen;
+#endif
+
+    res = LZ5_writeStream(ctx->huffType&LZ5_FLAG_LITERALS, ctx, ctx->literalsBase, literalsLen, op, oend);
+    if (res < 0) goto _output_error; else *start += (BYTE)(res*LZ5_FLAG_LITERALS);
+#ifdef LZ5_USE_LOGS
+    comprLiteralsLen = ctx->comprStreamLen;
+    sum = (int)(*op-start);
+#endif
+
+    if (LZ5_MINIMAL_BLOCK_GAIN((uint32_t)(*op-start)) > inputSize) goto _write_uncompressed;
+
+    LZ5_LOG_COMPRESS("%d: total=%d block=%d flagsLen[%.2f%%]=%d comprFlagsLen[%.2f%%]=%d literalsLen[%.2f%%]=%d comprLiteralsLen[%.2f%%]=%d lenLen=%d offset16Len[%.2f%%]=%d offset24Len[%.2f%%]=%d\n", (int)(ip - ctx->srcBase),
+            (int)(*op - ctx->destBase), sum, (flagsLen*100.0)/sum, flagsLen, (comprFlagsLen*100.0)/sum, comprFlagsLen, (literalsLen*100.0)/sum, literalsLen, (comprLiteralsLen*100.0)/sum, comprLiteralsLen,
+            lenLen, (offset16Len*100.0)/sum, offset16Len, (offset24Len*100.0)/sum, offset24Len);
+    return 0;
+
+_write_uncompressed:
+    LZ5_LOG_COMPRESS("%d: total=%d block=%d UNCOMPRESSED inputSize=%u outSize=%d\n", (int)(ip - ctx->srcBase),
+            (int)(*op - ctx->destBase), (int)(*op-start), inputSize, (int)(oend-start));
+    if ((uint32_t)(oend - start) < inputSize + 4) goto _output_error;
+    *start = LZ5_FLAG_UNCOMPRESSED;
+    *op = start + 1;
+    MEM_writeLE24(*op, inputSize);
+    *op += 3;
+    memcpy(*op, ip, inputSize);
+    *op += inputSize;
+    return 0;
+
+_output_error:
+    LZ5_LOG_COMPRESS("LZ5_writeBlock ERROR size=%d/%d flagsLen=%d literalsLen=%d lenLen=%d offset16Len=%d offset24Len=%d\n", (int)(*op-start), (int)(oend-start), flagsLen, literalsLen, lenLen, offset16Len, offset24Len);
+    return 1;
+}
+
+
 FORCE_INLINE int LZ5_encodeSequence (
     LZ5_stream_t* ctx,
     const BYTE** ip,
-    BYTE** op,
     const BYTE** anchor,
     size_t matchLength,
-    const BYTE* const match,
-    limitedOutput_directive limitedOutputBuffer,
-    BYTE* oend)
+    const BYTE* const match)
 {
 #ifdef USE_LZ4_ONLY
-    return LZ5_encodeSequence_LZ4(ctx, ip, op, anchor, matchLength, match, limitedOutputBuffer, oend);
+    return LZ5_encodeSequence_LZ4(ctx, ip, anchor, matchLength, match);
 #else
     if (ctx->params.decompressType == LZ5_coderwords_LZ4)
-        return LZ5_encodeSequence_LZ4(ctx, ip, op, anchor, matchLength, match, limitedOutputBuffer, oend);
+        return LZ5_encodeSequence_LZ4(ctx, ip, anchor, matchLength, match);
 
-    return LZ5_encodeSequence_LZ5v2(ctx, ip, op, anchor, matchLength, match, limitedOutputBuffer, oend);
+    return LZ5_encodeSequence_LZ5v2(ctx, ip, anchor, matchLength, match);
 #endif
 }
 
@@ -144,19 +272,16 @@ FORCE_INLINE int LZ5_encodeSequence (
 FORCE_INLINE int LZ5_encodeLastLiterals (
     LZ5_stream_t* ctx,
     const BYTE** ip,
-    BYTE** op,
-    const BYTE** anchor,
-    limitedOutput_directive limitedOutputBuffer,
-    BYTE* oend)
+    const BYTE** anchor)
 {
     LZ5_LOG_COMPRESS("LZ5_encodeLastLiterals LZ5_coderwords_LZ4=%d\n", ctx->params.decompressType == LZ5_coderwords_LZ4);    
 #ifdef USE_LZ4_ONLY
-    return LZ5_encodeLastLiterals_LZ4(ctx, ip, op, anchor, limitedOutputBuffer, oend);
+    return LZ5_encodeLastLiterals_LZ4(ctx, ip, anchor);
 #else
     if (ctx->params.decompressType == LZ5_coderwords_LZ4)
-        return LZ5_encodeLastLiterals_LZ4(ctx, ip, op, anchor, limitedOutputBuffer, oend);
+        return LZ5_encodeLastLiterals_LZ4(ctx, ip, anchor);
 
-    return LZ5_encodeLastLiterals_LZ5v2(ctx, ip, op, anchor, limitedOutputBuffer, oend);
+    return LZ5_encodeLastLiterals_LZ5v2(ctx, ip, anchor);
 #endif
 }
 
@@ -194,7 +319,7 @@ int LZ5_sizeofState(int compressionLevel)
     hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog3)+((size_t)1 << params.hashLog)));
     chainTableSize = (U32)(sizeof(U32)*((size_t)1 << params.contentLog));
 
-    return sizeof(LZ5_stream_t) + hashTableSize + chainTableSize;
+    return sizeof(LZ5_stream_t) + hashTableSize + chainTableSize + LZ5_COMPRESS_ADD_BUF + (int)LZ5_COMPRESS_ADD_HUF;
 }
 
 
@@ -210,6 +335,7 @@ static void LZ5_init(LZ5_stream_t* ctx, const BYTE* start)
     ctx->dictLimit = LZ5_DICT_SIZE;
     ctx->lowLimit = LZ5_DICT_SIZE;
     ctx->last_off = LZ5_INIT_LAST_OFFSET;
+    ctx->huffType = 0;//LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS + LZ5_FLAG_OFF16LEN + LZ5_FLAG_OFF24LEN;
 }
 
 
@@ -226,9 +352,9 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel)
     
     if (!ctx)
     {
-        ctx = (LZ5_stream_t*)malloc(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize);
+        ctx = (LZ5_stream_t*)malloc(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize + LZ5_COMPRESS_ADD_BUF + LZ5_COMPRESS_ADD_HUF);
         if (!ctx) { printf("ERROR: Cannot allocate %d MB\n", (int)(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize)>>20); return 0; }
-        ctx->allocatedMemory = sizeof(LZ5_stream_t) + hashTableSize + chainTableSize;
+        ctx->allocatedMemory = sizeof(LZ5_stream_t) + hashTableSize + chainTableSize + LZ5_COMPRESS_ADD_BUF + (U32)LZ5_COMPRESS_ADD_HUF;
       //  printf("malloc from=%p to=%p hashTable=%p hashEnd=%p chainTable=%p chainEnd=%p\n", ctx, ((BYTE*)ctx)+sizeof(LZ5_stream_t) + hashTableSize + chainTableSize, ctx->hashTable, ((BYTE*)ctx->hashTable) + hashTableSize, ctx->chainTable, ((BYTE*)ctx->chainTable)+chainTableSize);
     }
     
@@ -238,6 +364,14 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel)
     ctx->chainTableSize = chainTableSize;
     ctx->params = params;
     ctx->compressionLevel = (unsigned)compressionLevel;
+
+    ctx->literalsBase = (BYTE*)ctx->hashTable + ctx->hashTableSize + ctx->chainTableSize;
+    ctx->flagsBase    = ctx->literalsEnd = ctx->literalsBase + LZ5_BLOCK_SIZE_PAD;
+    ctx->lenBase      = ctx->flagsEnd    = ctx->flagsBase    + LZ5_BLOCK_SIZE_PAD;
+    ctx->offset16Base = ctx->lenEnd      = ctx->lenBase      + LZ5_BLOCK_SIZE_PAD;
+    ctx->offset24Base = ctx->offset16End = ctx->offset16Base + LZ5_BLOCK_SIZE_PAD;
+    ctx->huffBase     = ctx->offset24End = ctx->offset24Base + LZ5_BLOCK_SIZE_PAD;
+                        ctx->huffEnd     = ctx->huffBase     + LZ5_COMPRESS_ADD_HUF;
 
     return ctx;
 }
@@ -336,45 +470,46 @@ FORCE_INLINE int LZ5_compress_generic (
     const char* source,
     char* dest,
     int inputSize,
-    int maxOutputSize,
-    limitedOutput_directive limit)
+    int maxOutputSize)
 {
     LZ5_stream_t* ctx = (LZ5_stream_t*) ctxvoid;
     size_t dictSize = (size_t)(ctx->end - ctx->base) - ctx->dictLimit;
     const BYTE* ip = (const BYTE*) source;
     BYTE* op = (BYTE*) dest;
     BYTE* const oend = op + maxOutputSize;
-    int res, total = 1;
+    int res;
 
     (void)dictSize;
-    LZ5_LOG_COMPRESS("LZ5_compress_generic source=%p inputSize=%d dest=%p maxOutputSize=%d cLevel=%d limit=%d dictBase=%p dictSize=%d\n", source, inputSize, dest, maxOutputSize, ctx->compressionLevel, limit, ctx->dictBase, (int)dictSize); 
+    LZ5_LOG_COMPRESS("LZ5_compress_generic source=%p inputSize=%d dest=%p maxOutputSize=%d cLevel=%d dictBase=%p dictSize=%d\n", source, inputSize, dest, maxOutputSize, ctx->compressionLevel, ctx->dictBase, (int)dictSize); 
     *op++ = (BYTE)ctx->compressionLevel;
     maxOutputSize--; // can be lower than 0
-    ctx->last_off = LZ5_INIT_LAST_OFFSET; /* reset last offset */
-    ctx->tokenPart = 0;
     ctx->end += inputSize;
-    
-  //  while (inputSize > 0)
+    ctx->srcBase = ip;
+    ctx->destBase = (BYTE*)dest;
+
+    while (inputSize > 0)
     {
-        int inputPart = inputSize; //MIN(LZ5_BLOCK_SIZE, inputSize);
+        int inputPart = MIN(LZ5_BLOCK_SIZE, inputSize);
+        LZ5_initBlock(ctx);
+        ctx->diffBase = ip;
 
         switch(ctx->params.parserType)
         {
         default:
         case LZ5_parser_fast:
-            res = LZ5_compress_fast(ctx, ip, ip+inputPart, op, oend, limit); break;
+            res = LZ5_compress_fast(ctx, ip, ip+inputPart); break;
         case LZ5_parser_noChain:
-            res = LZ5_compress_noChain(ctx, ip, ip+inputPart, op, oend, limit); break;
+            res = LZ5_compress_noChain(ctx, ip, ip+inputPart); break;
         case LZ5_parser_hashChain:
-            res = LZ5_compress_hashChain(ctx, ip, ip+inputPart, op, oend, limit); break;
+            res = LZ5_compress_hashChain(ctx, ip, ip+inputPart); break;
 #ifndef USE_LZ4_ONLY
         case LZ5_parser_priceFast:
-            res = LZ5_compress_priceFast(ctx, ip, ip+inputPart, op, oend, limit); break;
+            res = LZ5_compress_priceFast(ctx, ip, ip+inputPart); break;
         case LZ5_parser_lowestPrice:
-            res = LZ5_compress_lowestPrice(ctx, ip, ip+inputPart, op, oend, limit); break;
+            res = LZ5_compress_lowestPrice(ctx, ip, ip+inputPart); break;
         case LZ5_parser_optimalPrice:
         case LZ5_parser_optimalPriceBT:
-            res = LZ5_compress_optimalPrice(ctx, ip, ip+inputPart, op, oend, limit); break;
+            res = LZ5_compress_optimalPrice(ctx, ip, ip+inputPart); break;
 #else
         case LZ5_parser_priceFast:
         case LZ5_parser_lowestPrice:
@@ -383,23 +518,28 @@ FORCE_INLINE int LZ5_compress_generic (
             res = 0;
 #endif
         }
-        // printf("res=%d/%d \n", res, inputSize);
+
+        LZ5_LOG_COMPRESS("LZ5_compress_generic res=%d inputPart=%d \n", res, inputPart);
         if (res <= 0) return res;
 
-       // ip += inputPart;
-       // op += res;
-        total += res;
-      //  inputSize -= inputPart;
+        if (LZ5_writeBlock(ctx, ip, inputPart, &op, oend)) goto _output_error;
+
+        ip += inputPart;
+        inputSize -= inputPart;
+        LZ5_LOG_COMPRESS("LZ5_compress_generic in=%d out=%d\n", (int)(ip-(const BYTE*)source), (int)(op-(BYTE*)dest));
     }
 
-    LZ5_LOG_COMPRESS("LZ5_compress_generic res=%d\n", total);
-    return total;
+    LZ5_LOG_COMPRESS("LZ5_compress_generic total=%d\n", (int)(op-(BYTE*)dest));
+    return (int)(op-(BYTE*)dest);
+_output_error:
+    LZ5_LOG_COMPRESS("LZ5_compress_generic ERROR\n");
+    return 0;
 }
 
 
-FORCE_INLINE int LZ5_compress_continue_generic (LZ5_stream_t* ctxPtr,
+int LZ5_compress_continue (LZ5_stream_t* ctxPtr,
                                             const char* source, char* dest,
-                                            int inputSize, int maxOutputSize, limitedOutput_directive limit)
+                                            int inputSize, int maxOutputSize)
 {
     /* auto-init if forgotten */
     if (ctxPtr->base == NULL) LZ5_init (ctxPtr, (const BYTE*) source);
@@ -426,20 +566,11 @@ FORCE_INLINE int LZ5_compress_continue_generic (LZ5_stream_t* ctxPtr,
         }
     }
 
-    return LZ5_compress_generic (ctxPtr, source, dest, inputSize, maxOutputSize, limit);
+    return LZ5_compress_generic (ctxPtr, source, dest, inputSize, maxOutputSize);
 }
 
 
-int LZ5_compress_continue (LZ5_stream_t* LZ5_streamPtr, const char* source, char* dest, int inputSize, int maxOutputSize)
-{
-    if (maxOutputSize < LZ5_compressBound(inputSize))
-        return LZ5_compress_continue_generic ((LZ5_stream_t*)LZ5_streamPtr, source, dest, inputSize, maxOutputSize, limitedOutput);
-    else
-        return LZ5_compress_continue_generic ((LZ5_stream_t*)LZ5_streamPtr, source, dest, inputSize, maxOutputSize, noLimit);
-}
-
-
-int LZ5_compress_extState (void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel)
+int LZ5_compress_extState_Huf (void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel, int huffType)
 {
     LZ5_stream_t* ctx = (LZ5_stream_t*) state;
     if (((size_t)(state)&(sizeof(void*)-1)) != 0) return 0;   /* Error : state is not aligned for pointers (32 or 64 bits) */
@@ -447,24 +578,34 @@ int LZ5_compress_extState (void* state, const char* src, char* dst, int srcSize,
     /* initialize stream */
     LZ5_initStream(ctx, compressionLevel);
     LZ5_init ((LZ5_stream_t*)state, (const BYTE*)src);
+    ctx->huffType = huffType;
+ //   (void)huffType;
 
-    if (maxDstSize < LZ5_compressBound(srcSize))
-        return LZ5_compress_generic (state, src, dst, srcSize, maxDstSize, limitedOutput);
-    else
-        return LZ5_compress_generic (state, src, dst, srcSize, maxDstSize, noLimit);
+    return LZ5_compress_generic (state, src, dst, srcSize, maxDstSize);
 }
 
 
-int LZ5_compress(const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel)
+int LZ5_compress_extState (void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel)
+{
+    return LZ5_compress_extState_Huf(state, src, dst, srcSize, maxDstSize, compressionLevel, 0);
+}
+
+
+int LZ5_compress_Huf(const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel, int huffType)
 {
     int cSize;
     LZ5_stream_t* statePtr = LZ5_createStream(compressionLevel);
 
     if (!statePtr) return 0;
-    cSize = LZ5_compress_extState(statePtr, src, dst, srcSize, maxDstSize, compressionLevel);
+    cSize = LZ5_compress_extState_Huf(statePtr, src, dst, srcSize, maxDstSize, compressionLevel, huffType);
 
     LZ5_freeStream(statePtr);
     return cSize;
+}
+
+int LZ5_compress(const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel)
+{
+    return LZ5_compress_Huf(src, dst, srcSize, maxDstSize, compressionLevel, 0);
 }
 
 

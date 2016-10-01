@@ -39,20 +39,16 @@
 extern "C" {
 #endif
 
-// TO DO:
-// sl codewords
-// remove if (offset < 8) printf("ERROR 
-// improve LZ5_COMPRESSBOUND
 
 /*-************************************
 *  Memory routines
 **************************************/
 #include <stdlib.h>   /* malloc, calloc, free */
 #include <string.h>   /* memset, memcpy */
-#include "mem.h"
+#include "entropy/mem.h"
 #include "lz5_compress.h"      /* LZ5_GCC_VERSION */
 
-
+//#define LZ5_USE_LOGS
 #define LZ5_LOG_COMPRESS(...) //printf(__VA_ARGS__)
 #define LZ5_LOG_DECOMPRESS(...) //printf(__VA_ARGS__)
 
@@ -63,8 +59,8 @@ extern "C" {
 
 #define LZ5_LOG_COMPRESS_LZ5v2(...) //printf(__VA_ARGS__)
 #define COMPLOG_CODEWORDS_LZ5v2(...) //printf(__VA_ARGS__)
-#define DECOMPLOG_CODEWORDS_LZ5v2(...) //printf(__VA_ARGS__)
 #define LZ5_LOG_DECOMPRESS_LZ5v2(...) //printf(__VA_ARGS__)
+#define DECOMPLOG_CODEWORDS_LZ5v2(...) //printf(__VA_ARGS__)
 
 
 
@@ -74,7 +70,7 @@ extern "C" {
 **************************************/
 #define MINMATCH 4
 //#define USE_LZ4_ONLY
-//#define USE_8BIT_CODEWORDS
+//#define LZ5_USE_TEST
 
 #define WILDCOPYLENGTH 16
 #define LASTLITERALS WILDCOPYLENGTH
@@ -84,7 +80,15 @@ extern "C" {
 #define LZ5_INIT_LAST_OFFSET    0
 #define LZ5_MAX_16BIT_OFFSET    (1<<16)
 #define MM_LONGOFF              16
-#define LZ5_BLOCK_SIZE          (1<<16)
+#define LZ5_BLOCK_SIZE_PAD      (LZ5_BLOCK_SIZE+32)
+#define LZ5_COMPRESS_ADD_BUF    (5*LZ5_BLOCK_SIZE_PAD)
+#ifdef LZ5_USE_HUFFMAN
+    #define LZ5_COMPRESS_ADD_HUF    HUF_compressBound(LZ5_BLOCK_SIZE_PAD)
+    #define LZ5_HUF_BLOCK_SIZE      LZ5_BLOCK_SIZE
+#else
+    #define LZ5_COMPRESS_ADD_HUF    0
+    #define LZ5_HUF_BLOCK_SIZE      1
+#endif
 
 /* LZ4 codewords */
 #define ML_BITS_LZ4  4
@@ -93,25 +97,23 @@ extern "C" {
 #define RUN_MASK_LZ4 ((1U<<RUN_BITS_LZ4)-1)
 
 /* LZ5v2 codewords */
-#define ML_BITS_LZ5v2   4
-#define ML_MASK_LZ5v2   ((1U<<ML_BITS_LZ5v2)-1)
-#define RUN_BITS_LZ5v2  3
-#define RUN_MASK_LZ5v2  ((1U<<RUN_BITS_LZ5v2)-1)
-#define ML_RUN_BITS     (ML_BITS_LZ5v2 + RUN_BITS_LZ5v2)
+#define ML_BITS_LZ5v2       4
+#define RUN_BITS_LZ5v2      3
+#define ML_RUN_BITS         (ML_BITS_LZ5v2 + RUN_BITS_LZ5v2)
+#define MAX_SHORT_LITLEN    7
+#define MAX_SHORT_MATCHLEN  15
+#define LZ5_LAST_LONG_OFF   31
 #define LZ5_24BIT_OFFSET_LOAD   price += LZ5_highbit32(offset)
-#define LZ5_LENGTH_SIZE_LZ5v2(len) ((len >= (1<<16)+RUN_MASK_LZ5v2) ? 5 : ((len >= 254+RUN_MASK_LZ5v2) ? 3 : ((len >= RUN_MASK_LZ5v2) ? 1 : 0)))
 
-#ifdef USE_8BIT_CODEWORDS
-    #define LZ5_MAX_8BIT_OFFSET (1<<8)
-    #define LAST_LONG_OFF 15
-    #define FIRST_SHORT_OFF 16
-    #define LAST_SHORT_OFF 31
-    #define SHORT_OFF_COUNT (LAST_SHORT_OFF-FIRST_SHORT_OFF)
-#else
-    #define LAST_LONG_OFF 31
-#endif
+/* header byte */
+#define LZ5_FLAG_LITERALS       1
+#define LZ5_FLAG_FLAGS          2
+#define LZ5_FLAG_OFF16LEN       4
+#define LZ5_FLAG_OFF24LEN       8
+#define LZ5_FLAG_LEN            16
+#define LZ5_FLAG_UNCOMPRESSED   128
 
-typedef enum { noLimit = 0, limitedOutput = 1 } limitedOutput_directive;
+
 typedef enum { LZ5_parser_fast, LZ5_parser_noChain, LZ5_parser_hashChain, LZ5_parser_priceFast, LZ5_parser_lowestPrice, LZ5_parser_optimalPrice, LZ5_parser_optimalPriceBT } LZ5_parser_type;   /* from faster to stronger */ 
 typedef enum { LZ5_coderwords_LZ4, LZ5_coderwords_LZ5v2 } LZ5_decompress_type;
 typedef struct
@@ -146,10 +148,47 @@ struct LZ5_stream_s
     U32*  chainTable;
     U32*  hashTable;
     int   last_off;
-    BYTE* tokenPtr;
-    int   tokenPart;
+    U32   huffType;
+    U32   comprStreamLen;
+
+    BYTE*  huffBase;
+    BYTE*  huffEnd;
+    BYTE*  offset16Base;
+    BYTE*  offset24Base;
+    BYTE*  lenBase;
+    BYTE*  literalsBase;
+    BYTE*  flagsBase;
+    BYTE*  offset16Ptr;
+    BYTE*  offset24Ptr;
+    BYTE*  lenPtr;
+    BYTE*  literalsPtr;
+    BYTE*  flagsPtr;
+    BYTE*  offset16End;
+    BYTE*  offset24End;
+    BYTE*  lenEnd;
+    BYTE*  literalsEnd;
+    BYTE*  flagsEnd;
+    const BYTE* diffBase;
+    const BYTE* srcBase;
+    const BYTE* destBase;
 };
 
+struct LZ5_dstream_s
+{
+    const BYTE*  offset16Ptr;
+    const BYTE*  offset24Ptr;
+    const BYTE*  lenPtr;
+    const BYTE*  literalsPtr;
+    const BYTE*  flagsPtr;
+    const BYTE*  offset16End;
+    const BYTE*  offset24End;
+    const BYTE*  lenEnd;
+    const BYTE*  literalsEnd;
+    const BYTE*  flagsEnd;
+    const BYTE*  diffBase;
+};
+
+typedef struct LZ5_dstream_s LZ5_dstream_t;
 
 /* *************************************
 *  HC Pre-defined compression levels
@@ -163,6 +202,7 @@ struct LZ5_stream_s
 #define LZ5_HASHLOG_LZ5v2   18
 
 #define LZ5_DEFAULT_CLEVEL  8
+
 
 
 static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1] =
@@ -405,6 +445,9 @@ int LZ5_compress_extState_Level1 (void* state, const char* source, char* dest, i
 LZ5_stream_t* LZ5_resetStream_Level1 (LZ5_stream_t* streamPtr);
 LZ5_stream_t* LZ5_createStream_Level1(void);
 
+/* with experimental Huffman compression */
+int LZ5_compress_Huf(const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel, int huffType);
+int LZ5_compress_extState_Huf(void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel, int huffType);
 
 #if defined (__cplusplus)
 }

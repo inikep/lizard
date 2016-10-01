@@ -36,34 +36,84 @@
 /**************************************
 *  Includes
 **************************************/
+//#define LZ5_STATS
+#ifdef LZ5_STATS
+    #include "test/lz5_stats.h"
+#endif
 #include "lz5_compress.h"
 #include "lz5_decompress.h"
 #include "lz5_common.h"
 #include <stdio.h> // printf
 #include <stdint.h> // intptr_t
 
+
 /*-************************************
 *  Local Structures and types
 **************************************/
 typedef enum { noDict = 0, withPrefix64k, usingExtDict } dict_directive;
-typedef enum { endOnOutputSize = 0, endOnInputSize = 1 } endCondition_directive;
 typedef enum { full = 0, partial = 1 } earlyEnd_directive;
 
 #include "lz5_decompress_lz4.h"
 #ifndef USE_LZ4_ONLY
-    #include "lz5_decompress_lz5v2.h"
+    #ifdef LZ5_USE_TEST
+        #include "test/lz5_common_test.h"
+        #include "test/lz5_decompress_test.h"
+    #else
+        #include "lz5_decompress_lz5v2.h"
+    #endif
 #endif
+#include "entropy/huf.h"
 
 
 /*-*****************************
 *  Decompression functions
 *******************************/
+
+FORCE_INLINE size_t LZ5_readStream(int flag, const BYTE** ip, const BYTE* const iend, BYTE* op, BYTE* const oend, const BYTE** streamPtr, const BYTE** streamEnd)
+{
+    if (!flag) {
+        if (*ip > iend - 3) return 0;
+        *streamPtr = *ip + 3;
+        *streamEnd = *streamPtr + MEM_readLE24(*ip);
+        if (*streamEnd < *streamPtr) return 0;
+        *ip = *streamEnd;
+        return 1;
+    } else {
+#ifdef LZ5_USE_HUFFMAN
+        size_t res, streamLen, comprStreamLen;
+
+        if (*ip > iend - 6) return 0;
+        streamLen = MEM_readLE24(*ip);
+        comprStreamLen = MEM_readLE24(*ip + 3);
+
+      //  printf("LZ5_readStream ip=%p iout=%p iend=%p streamLen=%d comprStreamLen=%d\n", *ip, *ip + 6 + comprStreamLen, iend, (int)streamLen, (int)comprStreamLen);
+
+        if ((op > oend - streamLen) || (*ip + comprStreamLen > iend - 6)) return 0;
+        res = HUF_decompress(op, streamLen, *ip + 6, comprStreamLen);
+        if (HUF_isError(res) || (res != streamLen)) return 0;
+        
+        *ip += comprStreamLen + 6;
+        *streamPtr = op;
+        *streamEnd = *streamPtr + streamLen;
+#ifdef LZ5_STATS
+        if (flag == LZ5_FLAG_LITERALS) compr_lit_count += comprStreamLen + 6;
+        if (flag == LZ5_FLAG_FLAGS) compr_flag_count += comprStreamLen + 6;
+#endif
+        return 1;
+#else
+        LZ5_LOG_DECOMPRESS("compiled without LZ5_USE_HUFFMAN\n");
+        (void)op; (void)oend;
+        return 0;
+#endif
+    }
+}
+
+
 FORCE_INLINE int LZ5_decompress_generic(
                  const char* source,
                  char* const dest,
                  int inputSize,
-                 int outputSize,         /* If endOnInput==endOnInputSize, this value is the max size of Output Buffer. */
-                 int endOnInput,         /* endOnOutputSize, endOnInputSize */
+                 int outputSize,         /* this value is the max size of Output Buffer. */
                  int partialDecoding,    /* full, partial */
                  int targetOutputSize,   /* only used if partialDecoding==partial */
                  int dict,               /* noDict, withPrefix64k, usingExtDict */
@@ -73,48 +123,157 @@ FORCE_INLINE int LZ5_decompress_generic(
                  )
 {
     /* Local Variables */
+    const BYTE* ip = (const BYTE*) source, *istart = (const BYTE*) source;
+    const BYTE* const iend = ip + inputSize;
+    BYTE* op = (BYTE*) dest;
+    BYTE* const oend = op + outputSize;
+    BYTE* oexit = op + targetOutputSize;
     LZ5_parameters params;
+    LZ5_dstream_t ctx;
+    BYTE* decompFlagsBase, *decompOff24Base, *decompOff16Base, *decompLiteralsBase = NULL;
     int res, compressionLevel;
 
-    if ((endOnInput) && (inputSize < 1)) { LZ5_LOG_DECOMPRESS("inputSize=%d outputSize=%d partialDecoding=%d endOnInput=%d\n", inputSize, outputSize, partialDecoding, endOnInput); return 0; }
-    compressionLevel = *source;
+    if (inputSize < 1) { LZ5_LOG_DECOMPRESS("inputSize=%d outputSize=%d targetOutputSize=%d partialDecoding=%d\n", inputSize, outputSize, targetOutputSize, partialDecoding); return 0; }
 
-    if (compressionLevel == 0 || compressionLevel > LZ5_MAX_CLEVEL)
-    {
+    compressionLevel = *ip++;
+
+    if (compressionLevel == 0 || compressionLevel > LZ5_MAX_CLEVEL) {
         LZ5_LOG_DECOMPRESS("ERROR LZ5_decompress_generic inputSize=%d compressionLevel=%d\n", inputSize, compressionLevel);
         return -1;
     }
 
-    LZ5_LOG_DECOMPRESS("LZ5_decompress_generic source=%p inputSize=%d dest=%p outputSize=%d cLevel=%d dict=%d dictSize=%d dictStart=%p partialDecoding=%d endOnInput=%d\n", source, inputSize, dest, outputSize, compressionLevel, dict, (int)dictSize, dictStart, partialDecoding, endOnInput);
+    LZ5_LOG_DECOMPRESS("LZ5_decompress_generic ip=%p inputSize=%d targetOutputSize=%d dest=%p outputSize=%d cLevel=%d dict=%d dictSize=%d dictStart=%p partialDecoding=%d\n", ip, inputSize, targetOutputSize, dest, outputSize, compressionLevel, dict, (int)dictSize, dictStart, partialDecoding);
 
-    params = LZ5_defaultParameters[compressionLevel];
-    if (params.decompressType == LZ5_coderwords_LZ4)
-        res = LZ5_decompress_LZ4(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
-    else 
-#ifdef USE_LZ4_ONLY
-        res = LZ5_decompress_LZ4(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
+    decompLiteralsBase = (BYTE*)malloc(4*LZ5_HUF_BLOCK_SIZE);
+    if (!decompLiteralsBase) return -1;
+    decompFlagsBase = decompLiteralsBase + LZ5_HUF_BLOCK_SIZE;
+    decompOff24Base = decompFlagsBase + LZ5_HUF_BLOCK_SIZE;
+    decompOff16Base = decompOff24Base + LZ5_HUF_BLOCK_SIZE;
+
+#ifdef LZ5_STATS
+    init_stats();
+#endif
+    (void)istart;
+
+    while (ip < iend)
+    {
+        res = *ip++;
+        if (res == LZ5_FLAG_UNCOMPRESSED) /* uncompressed */
+        {
+            uint32_t length;
+            if (ip > iend - 3) { LZ5_LOG_DECOMPRESS("UNCOMPRESSED  ip[%p] > iend[%p] - 3\n", ip, iend); goto _output_error; }
+            length = MEM_readLE24(ip);
+            ip += 3;
+         //   printf("%d: total=%d block=%d UNCOMPRESSED op=%p oexit=%p oend=%p\n", (int)(op-(BYTE*)dest) ,(int)(ip-istart), length, op, oexit, oend);
+            if (ip + length > iend || op + length > oend) { LZ5_LOG_DECOMPRESS("UNCOMPRESSED  ip[%p]+length[%d] > iend[%p]\n", ip, length, iend); goto _output_error; }
+            memcpy(op, ip, length);
+            op += length;
+            ip += length;
+            if ((partialDecoding) && (op >= oexit)) break;
+#ifdef LZ5_STATS
+            uncompressed_count += length;
+#endif
+            continue;
+        }
+        
+        if (res&LZ5_FLAG_LEN) {
+            LZ5_LOG_DECOMPRESS("res=%d\n", res); goto _output_error;
+        }
+
+        if (ip > iend - 5*3) goto _output_error;
+        ctx.lenPtr = (const BYTE*)ip + 3;
+        ctx.lenEnd = ctx.lenPtr + MEM_readLE24(ip);
+        if (ctx.lenEnd < ctx.lenPtr || (ctx.lenEnd > iend - 3)) goto _output_error;
+
+        ip = ctx.lenEnd;
+
+        {   size_t streamLen;
+#ifdef LZ5_USE_LOGS
+            const BYTE* ipos;
+            size_t comprFlagsLen, comprLiteralsLen, total;
+#endif
+            streamLen = LZ5_readStream(res&LZ5_FLAG_OFF16LEN, &ip, iend, decompOff16Base, decompOff16Base + LZ5_HUF_BLOCK_SIZE, &ctx.offset16Ptr, &ctx.offset16End);
+            if (streamLen == 0) goto _output_error;
+
+            streamLen = LZ5_readStream(res&LZ5_FLAG_OFF24LEN, &ip, iend, decompOff24Base, decompOff24Base + LZ5_HUF_BLOCK_SIZE, &ctx.offset24Ptr, &ctx.offset24End);
+            if (streamLen == 0) goto _output_error;
+
+#ifdef LZ5_USE_LOGS
+            ipos = ip;
+            streamLen = LZ5_readStream(res&LZ5_FLAG_FLAGS, &ip, iend, decompFlagsBase, decompFlagsBase + LZ5_HUF_BLOCK_SIZE, &ctx.flagsPtr, &ctx.flagsEnd);
+            if (streamLen == 0) goto _output_error;
+            streamLen = (size_t)(ctx.flagsEnd-ctx.flagsPtr);
+            comprFlagsLen = ((size_t)(ip - ipos) + 3 >= streamLen) ? 0 : (size_t)(ip - ipos);
+            ipos = ip;
 #else
-        res = LZ5_decompress_LZ5v2(source, dest, inputSize, outputSize, endOnInput, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
+            streamLen = LZ5_readStream(res&LZ5_FLAG_FLAGS, &ip, iend, decompFlagsBase, decompFlagsBase + LZ5_HUF_BLOCK_SIZE, &ctx.flagsPtr, &ctx.flagsEnd);
+            if (streamLen == 0) goto _output_error;
 #endif
 
-    LZ5_LOG_DECOMPRESS("LZ5_decompress_generic res=%d\n", res);
-    return res;
+            streamLen = LZ5_readStream(res&LZ5_FLAG_LITERALS, &ip, iend, decompLiteralsBase, decompLiteralsBase + LZ5_HUF_BLOCK_SIZE, &ctx.literalsPtr, &ctx.literalsEnd);
+            if (streamLen == 0) goto _output_error;
+#ifdef LZ5_USE_LOGS
+            streamLen = (size_t)(ctx.literalsEnd-ctx.literalsPtr);
+            comprLiteralsLen = ((size_t)(ip - ipos) + 3 >= streamLen) ? 0 : (size_t)(ip - ipos);
+            total = (size_t)(ip-(ctx.lenEnd-1));
+#endif
+
+            if (ip > iend) goto _output_error;
+
+            LZ5_LOG_DECOMPRESS("%d: total=%d block=%d flagsLen=%d(HUF=%d) literalsLen=%d(HUF=%d) offset16Len=%d offset24Len=%d lengthsLen=%d \n", (int)(op-(BYTE*)dest) ,(int)(ip-istart), (int)total, 
+                        (int)(ctx.flagsEnd-ctx.flagsPtr), (int)comprFlagsLen, (int)(ctx.literalsEnd-ctx.literalsPtr), (int)comprLiteralsLen, 
+                        (int)(ctx.offset16End-ctx.offset16Ptr), (int)(ctx.offset24End-ctx.offset24Ptr), (int)(ctx.lenEnd-ctx.lenPtr));
+        }
+
+#ifdef LZ5_STATS
+        off22bit_count += (int)(ctx.offset24End-ctx.offset24Ptr);
+        off16_count += (int)(ctx.offset16End-ctx.offset16Ptr);
+        flag_count += (int)(ctx.flagsEnd-ctx.flagsPtr);
+        len_count += (int)(ctx.lenEnd-ctx.lenPtr);
+        lit_count += (int)(ctx.literalsEnd-ctx.literalsPtr);
+#endif
+
+        params = LZ5_defaultParameters[compressionLevel];
+        if (params.decompressType == LZ5_coderwords_LZ4)
+            res = LZ5_decompress_LZ4(&ctx, op, outputSize, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
+        else 
+#ifdef USE_LZ4_ONLY
+            res = LZ5_decompress_LZ4(&ctx, op, outputSize, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
+#else
+            res = LZ5_decompress_LZ5v2(&ctx, op, outputSize, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
+#endif        
+        LZ5_LOG_DECOMPRESS("LZ5_decompress_generic res=%d inputSize=%d\n", res, (int)(ctx.literalsEnd-ctx.lenEnd));
+
+        if (res <= 0) { free(decompLiteralsBase); return res; }
+        
+        op += res;
+        outputSize -= res;
+        if ((partialDecoding) && (op >= oexit)) break;
+    }
+
+#ifdef LZ5_STATS
+    print_stats();
+#endif
+
+    LZ5_LOG_DECOMPRESS("LZ5_decompress_generic total=%d\n", (int)(op-(BYTE*)dest));
+    free(decompLiteralsBase);
+    return (int)(op-(BYTE*)dest);
+
+_output_error:
+    LZ5_LOG_DECOMPRESS("LZ5_decompress_generic ERROR\n");
+    free(decompLiteralsBase);
+    return -1;
 }
 
 
 int LZ5_decompress_safe(const char* source, char* dest, int compressedSize, int maxDecompressedSize)
 {
-    return LZ5_decompress_generic(source, dest, compressedSize, maxDecompressedSize, endOnInputSize, full, 0, noDict, (BYTE*)dest, NULL, 0);
+    return LZ5_decompress_generic(source, dest, compressedSize, maxDecompressedSize, full, 0, noDict, (BYTE*)dest, NULL, 0);
 }
 
 int LZ5_decompress_safe_partial(const char* source, char* dest, int compressedSize, int targetOutputSize, int maxDecompressedSize)
 {
-    return LZ5_decompress_generic(source, dest, compressedSize, maxDecompressedSize, endOnInputSize, partial, targetOutputSize, noDict, (BYTE*)dest, NULL, 0);
-}
-
-int LZ5_decompress_fast(const char* source, char* dest, int originalSize)
-{
-    return LZ5_decompress_generic(source, dest, 0, originalSize, endOnOutputSize, full, 0, withPrefix64k, (BYTE*)(dest - LZ5_DICT_SIZE), NULL, LZ5_DICT_SIZE);
+    return LZ5_decompress_generic(source, dest, compressedSize, maxDecompressedSize, partial, targetOutputSize, noDict, (BYTE*)dest, NULL, 0);
 }
 
 
@@ -170,8 +329,7 @@ int LZ5_decompress_safe_continue (LZ5_streamDecode_t* LZ5_streamDecode, const ch
 
     if (lz5sd->prefixEnd == (BYTE*)dest) {
         result = LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize,
-                                        endOnInputSize, full, 0,
-                                        usingExtDict, lz5sd->prefixEnd - lz5sd->prefixSize, lz5sd->externalDict, lz5sd->extDictSize);
+                                        full, 0, usingExtDict, lz5sd->prefixEnd - lz5sd->prefixSize, lz5sd->externalDict, lz5sd->extDictSize);
         if (result <= 0) return result;
         lz5sd->prefixSize += result;
         lz5sd->prefixEnd  += result;
@@ -179,37 +337,10 @@ int LZ5_decompress_safe_continue (LZ5_streamDecode_t* LZ5_streamDecode, const ch
         lz5sd->extDictSize = lz5sd->prefixSize;
         lz5sd->externalDict = lz5sd->prefixEnd - lz5sd->extDictSize;
         result = LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize,
-                                        endOnInputSize, full, 0,
-                                        usingExtDict, (BYTE*)dest, lz5sd->externalDict, lz5sd->extDictSize);
+                                        full, 0, usingExtDict, (BYTE*)dest, lz5sd->externalDict, lz5sd->extDictSize);
         if (result <= 0) return result;
         lz5sd->prefixSize = result;
         lz5sd->prefixEnd  = (BYTE*)dest + result;
-    }
-
-    return result;
-}
-
-int LZ5_decompress_fast_continue (LZ5_streamDecode_t* LZ5_streamDecode, const char* source, char* dest, int originalSize)
-{
-    LZ5_streamDecode_t* lz5sd = (LZ5_streamDecode_t*) LZ5_streamDecode;
-    int result;
-
-    if (lz5sd->prefixEnd == (BYTE*)dest) {
-        result = LZ5_decompress_generic(source, dest, 0, originalSize,
-                                        endOnOutputSize, full, 0,
-                                        usingExtDict, lz5sd->prefixEnd - lz5sd->prefixSize, lz5sd->externalDict, lz5sd->extDictSize);
-        if (result <= 0) return result;
-        lz5sd->prefixSize += originalSize;
-        lz5sd->prefixEnd  += originalSize;
-    } else {
-        lz5sd->extDictSize = lz5sd->prefixSize;
-        lz5sd->externalDict = (BYTE*)dest - lz5sd->extDictSize;
-        result = LZ5_decompress_generic(source, dest, 0, originalSize,
-                                        endOnOutputSize, full, 0,
-                                        usingExtDict, (BYTE*)dest, lz5sd->externalDict, lz5sd->extDictSize);
-        if (result <= 0) return result;
-        lz5sd->prefixSize = originalSize;
-        lz5sd->prefixEnd  = (BYTE*)dest + originalSize;
     }
 
     return result;
@@ -223,32 +354,22 @@ Advanced decoding functions :
     the dictionary must be explicitly provided within parameters
 */
 
-FORCE_INLINE int LZ5_decompress_usingDict_generic(const char* source, char* dest, int compressedSize, int maxOutputSize, int safe, const char* dictStart, int dictSize)
+int LZ5_decompress_safe_usingDict(const char* source, char* dest, int compressedSize, int maxOutputSize, const char* dictStart, int dictSize)
 {
     if (dictSize==0)
-        return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, safe, full, 0, noDict, (BYTE*)dest, NULL, 0);
+        return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, full, 0, noDict, (BYTE*)dest, NULL, 0);
     if (dictStart+dictSize == dest)
     {
         if (dictSize >= (int)(LZ5_DICT_SIZE - 1))
-            return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, safe, full, 0, withPrefix64k, (BYTE*)dest-LZ5_DICT_SIZE, NULL, 0);
-        return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, safe, full, 0, noDict, (BYTE*)dest-dictSize, NULL, 0);
+            return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, full, 0, withPrefix64k, (BYTE*)dest-LZ5_DICT_SIZE, NULL, 0);
+        return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, full, 0, noDict, (BYTE*)dest-dictSize, NULL, 0);
     }
-    return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, safe, full, 0, usingExtDict, (BYTE*)dest, (const BYTE*)dictStart, dictSize);
-}
-
-int LZ5_decompress_safe_usingDict(const char* source, char* dest, int compressedSize, int maxOutputSize, const char* dictStart, int dictSize)
-{
-    return LZ5_decompress_usingDict_generic(source, dest, compressedSize, maxOutputSize, 1, dictStart, dictSize);
-}
-
-int LZ5_decompress_fast_usingDict(const char* source, char* dest, int originalSize, const char* dictStart, int dictSize)
-{
-    return LZ5_decompress_usingDict_generic(source, dest, 0, originalSize, 0, dictStart, dictSize);
+    return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, full, 0, usingExtDict, (BYTE*)dest, (const BYTE*)dictStart, dictSize);
 }
 
 /* debug function */
 int LZ5_decompress_safe_forceExtDict(const char* source, char* dest, int compressedSize, int maxOutputSize, const char* dictStart, int dictSize)
 {
-    return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, endOnInputSize, full, 0, usingExtDict, (BYTE*)dest, (const BYTE*)dictStart, dictSize);
+    return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, full, 0, usingExtDict, (BYTE*)dest, (const BYTE*)dictStart, dictSize);
 }
 
