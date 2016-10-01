@@ -2,23 +2,21 @@ Introduction
 -------------------------
 
 LZ5 is a modification of [LZ4] which gives a better ratio at cost of slower compression and decompression speed. 
-**In my experiments there is no open-source bytewise compressor that gives better ratio than lz5.**
 The improvement in compression ratio is caused mainly because of:
-- 22-bit dictionary instead of 16-bit in LZ4
-- using 4 new parsers (including an optimal parser) optimized for a bigger dictionary
-- support for 3-byte long matches (MINMATCH = 3)
+- 24-bit dictionary instead of 16-bit in LZ4
+- using 6 parsers (including an optimal parser) optimized for a bigger dictionary
 - a special 1-byte codeword for the last occured offset
 
 |Branch      |Status   |
 |------------|---------|
 |master      | [![Build Status][travisMasterBadge]][travisLink] [![Build status][AppveyorMasterBadge]][AppveyorLink]  |
-|dev         | [![Build Status][travisDevBadge]][travisLink]    [![Build status][AppveyorDevBadge]][AppveyorLink]     |
+|lz5_v1.5    | [![Build Status][travisDevBadge]][travisLink]    [![Build status][AppveyorDevBadge]][AppveyorLink]     |
 
 [travisMasterBadge]: https://travis-ci.org/inikep/lz5.svg?branch=master "Continuous Integration test suite"
-[travisDevBadge]: https://travis-ci.org/inikep/lz5.svg?branch=dev "Continuous Integration test suite"
+[travisDevBadge]: https://travis-ci.org/inikep/lz5.svg?branch=lz5_v1.5 "Continuous Integration test suite"
 [travisLink]: https://travis-ci.org/inikep/lz5
 [AppveyorMasterBadge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/master?svg=true "Visual test suite"
-[AppveyorDevBadge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/dev?svg=true "Visual test suite"
+[AppveyorDevBadge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v1.5?svg=true "Visual test suite"
 [AppveyorLink]: https://ci.appveyor.com/project/inikep/lz5
 [LZ4]: https://github.com/Cyan4973/lz4
 

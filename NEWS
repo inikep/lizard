@@ -1,3 +1,8 @@
+v2.0 beta
+- this version is optimized for decompression speed (instead of ratio for previous versions)
+- levels from 1 to 9 use LZ4-type codewords and give about 10% better decompression speed than LZ4
+- levels from 10 to 18 use new codewords with decompression speed about 2 times faster than LZ5 v1.5
+
 v1.5
 - introduced compatibility with Visual C++ 2010 and newer
 - attached Visual Studio 2010 project
