@@ -81,7 +81,7 @@ liblz5: *.c xxhash/*.c
 	@ln -sf $@.$(SHARED_EXT_VER) $@.$(SHARED_EXT)
 
 clean:
-	@rm -f core *.o *.a *.$(SHARED_EXT) *.$(SHARED_EXT).* liblz5.pc
+	@rm -f core entropy/*.o xxhash/*.o *.o *.a *.$(SHARED_EXT) *.$(SHARED_EXT).* liblz5.pc
 	@echo Cleaning library completed
 
 

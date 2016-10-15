@@ -139,7 +139,6 @@ static int usage(void)
     DISPLAY( "Arguments :\n");
     DISPLAY( " -0       : Fast compression (default) \n");
     DISPLAY( " -1...-%d : High compression; higher number == more compression but slower\n", LZ5_MAX_CLEVEL);
-    DISPLAY( " -l#    : use Huffman compressions of streams\n");
     DISPLAY( " -d     : decompression (default for %s extension)\n", LZ5_EXTENSION);
     DISPLAY( " -z     : force compression\n");
     DISPLAY( " -f     : overwrite output without prompting \n");
@@ -159,7 +158,7 @@ static int usage_advanced(void)
     DISPLAY( " -c     : force write to standard output, even if it is the console\n");
     DISPLAY( " -t     : test compressed file integrity\n");
     DISPLAY( " -m     : multiple input files (implies automatic output filenames)\n");
-    DISPLAY( " -B#    : Block size [1-7] = 64KB, 256KB, 1MB, 4MB, 16MB, 64MB, 256MB (default : 4 = 4MB)\n");
+    DISPLAY( " -B#    : Block size [1-7] = 128KB, 256KB, 1MB, 4MB, 16MB, 64MB, 256MB (default : 4 = 4MB)\n");
     DISPLAY( " -BD    : Block dependency (improve compression ratio)\n");
     /* DISPLAY( " -BX    : enable block checksum (default:disabled)\n");   *//* Option currently inactive */
     DISPLAY( "--no-frame-crc : disable stream checksum (default:enabled)\n");
@@ -170,6 +169,7 @@ static int usage_advanced(void)
     DISPLAY( " -b#    : benchmark file(s), using # compression level (default : 1) \n");
     DISPLAY( " -e#    : test all compression levels from -bX to # (default: 1)\n");
     DISPLAY( " -i#    : iteration loops [1-9](default : 3), benchmark mode only\n");
+    DISPLAY( " -l#    : use Huffman compressions of streams (1=literals, 2=flags, 4=off16, 8=off24)\n");
     EXTENDED_HELP;
     return 0;
 }
@@ -255,7 +255,11 @@ static unsigned readU32FromChar(const char** stringPtr)
 int main(int argc, const char** argv)
 {
     int i,
-        huffType=0,
+#ifdef LZ5_USE_HUFFMAN
+        huffType = LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS, // + LZ5_FLAG_OFF16LEN + LZ5_FLAG_OFF24LEN;
+#else
+        huffType = 0,//LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS + LZ5_FLAG_OFF16LEN + LZ5_FLAG_OFF24LEN;
+#endif
         cLevel=0,
         cLevelLast=0,
         decode=0,

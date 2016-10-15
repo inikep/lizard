@@ -120,7 +120,7 @@ int LZ5_setStreamDecode (LZ5_streamDecode_t* LZ5_streamDecode, const char* dicti
     - _At least_ LZ5_DICT_SIZE + 8 bytes + maxBlockSize.
       In which case, encoding and decoding buffers do not need to be synchronized,
       and encoding ring buffer can have any size, including larger than decoding buffer.
-    Whenever these conditions are not possible, save the last 64KB of decoded data into a safe buffer,
+    Whenever these conditions are not possible, save the last LZ5_DICT_SIZE of decoded data into a safe buffer,
     and indicate where it is saved using LZ5_setStreamDecode()
 */
 int LZ5_decompress_safe_continue (LZ5_streamDecode_t* LZ5_streamDecode, const char* source, char* dest, int compressedSize, int maxDecompressedSize);
