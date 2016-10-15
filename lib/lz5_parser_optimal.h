@@ -509,31 +509,31 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
                         goto encode;
                     }
 
-                    //if (opt[cur].mlen == 1)
-                    if (opt[cur].off == -1) {
-                        litlen = opt[cur].litlen;
-
-                        if (cur != litlen) {
-                            price = opt[cur - litlen].price + LZ5_get_price(ctx, litlen, 0, mlen);
-                            LZ5_LOG_PRICE("%d: TRY1 opt[%d].price=%d price=%d cur=%d litlen=%d\n", (int)(inr-source), cur - litlen, opt[cur - litlen].price, price, cur, litlen);
-                        } else {
-                            price = LZ5_get_price(ctx, llen + litlen, 0, mlen);
-                            LZ5_LOG_PRICE("%d: TRY2 price=%d cur=%d litlen=%d llen=%d\n", (int)(inr-source), price, cur, litlen, llen);
-                        }
-                    } else {
-                        litlen = 0;
-                        price = opt[cur].price + LZ5_get_price(ctx, litlen, 0, mlen);
-                        LZ5_LOG_PRICE("%d: TRY3 price=%d cur=%d litlen=%d getprice=%d\n", (int)(inr-source), price, cur, litlen, LZ5_get_price(ctx, litlen, 0, mlen - MINMATCH));
-                    }
-
                     best_mlen = mlen;
                     if (faster_get_matches)
                         skip_num = best_mlen;
 
-                    LZ5_LOG_PARSER("%d: Found REP mlen=%d off=%d price=%d litlen=%d price[%d]=%d\n", (int)(inr-source), mlen, 0, price, litlen, cur - litlen, opt[cur - litlen].price);
-
                     do
                     {
+                        //if (opt[cur].mlen == 1)
+                        if (opt[cur].off == -1) {
+                            litlen = opt[cur].litlen;
+
+                            if (cur != litlen) {
+                                price = opt[cur - litlen].price + LZ5_get_price(ctx, litlen, 0, mlen);
+                                LZ5_LOG_PRICE("%d: TRY1 opt[%d].price=%d price=%d cur=%d litlen=%d\n", (int)(inr-source), cur - litlen, opt[cur - litlen].price, price, cur, litlen);
+                            } else {
+                                price = LZ5_get_price(ctx, llen + litlen, 0, mlen);
+                                LZ5_LOG_PRICE("%d: TRY2 price=%d cur=%d litlen=%d llen=%d\n", (int)(inr-source), price, cur, litlen, llen);
+                            }
+                        } else {
+                            litlen = 0;
+                            price = opt[cur].price + LZ5_get_price(ctx, litlen, 0, mlen);
+                            LZ5_LOG_PRICE("%d: TRY3 price=%d cur=%d litlen=%d getprice=%d\n", (int)(inr-source), price, cur, litlen, LZ5_get_price(ctx, litlen, 0, mlen - MINMATCH));
+                        }
+
+                        LZ5_LOG_PARSER("%d: Found REP mlen=%d off=%d price=%d litlen=%d price[%d]=%d\n", (int)(inr-source), mlen, 0, price, litlen, cur - litlen, opt[cur - litlen].price);
+
                         if (cur + mlen > last_pos || price <= (size_t)opt[cur + mlen].price) // || ((price == opt[cur + mlen].price) && (opt[cur].mlen == 1) && (cur != litlen))) // at equal price prefer REP instead of MATCH
                             SET_PRICE(cur + mlen, mlen, 0, litlen, price);
                         mlen--;
