@@ -1,6 +1,6 @@
-LZ5 Block Format Description
+LZ5 v2.x Block Format Description
 ============================
-Last revised: 2016-01-22
+Last revised: 2016-10-08
 Authors : Yann Collet, Przemyslaw Skibinski
 
 
@@ -9,8 +9,7 @@ willing to produce LZ5-compatible compressed data blocks
 using any programming language.
 
 LZ5 is an LZ77-type compressor with a fixed, byte-oriented encoding.
-There is no entropy encoder back-end nor framing layer.
-The latter is assumed to be handled by other parts of the system (see [LZ5 Frame format]).
+There is no framing layer as it is assumed to be handled by other parts of the system (see [LZ5 Frame format]).
 This design is assumed to favor simplicity and speed.
 It helps later on for optimizations, compactness, and features.
 
@@ -22,87 +21,133 @@ on implementation details of the compressor, and vice versa.
 [LZ5 Frame format]: lz5_Frame_format.md
 
 
-Compressed block format
------------------------
-An LZ5 compressed block is composed of sequences.
-A sequence is a suite of literals (not-compressed bytes),
-followed by a match copy.
+Division into blocks
+--------------------
 
-Each sequence starts with a token.
-The token is a one byte value. It is separated into flag (1, 00, 010, 011), literal length (LL, LLL) and match length (MMM) fields.
-LZ5 uses 4 types of codewords from 1 to 4+ bytes long:
-- [1_OO_LL_MMM] [OOOOOOOO] - 10-bit offset, 3-bit match length, 2-bit literal length
-- [00_LLL_MMM] [OOOOOOOO] [OOOOOOOO] - 16-bit offset, 3-bit match length, 3-bit literal length
-- [010_LL_MMM] [OOOOOOOO] [OOOOOOOO] [OOOOOOOO] - 24-bit offset, 3-bit match length, 2-bit literal length
-- [011_LL_MMM] - last offset, 3-bit match length, 2-bit literal length
+The input data is divided into blocks of maximum size LZ5_BLOCK_SIZE (which is 128 KB). The subsequent blocks use the same sliding window and are dependent on previous blocks.
+Our impementation of LZ5 compressor divides input data into blocks of size of LZ5_BLOCK_SIZE except the last one which usually will be smaller.
+The output data is a single byte 'Compression_Level' and one or more blocks in the format described below.
+
+
+Block header format
+-----------------------
+
+The block header is a single byte `Header_Byte` that is combination of following flags:
+
+| Name                | Value |
+| --------------------- | --- |
+| LZ5_FLAG_LITERALS     | 1   |
+| LZ5_FLAG_FLAGS        | 2   |
+| LZ5_FLAG_OFF16LEN     | 4   |
+| LZ5_FLAG_OFF24LEN     | 8   |
+| LZ5_FLAG_LEN          | 16  |
+| LZ5_FLAG_UNCOMPRESSED | 128 |
+
+When `Header_Byte & LZ5_FLAG_UNCOMPRESSED` is true then the block is followed by 3-byte `Uncompressed_length` and uncompressed data of given size.
+
+
+Compressed block content
+------------------------
+
+When `Header_Byte & LZ5_FLAG_UNCOMPRESSED` is false then compressed block contains of 5 streams:
+- `Lengths_Stream` (compressed with Huffman if LZ5_FLAG_LEN is set)
+- `16-bit_Offsets_Stream` (compressed with Huffman if LZ5_FLAG_OFF16LEN is set)
+- `24-bit_Offsets_Stream` (compressed with Huffman if LZ5_FLAG_OFF24LEN is set)
+- `Tokens_Stream` (compressed with Huffman if LZ5_FLAG_FLAGS is set)
+- `Literals_Stream` (compressed with Huffman if LZ5_FLAG_LITERALS is set)
+
+
+Stream format
+-------------
+The single stream is either:
+- if LZ5_FLAG_XXX is not set: 3 byte `Stream_Length` followed by a given number bytes
+- if LZ5_FLAG_XXX is set: 3 byte `Original_Stream_Length`, 3 byte `Compressed_Stream_Length`, followed by a given number of Huffman compressed bytes
+
+
+LZ5 block decompression
+-----------------------
+At the beginning we have 5 streams and their sizes.
+Decompressor should iterate through `Tokens_Stream`. Each token is 1-byte long and describes how to get data from other streams. 
+If token points a stream that is already empty it means that data is corrupted.
+
+
+LZ5 token decompression
+-----------------------
+The token is a one byte. Token decribes:
+- how many literals should be copied from `Literals_Stream`
+- if offset should be read from `16-bit_Offsets_Stream` or `24-bit_Offsets_Stream`
+- how many bytes are part of a match and should be copied from a sliding window
+
+LZ5 uses 4 types of tokens:
+- [0_MMMM_LLL] - 3-bit literal length (0-7+), use offset from `16-bit_Offsets_Stream`, 4-bit match length (4-15+)
+- [1_MMMM_LLL] - 3-bit literal length (0-7+), use last offset, 4-bit match length (0-15+)
+- token 31     - no literal length, use offset from `24-bit_Offsets_Stream`, match length (47+)
+- token 0-30   - no literal length, use offset from `24-bit_Offsets_Stream`, 31 match lengths (16-46)
 
 LZ5 uses different output codewords and is not compatible with LZ4. LZ4 output codewords are 3 byte long (24-bit) and look as follows:
 - LLLL_MMMM OOOOOOOO OOOOOOOO - 16-bit offset, 4-bit match length, 4-bit literal length 
 
-The flag field (1, 00, 010, 011) selects the format of a codeword: the lenght of the literal length field and the length of offset.
 
-The literal length field (LL, LLL) uses the 2 or 3 bits of the token.
-It provides the length of literals to follow.
-Therefore each field ranges from 0 to 3 (2-bit) or 0 to 7 (3-bit).
-If the field value is 0, then there is no literal.
-If it is 3 (2-bit) or 7 (3-bit), then we need to add some more bytes to indicate the full length.
-Each additional byte then represent a value from 0 to 255,
-which is added to the previous value to produce a total length.
-When the byte value is 255, another byte is output.
-There can be any number of bytes following the token. There is no "size limit".
-(Side note : this is why a not-compressible input block is expanded by 0.4%).
+The format of `Lengths_Stream`
+------------------------------
+`Lengths_Stream` contains lenghts in the the following format:
+- when 'First_Byte' is < 254 then lenght is equal 'First_Byte'
+- when 'First_Byte' is 254 then lenght is equal to value of 2-bytes after 'First_Byte' i.e. 0-65536
+- when 'First_Byte' is 255 then lenght is equal to value of 3-bytes after 'First_Byte' i.e. 0-16777215
 
-Example 1 : A length of 48 for 3-bit literal length will be represented as :
+
+[0_MMMM_LLL] and [1_MMMM_LLL] tokens
+---------------------------------------
+The length of literals to be copied from `Literals_Stream` depends on the literal length field (LLL) that uses 3 bits of the token.
+Therefore each field ranges from 0 to 7.
+If the value is 7, then the lenght is increased with a length taken from `Lengths_Stream`.
+
+Example 1 : A literal length of 48 will be represented as :
 
   - 7  : value for the 3-bits LLL field
-  - 41 : (=48-7) remaining length to reach 48
+  - 41 : (=48-7) remaining length to reach 48 (in `Lengths_Stream`)
 
-Example 2 : A length of 280 for 3-bit literal length will be represented as :
+Example 2 : A literal length of 280 for will be represented as :
 
   - 7   : value for the 3-bits LLL field
-  - 255 : following byte is maxed, since 280-7 >= 255
-  - 18  : (=280 - 7 - 255) ) remaining length to reach 280
+  - 254 : informs that remaining length (=280-7) must be represented as 2-bytes (in `Lengths_Stream`)
+  - 273 : (=280-7) encoded as 2-bytes (in `Lengths_Stream`)
 
-Example 3 : A length of 7 for 3-bit literal length will be represented as :
+Example 3 : A literal length of 7 for will be represented as :
 
   - 7  : value for the 3-bits LLL field
-  - 0  : (=7-7) yes, the zero must be output
+  - 0  : (=7-7) yes, the zero must be output (in `Lengths_Stream`)
 
-Following the token and optional length bytes, are the literals themselves.
-They are exactly as numerous as previously decoded (length of literals).
-It's possible that there are zero literal.
+After copying 0 or more literals from `Literals_Stream` we can prepare the match copy operation which depends on a offset and a match length.
+The flag "0" informs that decoder should use the last encoded offset.
+The flag "1" informs that the offset is a 2 bytes value (16-bit), in little endian format and should be taken from `16-bit_Offsets_Stream`.
 
-Following the literals is the match copy operation.
+The match length depends on the match length field (MMMM) that uses 4 bits of the token.
+Therefore each field ranges from 0 to 15. Values from 0-3 are forbidden with offset taken from `16-bit_Offsets_Stream`.
+If the value is 15, then the lenght is increased with a length taken from `Lengths_Stream`.
 
-It starts by the offset. The length of offset depends on the flag field.
-The flag "011" informs that decoder should use the last encoded offset.
-The flag "00" informs that the offset is a 2 bytes value (16-bit), in little endian format.
-The flag "010" informs that the offset is a 3 bytes value (24-bit), in little endian format.
-The flag "1" informs that the offset is a 1 bytes value.
-With additional 2-bits from the token it creates 10-bit offset (2-bits are high bits).
+With the offset and the match length,
+the decoder can now proceed to copy the data from the already decoded buffer.
 
+
+LZ5 block epilogue
+------------------
+When all tokens are read from `Tokens_Stream` and interpreted all remaining streams should also be empty.
+Otherwise, it means that the data is corrupted. The only exception is `Literals_Stream` that should have at least 16 remaining literals what
+allows fast memory copy operations. The remaining literals up to the end of `Literals_Stream` should be appended to the output data.
+
+
+Tokens 0-31
+-----------
+The offset is a 3 bytes value (24-bit), in little endian format and should be taken from `24-bit_Offsets_Stream`.
 The offset represents the position of the match to be copied from.
 1 means "current position - 1 byte".
 The maximum offset value is (1<<24)-1, 1<<24 cannot be coded.
 Note that 0 is an invalid value, not used. 
 
-Then we need to extract the match length.
-For this, we use the match length field from the token, the low 3-bits.
-Value, obviously, ranges from 0 to 7.
-However here, 0 means that the copy operation will be minimal.
-The minimum length of a match, called minmatch, is 3.
-As a consequence, a 0 value means 3 bytes, and a value of 7 means 10+ bytes.
-Similar to literal length, on reaching the highest possible value (7), 
-we output additional bytes, one at a time, with values ranging from 0 to 255.
-They are added to total to provide the final match length.
-A 255 value means there is another byte to read and add.
-There is no limit to the number of optional bytes that can be output this way.
-(This points towards a maximum achievable compression ratio of about 250).
-
-With the offset and the matchlength,
-the decoder can now proceed to copy the data from the already decoded buffer.
-On decoding the matchlength, we reach the end of the compressed sequence,
-and therefore start another one.
+The 'Token_Value' ranges from 0 to 31.
+The match length is equal to 'Token_Value + 16 that is from 16 to 47.
+If match length is 47, the lenght is increased with a length taken from `Lengths_Stream`.
 
 
 Parsing restrictions
@@ -110,9 +155,9 @@ Parsing restrictions
 There are specific parsing rules to respect in order to remain compatible
 with assumptions made by the decoder :
 
-1. The last 5 bytes are always literals
-2. The last match must start at least 12 bytes before end of block.   
-   Consequently, a block with less than 13 bytes cannot be compressed.
+1. The last 16 bytes are always literals what allows fast memory copy operations.
+2. The last match must start at least 20 bytes before end of block.   
+   Consequently, a block with less than 20 bytes cannot be compressed.
 
 These rules are in place to ensure that the decoder
 will never read beyond the input buffer, nor write beyond the output buffer.

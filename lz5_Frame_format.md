@@ -1,5 +1,5 @@
-LZ5 Frame Format Description
-============================
+LZ5 v2.x Frame Format Description
+=================================
 
 ###Notices
 
@@ -18,7 +18,7 @@ Distribution of this document is unlimited.
 
 ###Version
 
-1.0 (22-01-2016)
+2.0 (8-10-2016)
 
 
 Introduction
@@ -70,7 +70,7 @@ General Structure of LZ5 Frame format
 __Magic Number__
 
 4 Bytes, Little endian format.
-Value : 0x184D2205 (it was 0x184D2204 for LZ4)
+Value : 0x184D2206 (it was 0x184D2204 for LZ4 and 0x184D2205 for LZ5 v1.x)
 
 __Frame Descriptor__
 
@@ -151,8 +151,8 @@ Other version numbers will use different flag layouts.
 __Block Independence flag__
 
 If this flag is set to “1”, blocks are independent. 
-If this flag is set to “0” (CURRENTLY IT'S NOT SUPPORTED), each block depends on previous ones
-(up to LZ5 window size, which is 4 MB).
+If this flag is set to “0”, each block depends on previous ones
+(up to LZ5 window size, which is 16 MB).
 In such case, it’s necessary to decode all blocks in sequence.
 
 Block dependency improves compression ratio, especially for small blocks.
@@ -310,3 +310,4 @@ Version changes
 ---------------
 
 1.0 : based on LZ4 Frame Format Description 1.5.1 (31/03/2015)
+2.0 : updated to LZ5 v2.x format

@@ -23,9 +23,9 @@ The improvement in compression ratio is caused mainly because of:
 > **Branch Policy:**
 
 > - The "master" branch is considered stable, at all times.
-> - The "dev" branch is the one where all contributions must be merged
+> - The "lz5_v1.5" and "lz5_v2.0" branches are the one where all contributions must be merged
     before being promoted to master.
->   + If you plan to propose a patch, please commit into the "dev" branch,
+>   + If you plan to propose a patch, please commit into the "lz5_v1.5" or "lz5_v2.0" branch,
       or its own feature branch.
       Direct commit to "master" are not permitted.
 
