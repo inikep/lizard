@@ -39,7 +39,7 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
 
     const int checkOffset = (dictSize < (int)(LZ5_DICT_SIZE));
 
-    intptr_t last_off = -LZ5_INIT_LAST_OFFSET;
+    intptr_t last_off = ctx->last_off;
     intptr_t length = 0;
     (void)compressionLevel;
     (void)LZ5_wildCopy;
@@ -213,6 +213,7 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
     op += length;
 
     /* end of decoding */
+    ctx->last_off = last_off;
     return (int) (op-dest);     /* Nb of output bytes decoded */
 
     /* Overflow error detected */

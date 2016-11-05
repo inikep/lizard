@@ -233,6 +233,7 @@ FORCE_INLINE int LZ5_decompress_generic(
         lit_count += (int)(ctx.literalsEnd-ctx.literalsPtr);
 #endif
 
+        ctx.last_off = -LZ5_INIT_LAST_OFFSET;
         params = LZ5_defaultParameters[compressionLevel];
         if (params.decompressType == LZ5_coderwords_LZ4)
             res = LZ5_decompress_LZ4(&ctx, op, outputSize, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);

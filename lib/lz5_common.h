@@ -194,6 +194,7 @@ struct LZ5_dstream_s
     const BYTE*  literalsEnd;
     const BYTE*  flagsEnd;
     const BYTE*  diffBase;
+    intptr_t last_off;
 };
 
 typedef struct LZ5_dstream_s LZ5_dstream_t;
