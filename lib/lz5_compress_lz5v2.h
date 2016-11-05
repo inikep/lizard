@@ -188,26 +188,30 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
     const BYTE* literals = ip - litLength;
     U32 u;
 
-    if (ctx->cachedLiterals == literals) {
-		size_t const additional = litLength - ctx->cachedLitLength;
-    //    printf("%d ", (int)litLength - (int)ctx->cachedLitLength);
-        const BYTE* literals2 = ctx->cachedLiterals + ctx->cachedLitLength;
-        price = ctx->cachedPrice + LZ5_PRICE_MULT * additional * ctx->log2LitSum;
-        for (u=0; u < additional; u++)
-            price -= LZ5_PRICE_MULT * LZ5_highbit32(ctx->litFreq[literals2[u]]+1);
-        ctx->cachedPrice = (U32)price;
-        ctx->cachedLitLength = (U32)litLength;
-    } else {
-        price = LZ5_PRICE_MULT * litLength * ctx->log2LitSum;
-        for (u=0; u < litLength; u++)
-            price -= LZ5_PRICE_MULT * LZ5_highbit32(ctx->litFreq[literals[u]]+1);
-
-        if (litLength >= 12) {
-            ctx->cachedLiterals = literals;
+    if (ctx->params.parserType != LZ5_parser_lowestPrice) {
+        if (ctx->cachedLiterals == literals && litLength >= ctx->cachedLitLength) {
+            size_t const additional = litLength - ctx->cachedLitLength;
+        //    printf("%d ", (int)litLength - (int)ctx->cachedLitLength);
+            const BYTE* literals2 = ctx->cachedLiterals + ctx->cachedLitLength;
+            price = ctx->cachedPrice + LZ5_PRICE_MULT * additional * ctx->log2LitSum;
+            for (u=0; u < additional; u++)
+                price -= LZ5_PRICE_MULT * LZ5_highbit32(ctx->litFreq[literals2[u]]+1);
             ctx->cachedPrice = (U32)price;
             ctx->cachedLitLength = (U32)litLength;
+        } else {
+            price = LZ5_PRICE_MULT * litLength * ctx->log2LitSum;
+            for (u=0; u < litLength; u++)
+                price -= LZ5_PRICE_MULT * LZ5_highbit32(ctx->litFreq[literals[u]]+1);
+
+            if (litLength >= 12) {
+                ctx->cachedLiterals = literals;
+                ctx->cachedPrice = (U32)price;
+                ctx->cachedLitLength = (U32)litLength;
+            }
         }
     }
+    else
+        price += 8*litLength;  /* Copy Literals */
 #else
     price += 8*litLength;  /* Copy Literals */
     (void)ip;
@@ -231,7 +235,10 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
 
         if (offset >= LZ5_MAX_16BIT_OFFSET) {
             token+=(1<<ML_RUN_BITS);
-            price += LZ5_GET_TOKEN_PRICE(token);
+            if (ctx->params.parserType != LZ5_parser_lowestPrice)
+                price += LZ5_GET_TOKEN_PRICE(token);
+            else
+                price += 8;
        }
     }
 
@@ -283,16 +290,22 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
     if (offset > 0 || matchLength > 0) {
         int offset_load = LZ5_highbit32(offset);
 #ifdef LZ5_USE_HUFFMAN
-        price += ((offset_load>=20) ? ((offset_load-19)*4) : 0);  // 16#silesia_tar       : 211947520 ->  64309721 (3.296),   3.9 MB/s ,1090.4 MB/s
+        price += ((offset_load>=20) ? ((offset_load-19)*4) : 0);
         price += 4 + (matchLength==1);
 #else
         price += ((offset_load>=16) ? ((offset_load-15)*4) : 0);
         price += 6 + (matchLength==1);
 #endif
-        price += LZ5_GET_TOKEN_PRICE(token);
+        if (ctx->params.parserType != LZ5_parser_lowestPrice)
+            price += LZ5_GET_TOKEN_PRICE(token);
+        else
+            price += 8;
     } else {
 #ifdef LZ5_USE_HUFFMAN
-        price += LZ5_GET_TOKEN_PRICE(token);  // 1=better ratio
+        if (ctx->params.parserType != LZ5_parser_lowestPrice)
+            price += LZ5_GET_TOKEN_PRICE(token);  // 1=better ratio
+#else
+        (void)token; // warning: Value stored to 'token' is never read
 #endif
     }
 
