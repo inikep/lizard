@@ -379,7 +379,7 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
 
     /* ctx Management */
     if (cctxPtr->lz5CtxLevel == 0) {
-        cctxPtr->lz5CtxPtr = LZ5_createStream(cctxPtr->prefs.compressionLevel);
+        cctxPtr->lz5CtxPtr = LZ5_createStream_Huf(cctxPtr->prefs.compressionLevel, cctxPtr->prefs.huffType);
         cctxPtr->lz5CtxLevel = 1;
     }
 
@@ -400,7 +400,7 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
     cctxPtr->tmpIn = cctxPtr->tmpBuff;
     cctxPtr->tmpInSize = 0;
     XXH32_reset(&(cctxPtr->xxh), 0);
-    cctxPtr->lz5CtxPtr = LZ5_resetStream((LZ5_stream_t*)(cctxPtr->lz5CtxPtr), cctxPtr->prefs.compressionLevel);
+    cctxPtr->lz5CtxPtr = LZ5_resetStream_Huf((LZ5_stream_t*)(cctxPtr->lz5CtxPtr), cctxPtr->prefs.compressionLevel, cctxPtr->prefs.huffType);
     if (!cctxPtr->lz5CtxPtr) return (size_t)-LZ5F_ERROR_allocation_failed;
 
     /* Magic Number */
@@ -453,14 +453,14 @@ size_t LZ5F_compressBound(size_t srcSize, const LZ5F_preferences_t* preferencesP
 }
 
 
-typedef int (*compressFunc_t)(void* ctx, const char* src, char* dst, int srcSize, int dstSize, int level);
+typedef int (*compressFunc_t)(void* ctx, const char* src, char* dst, int srcSize, int dstSize, int level, int huffType);
 
-static size_t LZ5F_compressBlock(void* dst, const void* src, size_t srcSize, compressFunc_t compress, void* lz5ctx, int level)
+static size_t LZ5F_compressBlock(void* dst, const void* src, size_t srcSize, compressFunc_t compress, void* lz5ctx, int level, int huffType)
 {
     /* compress one block */
     BYTE* cSizePtr = (BYTE*)dst;
     U32 cSize;
-    cSize = (U32)compress(lz5ctx, (const char*)src, (char*)(cSizePtr+4), (int)(srcSize), (int)(srcSize-1), level);
+    cSize = (U32)compress(lz5ctx, (const char*)src, (char*)(cSizePtr+4), (int)(srcSize), (int)(srcSize-1), level, huffType);
     LZ5F_writeLE32(cSizePtr, cSize);
     if (cSize == 0) {  /* compression failed */
         cSize = (U32)srcSize;
@@ -472,15 +472,15 @@ static size_t LZ5F_compressBlock(void* dst, const void* src, size_t srcSize, com
 
 
 
-static int LZ5F_localLZ5_compress_continue(void* ctx, const char* src, char* dst, int srcSize, int dstSize, int level)
+static int LZ5F_localLZ5_compress_continue(void* ctx, const char* src, char* dst, int srcSize, int dstSize, int level, int huffType)
 {
-    (void) level;
+    (void)level; (void)huffType;
     return LZ5_compress_continue((LZ5_stream_t*)ctx, src, dst, srcSize, dstSize);
 }
 
 static compressFunc_t LZ5F_selectCompression(LZ5F_blockMode_t blockMode)
 {
-    if (blockMode == LZ5F_blockIndependent) return LZ5_compress_extState;
+    if (blockMode == LZ5F_blockIndependent) return LZ5_compress_extState_Huf;
     return LZ5F_localLZ5_compress_continue;
 }
 
@@ -536,7 +536,7 @@ size_t LZ5F_compressUpdate(LZ5F_compressionContext_t compressionContext, void* d
             memcpy(cctxPtr->tmpIn + cctxPtr->tmpInSize, srcBuffer, sizeToCopy);
             srcPtr += sizeToCopy;
 
-            dstPtr += LZ5F_compressBlock(dstPtr, cctxPtr->tmpIn, blockSize, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel);
+            dstPtr += LZ5F_compressBlock(dstPtr, cctxPtr->tmpIn, blockSize, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel, cctxPtr->prefs.huffType);
 
             if (cctxPtr->prefs.frameInfo.blockMode==LZ5F_blockLinked) cctxPtr->tmpIn += blockSize;
             cctxPtr->tmpInSize = 0;
@@ -546,14 +546,14 @@ size_t LZ5F_compressUpdate(LZ5F_compressionContext_t compressionContext, void* d
     while ((size_t)(srcEnd - srcPtr) >= blockSize) {
         /* compress full block */
         lastBlockCompressed = fromSrcBuffer;
-        dstPtr += LZ5F_compressBlock(dstPtr, srcPtr, blockSize, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel);
+        dstPtr += LZ5F_compressBlock(dstPtr, srcPtr, blockSize, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel, cctxPtr->prefs.huffType);
         srcPtr += blockSize;
     }
 
     if ((cctxPtr->prefs.autoFlush) && (srcPtr < srcEnd)) {
         /* compress remaining input < blockSize */
         lastBlockCompressed = fromSrcBuffer;
-        dstPtr += LZ5F_compressBlock(dstPtr, srcPtr, srcEnd - srcPtr, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel);
+        dstPtr += LZ5F_compressBlock(dstPtr, srcPtr, srcEnd - srcPtr, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel, cctxPtr->prefs.huffType);
         srcPtr  = srcEnd;
     }
 
@@ -617,7 +617,7 @@ size_t LZ5F_flush(LZ5F_compressionContext_t compressionContext, void* dstBuffer,
     compress = LZ5F_selectCompression(cctxPtr->prefs.frameInfo.blockMode);
 
     /* compress tmp buffer */
-    dstPtr += LZ5F_compressBlock(dstPtr, cctxPtr->tmpIn, cctxPtr->tmpInSize, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel);
+    dstPtr += LZ5F_compressBlock(dstPtr, cctxPtr->tmpIn, cctxPtr->tmpInSize, compress, cctxPtr->lz5CtxPtr, cctxPtr->prefs.compressionLevel, cctxPtr->prefs.huffType);
     if (cctxPtr->prefs.frameInfo.blockMode==LZ5F_blockLinked) cctxPtr->tmpIn += cctxPtr->tmpInSize;
     cctxPtr->tmpInSize = 0;
 

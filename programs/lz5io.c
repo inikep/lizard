@@ -375,7 +375,7 @@ static void LZ5IO_freeCResources(cRess_t ress)
  * result : 0 : compression completed correctly
  *          1 : missing or pb opening srcFileName
  */
-static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName, const char* dstFileName, int compressionLevel)
+static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName, const char* dstFileName, int compressionLevel, int huffType)
 {
     unsigned long long filesize = 0;
     unsigned long long compressedfilesize = 0;
@@ -399,6 +399,7 @@ static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName,
     /* Set compression parameters */
     prefs.autoFlush = 1;
     prefs.compressionLevel = compressionLevel;
+    prefs.huffType = huffType;
     prefs.frameInfo.blockMode = (LZ5F_blockMode_t)g_blockIndependence;
     prefs.frameInfo.blockSizeID = (LZ5F_blockSizeID_t)g_blockSizeId;
     prefs.frameInfo.contentChecksumFlag = (LZ5F_contentChecksum_t)g_streamChecksum;
@@ -482,7 +483,7 @@ static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName,
 }
 
 
-int LZ5IO_compressFilename(const char* srcFileName, const char* dstFileName, int compressionLevel)
+int LZ5IO_compressFilename(const char* srcFileName, const char* dstFileName, int compressionLevel, int huffType)
 {
     clock_t start, end;
     cRess_t ress;
@@ -493,7 +494,7 @@ int LZ5IO_compressFilename(const char* srcFileName, const char* dstFileName, int
     ress = LZ5IO_createCResources();
 
     /* Compress File */
-    issueWithSrcFile += LZ5IO_compressFilename_extRess(ress, srcFileName, dstFileName, compressionLevel);
+    issueWithSrcFile += LZ5IO_compressFilename_extRess(ress, srcFileName, dstFileName, compressionLevel, huffType);
 
     /* Free resources */
     LZ5IO_freeCResources(ress);
@@ -510,7 +511,7 @@ int LZ5IO_compressFilename(const char* srcFileName, const char* dstFileName, int
 
 
 #define FNSPACE 30
-int LZ5IO_compressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix, int compressionLevel)
+int LZ5IO_compressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix, int compressionLevel, int huffType)
 {
     int i;
     int missed_files = 0;
@@ -530,7 +531,7 @@ int LZ5IO_compressMultipleFilenames(const char** inFileNamesTable, int ifntSize,
         strcpy(dstFileName, inFileNamesTable[i]);
         strcat(dstFileName, suffix);
 
-        missed_files += LZ5IO_compressFilename_extRess(ress, inFileNamesTable[i], dstFileName, compressionLevel);
+        missed_files += LZ5IO_compressFilename_extRess(ress, inFileNamesTable[i], dstFileName, compressionLevel, huffType);
     }
 
     /* Close & Free */

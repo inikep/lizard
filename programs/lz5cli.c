@@ -52,7 +52,7 @@
 #include <string.h>   /* strcmp, strlen */
 #include "bench.h"    /* BMK_benchFile, BMK_SetNbIterations, BMK_SetBlocksize */
 #include "lz5io.h"    /* LZ5IO_compressFilename, LZ5IO_decompressFilename, LZ5IO_compressMultipleFilenames */
-#include "lz5_compress.h"      /* LZ5_VERSION_STRING */
+#include "lz5_common.h"      /* LZ5_VERSION_STRING, LZ5_FLAG_* */
 #define LZ5_NO_MEM_FUNCTIONS
 
 
@@ -121,8 +121,6 @@ static const char* programName;
 #define EXTENDED_ARGUMENTS
 #define EXTENDED_HELP
 #define EXTENDED_FORMAT
-#define DEFAULT_COMPRESSOR   LZ5IO_compressFilename
-#define DEFAULT_DECOMPRESSOR LZ5IO_decompressFilename
 int LZ5IO_compressFilename_Legacy(const char* input_filename, const char* output_filename, int compressionlevel);   /* hidden function */
 
 
@@ -255,11 +253,7 @@ static unsigned readU32FromChar(const char** stringPtr)
 int main(int argc, const char** argv)
 {
     int i,
-#ifdef LZ5_USE_HUFFMAN
         huffType = LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS, // + LZ5_FLAG_OFF16LEN + LZ5_FLAG_OFF24LEN;
-#else
-        huffType = 0,//LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS + LZ5_FLAG_OFF16LEN + LZ5_FLAG_OFF24LEN;
-#endif
         cLevel=0,
         cLevelLast=0,
         decode=0,
@@ -481,7 +475,7 @@ int main(int argc, const char** argv)
         if (!decode) {   /* compression to file */
             size_t const l = strlen(input_filename);
             dynNameSpace = (char*)calloc(1,l+5);
-			if (dynNameSpace==NULL) exit(1);
+            if (dynNameSpace==NULL) exit(1);
             strcpy(dynNameSpace, input_filename);
             strcat(dynNameSpace, LZ5_EXTENSION);
             output_filename = dynNameSpace;
@@ -518,13 +512,13 @@ int main(int argc, const char** argv)
         if (multiple_inputs)
             operationResult = LZ5IO_decompressMultipleFilenames(inFileNames, ifnIdx, LZ5_EXTENSION);
         else
-            DEFAULT_DECOMPRESSOR(input_filename, output_filename);
+            operationResult = LZ5IO_decompressFilename(input_filename, output_filename);
     } else {
         /* compression is default action */
         if (multiple_inputs)
-            operationResult = LZ5IO_compressMultipleFilenames(inFileNames, ifnIdx, LZ5_EXTENSION, cLevel);
+            operationResult = LZ5IO_compressMultipleFilenames(inFileNames, ifnIdx, LZ5_EXTENSION, cLevel, huffType);
         else
-            DEFAULT_COMPRESSOR(input_filename, output_filename, cLevel);
+            operationResult = LZ5IO_compressFilename(input_filename, output_filename, cLevel, huffType);
     }
 
 _cleanup:

@@ -50,7 +50,6 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
     U32 offset = (U32)(*ip - match);
     size_t length = (size_t)(*ip - *anchor);
     BYTE* token = (ctx->flagsPtr)++;
-    (void) ctx;
 
     if (length > 0 || offset < LZ5_MAX_16BIT_OFFSET) {
         /* Encode Literal length */
@@ -70,10 +69,11 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
 #ifdef LZ5_USE_HUFFMAN
         ctx->litSum += length;
         ctx->litPriceSum += length * ctx->log2LitSum;
-        for (u=0; u < length; u++) {
-            ctx->litPriceSum -= LZ5_highbit32(ctx->litFreq[ctx->literalsPtr[u]]+1);
-            ctx->litFreq[ctx->literalsPtr[u]]++;
-        }
+        {   U32 u;
+            for (u=0; u < length; u++) {
+                ctx->litPriceSum -= LZ5_highbit32(ctx->litFreq[ctx->literalsPtr[u]]+1);
+                ctx->litFreq[ctx->literalsPtr[u]]++;
+        }   }
 #endif
         ctx->literalsPtr += length;
 
@@ -173,13 +173,15 @@ FORCE_INLINE int LZ5_encodeLastLiterals_LZ5v2 (
 
 
 #define LZ5_24BIT_OFFSET_LOAD   price += LZ5_highbit32(offset)
+#define LZ5_PRICE_MULT 2
+#define LZ5_GET_TOKEN_PRICE(token)    (LZ5_PRICE_MULT * (ctx->log2FlagSum - LZ5_highbit32(ctx->flagFreq[token]+1)))
 
 FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const BYTE *ip, const BYTE *off24pos, size_t litLength, U32 offset, size_t matchLength) 
 {
     int lz5_flag_weight = 8, lz5_literal_weight = 8, offset_load;
     size_t price = 0;
 
-#ifdef LZ5_USE_HUFFMAN
+#if 0 //def LZ5_USE_HUFFMAN
     const BYTE* literals = ip - litLength;
     U32 u;
 

@@ -47,11 +47,11 @@ static char const nulmark[] = "/dev/null";
 /* ****************** Functions ********************* */
 /* ************************************************** */
 
-int LZ5IO_compressFilename  (const char* input_filename, const char* output_filename, int compressionlevel);
+int LZ5IO_compressFilename  (const char* input_filename, const char* output_filename, int compressionlevel, int huffType);
 int LZ5IO_decompressFilename(const char* input_filename, const char* output_filename);
 
 
-int LZ5IO_compressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix, int compressionlevel);
+int LZ5IO_compressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix, int compressionlevel, int huffType);
 int LZ5IO_decompressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix);
 
 /* ************************************************** */
