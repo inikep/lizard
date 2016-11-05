@@ -173,15 +173,19 @@ FORCE_INLINE int LZ5_encodeLastLiterals_LZ5v2 (
 
 
 #define LZ5_24BIT_OFFSET_LOAD   price += LZ5_highbit32(offset)
-#define LZ5_PRICE_MULT 2
-#define LZ5_GET_TOKEN_PRICE(token)    (LZ5_PRICE_MULT * (ctx->log2FlagSum - LZ5_highbit32(ctx->flagFreq[token]+1)))
+#define LZ5_PRICE_MULT 1
+#ifdef LZ5_USE_HUFFMAN
+    #define LZ5_GET_TOKEN_PRICE(token)  (LZ5_PRICE_MULT * (ctx->log2FlagSum - LZ5_highbit32(ctx->flagFreq[token]+1)))
+#else
+    #define LZ5_GET_TOKEN_PRICE(token)  8
+#endif
 
 FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const BYTE *ip, const BYTE *off24pos, size_t litLength, U32 offset, size_t matchLength) 
 {
-    int lz5_flag_weight = 8, lz5_literal_weight = 8, offset_load;
     size_t price = 0;
-
-#if 0 //def LZ5_USE_HUFFMAN
+    size_t length = litLength;
+    BYTE token = 0;
+#ifdef LZ5_USE_HUFFMAN
     const BYTE* literals = ip - litLength;
     U32 u;
 
@@ -206,60 +210,97 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
         }
     }
 #else
+    price += 8*litLength;  /* Copy Literals */
     (void)ip;
 #endif
 
     (void)off24pos;
     (void)rep;
+    (void)ctx;
 
-    if (ctx) {
-        if (ctx->huffType & LZ5_FLAG_FLAGS) lz5_flag_weight = 6;
-        if (ctx->huffType & LZ5_FLAG_LITERALS) lz5_literal_weight = 7;
-    }
-
-    offset_load = 6;
-    if (offset > 0 || matchLength > 0)
-        price += lz5_flag_weight + offset_load + (matchLength==1);
-
-    if (litLength > 0 || offset < LZ5_MAX_16BIT_OFFSET) {
+    if (length > 0 || offset < LZ5_MAX_16BIT_OFFSET) {
         /* Encode Literal length */
-        if (litLength>=(int)MAX_SHORT_LITLEN) {  
-            size_t len = litLength - MAX_SHORT_LITLEN; 
+        if (length >= MAX_SHORT_LITLEN) 
+        {   size_t len; 
+            token = MAX_SHORT_LITLEN; 
+            len = length - MAX_SHORT_LITLEN;
             if (len >= (1<<16)) price += 32;
             else if (len >= 254) price += 24;
             else price += 8;
         }
-    
-        price += lz5_literal_weight*litLength;  /* Copy Literals */
-        if (offset >= LZ5_MAX_16BIT_OFFSET)
-            price += lz5_flag_weight;
+        else token = (BYTE)length;
+
+        if (offset >= LZ5_MAX_16BIT_OFFSET) {
+            token+=(1<<ML_RUN_BITS);
+            price += LZ5_GET_TOKEN_PRICE(token);
+       }
     }
 
     /* Encode Offset */
-    if (offset >= LZ5_MAX_16BIT_OFFSET) { // 24-bit offset
-        if (matchLength < 16) return LZ5_MAX_PRICE; // error
-        if (matchLength - MM_LONGOFF >= LZ5_LAST_LONG_OFF) {
+    if (offset >= LZ5_MAX_16BIT_OFFSET)  // 24-bit offset
+    {
+        if (matchLength < MM_LONGOFF) return LZ5_MAX_PRICE; // error
+
+        if (matchLength - MM_LONGOFF >= LZ5_LAST_LONG_OFF) 
+        {
             size_t len = matchLength - MM_LONGOFF - LZ5_LAST_LONG_OFF;
+            token = LZ5_LAST_LONG_OFF;
             if (len >= (1<<16)) price += 32;
             else if (len >= 254) price += 24;
-            else price += 8;
+            else len += 8;
         }
-        price += 24; // ctx->literalsPtr += 3;
-        LZ5_24BIT_OFFSET_LOAD;
-    } else {
-        if (offset) {
-            if (matchLength < MINMATCH) return LZ5_MAX_PRICE; // error
-            price += 16; // ctx->offset16Ptr += 2;
+        else
+        {
+            token = (BYTE)(matchLength - MM_LONGOFF);
+        }
+
+        price += 24;
+    }
+    else
+    {
+        if (offset == 0)
+        {
+            token+=(1<<ML_RUN_BITS);
+        }
+        else
+        {
+            if (offset < 8) return LZ5_MAX_PRICE; // error
+            if (matchLength < MINMATCH )return LZ5_MAX_PRICE; // error
+            price += 16;
         }
 
         /* Encode MatchLength */
-        if (matchLength>=(int)MAX_SHORT_MATCHLEN) 
-        {   size_t len = matchLength - MAX_SHORT_MATCHLEN; 
-            if (len >= (1<<16)) price += 32;
-            else if (len >= 254) price += 24;
+        length = matchLength;
+        if (length >= MAX_SHORT_MATCHLEN) {
+            token += (BYTE)(MAX_SHORT_MATCHLEN<<RUN_BITS_LZ5v2);
+            length -= MAX_SHORT_MATCHLEN;
+            if (length >= (1<<16)) price += 32;
+            else if (length >= 254) price += 24;
             else price += 8;
         }
+        else token += (BYTE)(length<<RUN_BITS_LZ5v2);
     }
+
+    if (offset > 0 || matchLength > 0) {
+#if 1
+        int offset_load = LZ5_highbit32(offset);
+        //price += 0;                                               // 16#silesia_tar       : 211947520 ->  64253109 (3.299),   4.1 MB/s ,1034.7 MB/s
+        //price += ((offset_load>=20) ? ((offset_load-19)*16) : 0); // 16#silesia_tar       : 211947520 ->  64493402 (3.286),   4.0 MB/s ,1062.6 MB/s
+        price += ((offset_load>=20) ? ((offset_load-19)*8) : 0);  // 16#silesia_tar       : 211947520 ->  64369241 (3.293),   4.0 MB/s ,1057.0 MB/s
+        //price += ((offset_load>=18) ? ((offset_load-17)*16) : 0); // 16#silesia_tar       : 211947520 ->  64985584 (3.261),   3.9 MB/s ,1064.8 MB/s
+        //price += ((offset_load>=18) ? ((offset_load-17)*8) : 0);  // 16#silesia_tar       : 211947520 ->  64699602 (3.276),   3.9 MB/s ,1065.1 MB/s
+        //price += ((offset_load>=16) ? ((offset_load-15)*8) : 0);  // 16#silesia_tar       : 211947520 ->  65153858 (3.253),   3.9 MB/s ,1069.5 MB/s
+        //price += ((offset_load>=16) ? ((offset_load-15)*12) : 0); // 16#silesia_tar       : 211947520 ->  65411965 (3.240),   4.0 MB/s ,1069.1 MB/s
+        //price += ((offset_load>=16) ? ((offset_load-15)*16) : 0); // 16#silesia_tar       : 211947520 ->  65608112 (3.231),   3.9 MB/s ,1070.3 MB/s
+#endif
+        price += LZ5_GET_TOKEN_PRICE(token);
+    } else {
+#if 1
+        price += LZ5_GET_TOKEN_PRICE(token);
+#else
+        price += 1; // 1=better ratio
+#endif
+    }
+
     return price;
 }
-

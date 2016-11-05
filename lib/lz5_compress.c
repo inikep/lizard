@@ -57,8 +57,8 @@
 ***************************************/
 #define LZ5_TRANSFORM_LEVEL 1
 #define DELTANEXT(p)        chainTable[(p) & contentMask]
-#define LZ5_MINIMAL_HUFF_GAIN(comprSize) (comprSize + (comprSize/10) + 512)
-#define LZ5_MINIMAL_BLOCK_GAIN(comprSize) (comprSize + (comprSize>>5) + 512)
+#define LZ5_MINIMAL_HUFF_GAIN(comprSize) (comprSize + (comprSize/12) + 512)
+#define LZ5_MINIMAL_BLOCK_GAIN(comprSize) (comprSize + (comprSize/32) + 512)
 
 
 /*-************************************
