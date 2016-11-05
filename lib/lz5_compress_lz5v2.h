@@ -67,8 +67,8 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
         /* Copy Literals */
         LZ5_wildCopy(ctx->literalsPtr, *anchor, (ctx->literalsPtr) + length);
 #ifdef LZ5_USE_HUFFMAN
-        ctx->litSum += length;
-        ctx->litPriceSum += length * ctx->log2LitSum;
+        ctx->litSum += (U32)length;
+        ctx->litPriceSum += (U32)(length * ctx->log2LitSum);
         {   U32 u;
             for (u=0; u < length; u++) {
                 ctx->litPriceSum -= LZ5_highbit32(ctx->litFreq[ctx->literalsPtr[u]]+1);
@@ -172,7 +172,6 @@ FORCE_INLINE int LZ5_encodeLastLiterals_LZ5v2 (
 }
 
 
-#define LZ5_24BIT_OFFSET_LOAD   price += LZ5_highbit32(offset)
 #define LZ5_PRICE_MULT 1
 #ifdef LZ5_USE_HUFFMAN
     #define LZ5_GET_TOKEN_PRICE(token)  (LZ5_PRICE_MULT * (ctx->log2FlagSum - LZ5_highbit32(ctx->flagFreq[token]+1)))
@@ -190,14 +189,14 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
     U32 u;
 
     if (ctx->cachedLiterals == literals) {
-        U32 const additional = litLength - ctx->cachedLitLength;
+		size_t const additional = litLength - ctx->cachedLitLength;
     //    printf("%d ", (int)litLength - (int)ctx->cachedLitLength);
         const BYTE* literals2 = ctx->cachedLiterals + ctx->cachedLitLength;
         price = ctx->cachedPrice + LZ5_PRICE_MULT * additional * ctx->log2LitSum;
         for (u=0; u < additional; u++)
             price -= LZ5_PRICE_MULT * LZ5_highbit32(ctx->litFreq[literals2[u]]+1);
-        ctx->cachedPrice = price;
-        ctx->cachedLitLength = litLength;
+        ctx->cachedPrice = (U32)price;
+        ctx->cachedLitLength = (U32)litLength;
     } else {
         price = LZ5_PRICE_MULT * litLength * ctx->log2LitSum;
         for (u=0; u < litLength; u++)
@@ -205,8 +204,8 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
 
         if (litLength >= 12) {
             ctx->cachedLiterals = literals;
-            ctx->cachedPrice = price;
-            ctx->cachedLitLength = litLength;
+            ctx->cachedPrice = (U32)price;
+            ctx->cachedLitLength = (U32)litLength;
         }
     }
 #else
@@ -282,23 +281,18 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
     }
 
     if (offset > 0 || matchLength > 0) {
-#if 1
         int offset_load = LZ5_highbit32(offset);
-        //price += 0;                                               // 16#silesia_tar       : 211947520 ->  64253109 (3.299),   4.1 MB/s ,1034.7 MB/s
-        //price += ((offset_load>=20) ? ((offset_load-19)*16) : 0); // 16#silesia_tar       : 211947520 ->  64493402 (3.286),   4.0 MB/s ,1062.6 MB/s
-        price += ((offset_load>=20) ? ((offset_load-19)*8) : 0);  // 16#silesia_tar       : 211947520 ->  64369241 (3.293),   4.0 MB/s ,1057.0 MB/s
-        //price += ((offset_load>=18) ? ((offset_load-17)*16) : 0); // 16#silesia_tar       : 211947520 ->  64985584 (3.261),   3.9 MB/s ,1064.8 MB/s
-        //price += ((offset_load>=18) ? ((offset_load-17)*8) : 0);  // 16#silesia_tar       : 211947520 ->  64699602 (3.276),   3.9 MB/s ,1065.1 MB/s
-        //price += ((offset_load>=16) ? ((offset_load-15)*8) : 0);  // 16#silesia_tar       : 211947520 ->  65153858 (3.253),   3.9 MB/s ,1069.5 MB/s
-        //price += ((offset_load>=16) ? ((offset_load-15)*12) : 0); // 16#silesia_tar       : 211947520 ->  65411965 (3.240),   4.0 MB/s ,1069.1 MB/s
-        //price += ((offset_load>=16) ? ((offset_load-15)*16) : 0); // 16#silesia_tar       : 211947520 ->  65608112 (3.231),   3.9 MB/s ,1070.3 MB/s
+#ifdef LZ5_USE_HUFFMAN
+        price += ((offset_load>=20) ? ((offset_load-19)*4) : 0);  // 16#silesia_tar       : 211947520 ->  64309721 (3.296),   3.9 MB/s ,1090.4 MB/s
+        price += 4 + (matchLength==1);
+#else
+        price += ((offset_load>=16) ? ((offset_load-15)*4) : 0);
+        price += 6 + (matchLength==1);
 #endif
         price += LZ5_GET_TOKEN_PRICE(token);
     } else {
-#if 1
-        price += LZ5_GET_TOKEN_PRICE(token);
-#else
-        price += 1; // 1=better ratio
+#ifdef LZ5_USE_HUFFMAN
+        price += LZ5_GET_TOKEN_PRICE(token);  // 1=better ratio
 #endif
     }
 
