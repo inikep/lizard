@@ -45,6 +45,7 @@ CFLAGS  += $(MOREFLAGS)
 CPPFLAGS:= -I$(LZ5DIR) -DXXH_NAMESPACE=LZ5_
 FLAGS   := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 ENTROPY_FILES := $(LZ5DIR)/entropy/*.c
+#TEST_CODEWORDS := $(LZ5DIR)/test/*.h
 
 # Define *.exe as extension for Windows systems
 ifneq (,$(filter Windows%,$(OS)))
@@ -74,22 +75,22 @@ bins: lz5 fullbench fuzzer frametest datagen
 all: bins m32
 
 # dependencies
-$(LZ5DIR)/lz5_compress.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress_lz4.h $(LZ5DIR)/lz5_compress_lz5v2.h $(LZ5DIR)/lz5_parser_hashchain.h $(LZ5DIR)/lz5_parser_fast.h $(LZ5DIR)/lz5_parser_nochain.h $(LZ5DIR)/lz5_parser_optimal.h $(LZ5DIR)/lz5_parser_pricefast.h $(LZ5DIR)/lz5_parser_lowestprice.h
+$(LZ5DIR)/lz5_compress.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress*.h $(LZ5DIR)/lz5_parser_*.h $(TEST_CODEWORDS)
 	$(CC) $(FLAGS) $< -c -o $@
 
-$(LZ5DIR)/lz5_compress32.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress_lz4.h $(LZ5DIR)/lz5_compress_lz5v2.h $(LZ5DIR)/lz5_parser_hashchain.h $(LZ5DIR)/lz5_parser_fast.h $(LZ5DIR)/lz5_parser_nochain.h $(LZ5DIR)/lz5_parser_optimal.h $(LZ5DIR)/lz5_parser_pricefast.h $(LZ5DIR)/lz5_parser_lowestprice.h
+$(LZ5DIR)/lz5_compress32.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress*.h $(LZ5DIR)/lz5_parser_*.h $(TEST_CODEWORDS)
 	$(CC) -m32 $(FLAGS) $< -c -o $@
 
-$(LZ5DIR)/lz5_compress_huf.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress_lz4.h $(LZ5DIR)/lz5_compress_lz5v2.h $(LZ5DIR)/lz5_parser_hashchain.h $(LZ5DIR)/lz5_parser_fast.h $(LZ5DIR)/lz5_parser_nochain.h $(LZ5DIR)/lz5_parser_optimal.h $(LZ5DIR)/lz5_parser_pricefast.h $(LZ5DIR)/lz5_parser_lowestprice.h
+$(LZ5DIR)/lz5_compress_huf.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress*.h $(LZ5DIR)/lz5_parser_*.h $(TEST_CODEWORDS)
 	$(CC) -DLZ5_USE_HUFFMAN $(FLAGS) $< -c -o $@
 
-$(LZ5DIR)/lz5_decompress.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_decompress.h $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress_lz4.h $(LZ5DIR)/lz5_decompress_lz5v2.h
+$(LZ5DIR)/lz5_decompress.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress*.h $(TEST_CODEWORDS)
 	$(CC) $(FLAGS) $(ALIGN_LOOP) $< -c -o $@
 
-$(LZ5DIR)/lz5_decompress32.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_decompress.h $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress_lz4.h $(LZ5DIR)/lz5_decompress_lz5v2.h
+$(LZ5DIR)/lz5_decompress32.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress*.h $(TEST_CODEWORDS)
 	$(CC) -m32 $(FLAGS) $< -c -o $@
 
-$(LZ5DIR)/lz5_decompress_huf.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_decompress.h $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress_lz4.h $(LZ5DIR)/lz5_decompress_lz5v2.h
+$(LZ5DIR)/lz5_decompress_huf.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress*.h $(TEST_CODEWORDS)
 	$(CC) -DLZ5_USE_HUFFMAN $(FLAGS) $(ALIGN_LOOP) $< -c -o $@
 
 

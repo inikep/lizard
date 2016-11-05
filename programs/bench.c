@@ -44,7 +44,7 @@
 ***************************************/
 #define NBLOOPS               3
 #define TIMELOOP_MICROSEC     1*1000000ULL /* 2 seconds */
-#define ACTIVEPERIOD_MICROSEC 70*1000000ULL /* 70 seconds */
+#define ACTIVEPERIOD_MICROSEC 120*1000000ULL /* 120 seconds */
 #define COOLPERIOD_SEC        10
 
 #define KB *(1 <<10)
@@ -274,7 +274,14 @@ static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
             {   U64 const crcCheck = XXH64(resultBuffer, srcSize, 0);
                 if (crcOrig!=crcCheck) {
                     size_t u;
-                    DISPLAY("!!! WARNING !!! %14s : Invalid Checksum : %x != %x   \n", displayName, (unsigned)crcOrig, (unsigned)crcCheck);
+#if 0
+                    FILE* f = fopen("_decomp_error", "wb");
+                    if (f) {
+                        fwrite(resultBuffer, 1, srcSize, f);
+                        fclose(f);
+                    }
+#endif
+                    DISPLAY("\n!!! WARNING !!! %14s : Invalid Checksum : %x != %x   \n", displayName, (unsigned)crcOrig, (unsigned)crcCheck);
                     for (u=0; u<srcSize; u++) {
                         if (((const BYTE*)srcBuffer)[u] != ((const BYTE*)resultBuffer)[u]) {
                             U32 segNb, bNb, pos;
