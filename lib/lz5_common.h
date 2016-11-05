@@ -454,11 +454,6 @@ int LZ5_compress_extState_Level1 (void* state, const char* source, char* dest, i
 LZ5_stream_t* LZ5_resetStream_Level1 (LZ5_stream_t* streamPtr);
 LZ5_stream_t* LZ5_createStream_Level1(void);
 
-/* with experimental Huffman compression */
-int LZ5_compress_Huf(const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel, int huffType);
-int LZ5_compress_extState_Huf(void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel, int huffType);
-LZ5_stream_t* LZ5_resetStream_Huf(LZ5_stream_t* streamPtr, int compressionLevel, int huffType);
-LZ5_stream_t* LZ5_createStream_Huf(int compressionLevel, int huffType);
 
 #if defined (__cplusplus)
 }

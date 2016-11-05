@@ -131,19 +131,20 @@ int LZ5_compress_extState(void* state, const char* src, char* dst, int srcSize, 
 *  Streaming Compression Functions
 ***********************************************/
 
-/*! LZ5_resetStream() :
- *  Use this function to init an allocated `LZ5_stream_t` structure
- */
-LZ5_stream_t* LZ5_resetStream (LZ5_stream_t* streamPtr, int compressionLevel); 
-
 /*! LZ5_createStream() will allocate and initialize an `LZ5_stream_t` structure.
  *  LZ5_freeStream() releases its memory.
  *  In the context of a DLL (liblz5), please use these methods rather than the static struct.
  *  They are more future proof, in case of a change of `LZ5_stream_t` size.
  */
 LZ5_stream_t* LZ5_createStream(int compressionLevel);
-
 int           LZ5_freeStream (LZ5_stream_t* streamPtr);
+
+
+/*! LZ5_resetStream() :
+ *  Use this function to reset/reuse an allocated `LZ5_stream_t` structure
+ */
+LZ5_stream_t* LZ5_resetStream (LZ5_stream_t* streamPtr, int compressionLevel); 
+
 
 /*! LZ5_loadDict() :
  *  Use this function to load a static dictionary into LZ5_stream.
@@ -152,6 +153,7 @@ int           LZ5_freeStream (LZ5_stream_t* streamPtr);
  *  Return : dictionary size, in bytes (necessarily <= LZ5_DICT_SIZE)
  */
 int LZ5_loadDict (LZ5_stream_t* streamPtr, const char* dictionary, int dictSize);
+
 
 /*! LZ5_compress_continue() :
  *  Compress buffer content 'src', using data from previously compressed blocks as dictionary to improve compression ratio.
@@ -162,6 +164,7 @@ int LZ5_loadDict (LZ5_stream_t* streamPtr, const char* dictionary, int dictSize)
  */
 int LZ5_compress_continue (LZ5_stream_t* streamPtr, const char* src, char* dst, int srcSize, int maxDstSize);
 
+
 /*! LZ5_saveDict() :
  *  If previously compressed data block is not guaranteed to remain available at its memory location,
  *  save it into a safer place (char* safeBuffer).
@@ -170,6 +173,14 @@ int LZ5_compress_continue (LZ5_stream_t* streamPtr, const char* src, char* dst, 
  *  Return : saved dictionary size in bytes (necessarily <= dictSize), or 0 if error.
  */
 int LZ5_saveDict (LZ5_stream_t* streamPtr, char* safeBuffer, int dictSize);
+
+
+
+/* experimental Huffman compression */
+int LZ5_compress_Huf(const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel, int huffType);
+int LZ5_compress_extState_Huf(void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel, int huffType);
+LZ5_stream_t* LZ5_resetStream_Huf(LZ5_stream_t* streamPtr, int compressionLevel, int huffType);
+LZ5_stream_t* LZ5_createStream_Huf(int compressionLevel, int huffType);
 
 
 
