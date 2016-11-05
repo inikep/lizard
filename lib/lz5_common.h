@@ -220,9 +220,9 @@ static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1] =
     {   LZ5_WINDOWLOG_LZ4,   LZ5_WINDOWLOG_LZ4+1,                23,  16,   256,  4,           0, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ4   }, // level 9
     { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2,                14,  13,     1,  5,  MM_LONGOFF,     0,  0, LZ5_parser_priceFast,      LZ5_coderwords_LZ5v2 }, // level 10
     { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2, LZ5_HASHLOG_LZ5v2,  13,     1,  5,  MM_LONGOFF,     0,  0, LZ5_parser_priceFast,      LZ5_coderwords_LZ5v2 }, // level 11
-    { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2, LZ5_HASHLOG_LZ5v2,  13,     1,  5,  MM_LONGOFF,     0,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LZ5v2 }, // level 12
-    { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2,                23,  16,     2,  5,  MM_LONGOFF,     0,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LZ5v2 }, // level 13
-    { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2,                23,  16,     8,  4,  MM_LONGOFF,     0,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LZ5v2 }, // level 14
+    { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2, LZ5_HASHLOG_LZ5v2,  13,     1,  5,  MM_LONGOFF,    64,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LZ5v2 }, // level 12
+    { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2,                23,  16,     2,  5,  MM_LONGOFF,    64,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LZ5v2 }, // level 13
+    { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2,                23,  16,     8,  4,  MM_LONGOFF,    64,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LZ5v2 }, // level 14
     { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2,                23,  16,     8,  4,  MM_LONGOFF,    64,  0, LZ5_parser_optimalPrice,   LZ5_coderwords_LZ5v2 }, // level 15
     { LZ5_WINDOWLOG_LZ5v2,  LZ5_CHAINLOG_LZ5v2+1,                23,  16,     8,  4,  MM_LONGOFF,    64,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ5v2 }, // level 16
     { LZ5_WINDOWLOG_LZ5v2,  LZ5_CHAINLOG_LZ5v2+1,                23,  16,   128,  4,  MM_LONGOFF,    64,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ5v2 }, // level 17

@@ -22,7 +22,7 @@ FORCE_INLINE size_t LZ5_better_price(size_t best_off, size_t best_common, size_t
     if (best_off == last_off) best_off = 0;
     if (off == last_off) off = 0; // rep code
 
-    return LZ5_get_price_LZ5v2(NULL, 0, (U32)off, common) < LZ5_get_price_LZ5v2(NULL, 0, (U32)best_off, best_common) + LZ5_get_price_LZ5v2(NULL, common - best_common, 0, 0);
+    return LZ5_get_price_LZ5v2(NULL, 0, (U32)off, common)  < LZ5_get_price_LZ5v2(NULL, common - best_common, (U32)best_off, best_common);
 }
 
 
@@ -54,25 +54,22 @@ FORCE_INLINE int LZ5_FindMatchLowestPrice (LZ5_stream_t* ctx,   /* Index table w
         if (matchIndexLO >= lowLimit) {
             if (matchIndexLO >= dictLimit) {
                 match = base + matchIndexLO;
-                if (MEM_readMINMATCH(match) == MEM_readMINMATCH(ip)) {
-                    mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
-              //      if ((mlt >= minMatchLongOff) || (ctx->last_off < LZ5_MAX_16BIT_OFFSET))
-                    {
-                        *matchpos = match;
-                        return (int)mlt;
-                    }
+                mlt = LZ5_count(ip, match, iLimit);// + MINMATCH;
+          //      if ((mlt >= minMatchLongOff) || (ctx->last_off < LZ5_MAX_16BIT_OFFSET))
+                if (mlt > REPMINMATCH) {
+                    *matchpos = match;
+                    return (int)mlt;
                 }
             } else {
                 match = dictBase + matchIndexLO;
-                if ((U32)((dictLimit-1) - matchIndexLO) >= 3)  /* intentional overflow */
-                if (MEM_readMINMATCH(match) == MEM_readMINMATCH(ip)) {
-                    mlt = LZ5_count_2segments(ip+MINMATCH, match+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
+                if ((U32)((dictLimit-1) - matchIndexLO) >= 3) {  /* intentional overflow */
+                    mlt = LZ5_count_2segments(ip, match, iLimit, dictEnd, lowPrefixPtr);
                  //   if ((mlt >= minMatchLongOff) || (ctx->last_off < LZ5_MAX_16BIT_OFFSET)) 
-                    {
+                    if (mlt > REPMINMATCH) {
                         *matchpos = base + matchIndexLO;  /* virtual matchpos */
                         return (int)mlt;
                     }
-                }
+               }
             }
         }
     }
@@ -275,6 +272,7 @@ FORCE_INLINE int LZ5_compress_lowestPrice(
     const BYTE* ref0;
     const BYTE* lowPrefixPtr = ctx->base + ctx->dictLimit;
     const size_t minMatchLongOff = ctx->params.minMatchLongOff;
+    const size_t sufficient_len = ctx->params.sufficientLength;
 
     /* Main Loop */
     while (ip < mflimit)
@@ -295,9 +293,11 @@ FORCE_INLINE int LZ5_compress_lowestPrice(
         start0 = ip;
         ref0 = ref;
         ml0 = ml;
+    //    goto _Encode;
 
 _Search:
-       if (ip+ml >= mflimit) { goto _Encode; }
+        if (ip+ml >= mflimit) { goto _Encode; }
+        if (ml >= sufficient_len) { goto _Encode; }
 
         LZ5_Insert(ctx, ip);
         ml2 = (int)LZ5_GetWiderMatch(ctx, ip + ml - 2, anchor, matchlimit, 0, &ref2, &start2);
