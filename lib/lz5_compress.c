@@ -336,6 +336,7 @@ static void LZ5_init(LZ5_stream_t* ctx, const BYTE* start)
     ctx->lowLimit = LZ5_DICT_SIZE;
     ctx->last_off = LZ5_INIT_LAST_OFFSET;
     ctx->huffType = 0;//LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS + LZ5_FLAG_OFF16LEN + LZ5_FLAG_OFF24LEN;
+    ctx->litSum = 0;
 }
 
 
@@ -484,12 +485,15 @@ FORCE_INLINE int LZ5_compress_generic (
     *op++ = (BYTE)ctx->compressionLevel;
     maxOutputSize--; // can be lower than 0
     ctx->end += inputSize;
-    ctx->srcBase = ip;
+    ctx->srcBase = ctx->off24pos = ip;
     ctx->destBase = (BYTE*)dest;
 
     while (inputSize > 0)
     {
         int inputPart = MIN(LZ5_BLOCK_SIZE, inputSize);
+#ifdef LZ5_USE_HUFFMAN
+        LZ5_rescaleFreqs(ctx);
+#endif
         LZ5_initBlock(ctx);
         ctx->diffBase = ip;
 

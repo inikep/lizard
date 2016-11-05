@@ -1,3 +1,45 @@
+#define LZ5_FREQ_DIV   5
+
+FORCE_INLINE void LZ5_setLog2Prices(LZ5_stream_t* ctx)
+{
+    ctx->log2LitSum = LZ5_highbit32(ctx->litSum+1);
+    ctx->log2FlagSum = LZ5_highbit32(ctx->flagSum+1);
+}
+
+
+MEM_STATIC void LZ5_rescaleFreqs(LZ5_stream_t* ctx)
+{
+    unsigned u;
+
+    ctx->cachedLiterals = NULL;
+    ctx->cachedPrice = ctx->cachedLitLength = 0;
+    
+    ctx->litPriceSum = 0;
+
+    if (ctx->litSum == 0) {
+        ctx->litSum = 2 * 256;
+        ctx->flagSum = 2 * 256;
+
+        for (u=0; u < 256; u++) {
+            ctx->litFreq[u] = 2;
+            ctx->flagFreq[u] = 2;
+        }
+    } else {
+        ctx->litSum = 0;
+        ctx->flagSum = 0;
+
+        for (u=0; u < 256; u++) {
+            ctx->litFreq[u] = 1 + (ctx->litFreq[u]>>LZ5_FREQ_DIV);
+            ctx->litSum += ctx->litFreq[u];
+            ctx->flagFreq[u] = 1 + (ctx->flagFreq[u]>>LZ5_FREQ_DIV);
+            ctx->flagSum += ctx->flagFreq[u];
+        }
+    }
+
+    LZ5_setLog2Prices(ctx);
+}
+
+
 FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
     LZ5_stream_t* ctx,
     const BYTE** ip,
@@ -25,11 +67,22 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
 
         /* Copy Literals */
         LZ5_wildCopy(ctx->literalsPtr, *anchor, (ctx->literalsPtr) + length);
+        ctx->litSum += length;
+        ctx->litPriceSum += length * ctx->log2LitSum;
+        for (u=0; u < length; u++) {
+            ctx->litPriceSum -= LZ5_highbit32(ctx->litFreq[ctx->literalsPtr[u]]+1);
+            ctx->litFreq[ctx->literalsPtr[u]]++;
+        }
         ctx->literalsPtr += length;
+
 
         if (offset >= LZ5_MAX_16BIT_OFFSET) {
             COMPLOG_CODEWORDS_LZ5v2("T32+ literal=%u match=%u offset=%d\n", (U32)length, 0, 0);
             *token+=(1<<ML_RUN_BITS);
+#ifdef LZ5_USE_HUFFMAN
+            ctx->flagFreq[*token]++;
+            ctx->flagSum++;
+#endif
             token = (ctx->flagsPtr)++;
         }
     }
@@ -58,6 +111,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
         MEM_writeLE24(ctx->offset24Ptr, offset); 
         ctx->offset24Ptr += 3;
         ctx->last_off = offset;
+        ctx->off24pos = *ip;
     }
     else
     {
@@ -88,6 +142,11 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
         else *token += (BYTE)(length<<RUN_BITS_LZ5v2);
     }
 
+#ifdef LZ5_USE_HUFFMAN
+    ctx->flagFreq[*token]++;
+    ctx->flagSum++;
+    LZ5_setLog2Prices(ctx);
+#endif
 
     /* Prepare next loop */
     *ip += matchLength;
@@ -117,6 +176,31 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
 {
     int lz5_flag_weight = 8, lz5_literal_weight = 8, offset_load;
     size_t price = 0;
+
+    (void)off24pos;
+
+#if 0 //def LZ5_USE_HUFFMAN
+    if (ctx->cachedLiterals == literals) {
+        U32 const additional = litLength - ctx->cachedLitLength;
+    //    printf("%d ", (int)litLength - (int)ctx->cachedLitLength);
+        const BYTE* literals2 = ctx->cachedLiterals + ctx->cachedLitLength;
+        price = ctx->cachedPrice + LZ5_PRICE_MULT * additional * ctx->log2LitSum;
+        for (u=0; u < additional; u++)
+            price -= LZ5_PRICE_MULT * LZ5_highbit32(ctx->litFreq[literals2[u]]+1);
+        ctx->cachedPrice = price;
+        ctx->cachedLitLength = litLength;
+    } else {
+        price = LZ5_PRICE_MULT * litLength * ctx->log2LitSum;
+        for (u=0; u < litLength; u++)
+            price -= LZ5_PRICE_MULT * LZ5_highbit32(ctx->litFreq[literals[u]]+1);
+
+        if (litLength >= 12) {
+            ctx->cachedLiterals = literals;
+            ctx->cachedPrice = price;
+            ctx->cachedLitLength = litLength;
+        }
+    }
+#endif
 
     if (ctx) {
         if (ctx->huffType & LZ5_FLAG_FLAGS) lz5_flag_weight = 6;
