@@ -67,12 +67,14 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
 
         /* Copy Literals */
         LZ5_wildCopy(ctx->literalsPtr, *anchor, (ctx->literalsPtr) + length);
+#ifdef LZ5_USE_HUFFMAN
         ctx->litSum += length;
         ctx->litPriceSum += length * ctx->log2LitSum;
         for (u=0; u < length; u++) {
             ctx->litPriceSum -= LZ5_highbit32(ctx->litFreq[ctx->literalsPtr[u]]+1);
             ctx->litFreq[ctx->literalsPtr[u]]++;
         }
+#endif
         ctx->literalsPtr += length;
 
 
@@ -177,9 +179,10 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
     int lz5_flag_weight = 8, lz5_literal_weight = 8, offset_load;
     size_t price = 0;
 
-    (void)off24pos;
+#ifdef LZ5_USE_HUFFMAN
+    const BYTE* literals = ip - litLength;
+    U32 u;
 
-#if 0 //def LZ5_USE_HUFFMAN
     if (ctx->cachedLiterals == literals) {
         U32 const additional = litLength - ctx->cachedLitLength;
     //    printf("%d ", (int)litLength - (int)ctx->cachedLitLength);
@@ -200,7 +203,12 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
             ctx->cachedLitLength = litLength;
         }
     }
+#else
+    (void)ip;
 #endif
+
+    (void)off24pos;
+    (void)rep;
 
     if (ctx) {
         if (ctx->huffType & LZ5_FLAG_FLAGS) lz5_flag_weight = 6;

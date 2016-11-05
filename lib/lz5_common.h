@@ -45,6 +45,7 @@ extern "C" {
 **************************************/
 #include <stdlib.h>   /* malloc, calloc, free */
 #include <string.h>   /* memset, memcpy */
+#include <stdint.h>   /* intptr_t */
 #include "entropy/mem.h"
 #include "lz5_compress.h"      /* LZ5_GCC_VERSION */
 
