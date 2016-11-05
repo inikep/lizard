@@ -1,22 +1,20 @@
-/* ******************************************************************
-  util.h - utility functions
-  Copyright (C) 2016, Przemyslaw Skibinski, Yann Collet.
+/*
+    util.h - utility functions
+    Copyright (C) 2016-present, Przemyslaw Skibinski, Yann Collet
 
-  GPL v2 License
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License along
-  with this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
   You can contact the author at :
    - LZ5 source repository : https://github.com/inikep/lz5
@@ -45,12 +43,12 @@ extern "C" {
 
 
 /* Unix Large Files support (>4GB) */
-#if !defined(__LP64__)              /* No point defining Large file for 64 bit */
-#   define _FILE_OFFSET_BITS 64     /* turn off_t into a 64-bit type for ftello, fseeko */
-#   if defined(__sun__)             /* Sun Solaris 32-bits requires specific definitions */
-#      define _LARGEFILE_SOURCE     /* fseeko, ftello */
-#   else
-#      define _LARGEFILE64_SOURCE   /* off64_t, fseeko64, ftello64 */
+#if !defined(__LP64__)                                  /* No point defining Large file for 64 bit */
+#   define _FILE_OFFSET_BITS 64                         /* turn off_t into a 64-bit type for ftello, fseeko */
+#   if defined(__sun__) && !defined(_LARGEFILE_SOURCE)  /* Sun Solaris 32-bits requires specific definitions */
+#      define _LARGEFILE_SOURCE                         /* fseeko, ftello */
+#   elif !defined(_LARGEFILE64_SOURCE)
+#      define _LARGEFILE64_SOURCE                       /* off64_t, fseeko64, ftello64 */
 #   endif
 #endif
 
@@ -60,8 +58,19 @@ extern "C" {
 ******************************************/
 #include <stdlib.h>     /* features.h with _POSIX_C_SOURCE, malloc */
 #include <stdio.h>      /* fprintf */
-#include <sys/types.h>  /* stat */
+#include <string.h>     /* strerr, strlen, memcpy */
+#include <stddef.h>     /* ptrdiff_t */
+#include <sys/types.h>  /* stat, utime */
 #include <sys/stat.h>   /* stat */
+#if defined(_MSC_VER)
+	#include <sys/utime.h>   /* utime */
+	#include <io.h>          /* _chmod */
+#else
+	#include <unistd.h>     /* chown, stat */
+	#include <utime.h>      /* utime */
+#endif
+#include <time.h>       /* time */
+#include <errno.h>
 #include "entropy/mem.h"        /* U32, U64 */
 
 
@@ -115,6 +124,8 @@ extern "C" {
 #endif
 
 
+
+
 /*-****************************************
 *  Time functions
 ******************************************/
@@ -156,6 +167,48 @@ UTIL_STATIC void UTIL_waitForNextTick(UTIL_time_t ticksPerSecond)
 /*-****************************************
 *  File functions
 ******************************************/
+#if defined(_MSC_VER)
+	#define chmod _chmod
+	typedef struct _stat64 stat_t;
+#else
+    typedef struct stat stat_t;
+#endif
+
+
+UTIL_STATIC int UTIL_setFileStat(const char *filename, stat_t *statbuf)
+{
+    int res = 0;
+    struct utimbuf timebuf;
+
+	timebuf.actime = time(NULL);
+	timebuf.modtime = statbuf->st_mtime;
+	res += utime(filename, &timebuf);  /* set access and modification times */
+
+#if !defined(_WIN32)
+    res += chown(filename, statbuf->st_uid, statbuf->st_gid);  /* Copy ownership */
+#endif
+
+    res += chmod(filename, statbuf->st_mode & 07777);  /* Copy file permissions */
+
+    errno = 0;
+    return -res; /* number of errors is returned */
+}
+
+
+UTIL_STATIC int UTIL_getFileStat(const char* infilename, stat_t *statbuf)
+{
+    int r;
+#if defined(_MSC_VER)
+    r = _stat64(infilename, statbuf);
+    if (r || !(statbuf->st_mode & S_IFREG)) return 0;   /* No good... */
+#else
+    r = stat(infilename, statbuf);
+    if (r || !S_ISREG(statbuf->st_mode)) return 0;   /* No good... */
+#endif
+    return 1;
+}
+
+
 UTIL_STATIC U64 UTIL_getFileSize(const char* infilename)
 {
     int r;
@@ -213,108 +266,130 @@ UTIL_STATIC U32 UTIL_isDirectory(const char* infilename)
     return 0;
 }
 
+/*
+ * A modified version of realloc().
+ * If UTIL_realloc() fails the original block is freed.
+*/
+UTIL_STATIC void *UTIL_realloc(void *ptr, size_t size)
+{
+    void *newptr = realloc(ptr, size);
+    if (newptr) return newptr;
+    free(ptr);
+    return NULL;
+}
+
 
 #ifdef _WIN32
 #  define UTIL_HAS_CREATEFILELIST
 
 UTIL_STATIC int UTIL_prepareFileList(const char *dirName, char** bufStart, size_t* pos, char** bufEnd)
 {
-    char path[MAX_PATH];
-    int pathLength, nbFiles = 0;
+    char* path;
+    int dirLength, fnameLength, pathLength, nbFiles = 0;
     WIN32_FIND_DATA cFile;
     HANDLE hFile;
 
-    pathLength = snprintf(path, MAX_PATH, "%s\\*", dirName);
-    if (pathLength < 0 || pathLength >= MAX_PATH) {
-        fprintf(stderr, "Path length has got too long.\n");
-        return 0;
-    }
+    dirLength = (int)strlen(dirName);
+    path = (char*) malloc(dirLength + 3);
+    if (!path) return 0;
+
+    memcpy(path, dirName, dirLength);
+    path[dirLength] = '\\';
+    path[dirLength+1] = '*';
+    path[dirLength+2] = 0;
 
     hFile=FindFirstFile(path, &cFile);
     if (hFile == INVALID_HANDLE_VALUE) {
         fprintf(stderr, "Cannot open directory '%s'\n", dirName);
         return 0;
     }
+    free(path);
 
     do {
-        pathLength = snprintf(path, MAX_PATH, "%s\\%s", dirName, cFile.cFileName);
-        if (pathLength < 0 || pathLength >= MAX_PATH) {
-            fprintf(stderr, "Path length has got too long.\n");
-            continue;
-        }
+        fnameLength = (int)strlen(cFile.cFileName);
+        path = (char*) malloc(dirLength + fnameLength + 2);
+        if (!path) { FindClose(hFile); return 0; }
+        memcpy(path, dirName, dirLength);
+        path[dirLength] = '\\';
+        memcpy(path+dirLength+1, cFile.cFileName, fnameLength);
+        pathLength = dirLength+1+fnameLength;
+        path[pathLength] = 0;
         if (cFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
             if (strcmp (cFile.cFileName, "..") == 0 ||
                 strcmp (cFile.cFileName, ".") == 0) continue;
-         //   printf ("[%s]\n", path);
+
             nbFiles += UTIL_prepareFileList(path, bufStart, pos, bufEnd);  /* Recursively call "UTIL_prepareFileList" with the new path. */
-            if (*bufStart == NULL) { FindClose(hFile); return 0; }
+            if (*bufStart == NULL) { free(path); FindClose(hFile); return 0; }
         }
         else if ((cFile.dwFileAttributes & FILE_ATTRIBUTE_NORMAL) || (cFile.dwFileAttributes & FILE_ATTRIBUTE_ARCHIVE) || (cFile.dwFileAttributes & FILE_ATTRIBUTE_COMPRESSED)) {
             if (*bufStart + *pos + pathLength >= *bufEnd) {
                 ptrdiff_t newListSize = (*bufEnd - *bufStart) + LIST_SIZE_INCREASE;
-                *bufStart = (char*)realloc(*bufStart, newListSize);
+                *bufStart = (char*)UTIL_realloc(*bufStart, newListSize);
                 *bufEnd = *bufStart + newListSize;
-                if (*bufStart == NULL) { FindClose(hFile); return 0; }
+                if (*bufStart == NULL) { free(path); FindClose(hFile); return 0; }
             }
             if (*bufStart + *pos + pathLength < *bufEnd) {
                 strncpy(*bufStart + *pos, path, *bufEnd - (*bufStart + *pos));
                 *pos += pathLength + 1;
                 nbFiles++;
             }
-         //   printf ("%s\\%s nbFiles=%d left=%d\n", dirName, cFile.cFileName, nbFiles, (int)(bufEnd - *bufStart));
         }
+        free(path);
     } while (FindNextFile(hFile, &cFile));
 
     FindClose(hFile);
     return nbFiles;
 }
 
-#elif (defined(__unix__) || defined(__unix) || defined(__midipix__) || (defined(__APPLE__) && defined(__MACH__))) && defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 200112L) /* snprintf, opendir */
+#elif (defined(__APPLE__) && defined(__MACH__)) || \
+     ((defined(__unix__) || defined(__unix) || defined(__midipix__)) && defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 200112L)) /* snprintf, opendir */
 #  define UTIL_HAS_CREATEFILELIST
 #  include <dirent.h>       /* opendir, readdir */
-#  include <limits.h>       /* PATH_MAX */
-#  include <errno.h>
 
 UTIL_STATIC int UTIL_prepareFileList(const char *dirName, char** bufStart, size_t* pos, char** bufEnd)
 {
     DIR *dir;
     struct dirent *entry;
-    char path[PATH_MAX];
-    int pathLength, nbFiles = 0;
+    char* path;
+    int dirLength, fnameLength, pathLength, nbFiles = 0;
 
     if (!(dir = opendir(dirName))) {
         fprintf(stderr, "Cannot open directory '%s': %s\n", dirName, strerror(errno));
         return 0;
     }
 
+    dirLength = (int)strlen(dirName);
     errno = 0;
     while ((entry = readdir(dir)) != NULL) {
         if (strcmp (entry->d_name, "..") == 0 ||
             strcmp (entry->d_name, ".") == 0) continue;
-        pathLength = snprintf(path, PATH_MAX, "%s/%s", dirName, entry->d_name);
-        if (pathLength < 0 || pathLength >= PATH_MAX) {
-            fprintf(stderr, "Path length has got too long.\n");
-            continue;
-        }
+        fnameLength = (int)strlen(entry->d_name);
+        path = (char*) malloc(dirLength + fnameLength + 2);
+        if (!path) { closedir(dir); return 0; }
+        memcpy(path, dirName, dirLength);
+        path[dirLength] = '/';
+        memcpy(path+dirLength+1, entry->d_name, fnameLength);
+        pathLength = dirLength+1+fnameLength;
+        path[pathLength] = 0;
+
         if (UTIL_isDirectory(path)) {
-         //   printf ("[%s]\n", path);
             nbFiles += UTIL_prepareFileList(path, bufStart, pos, bufEnd);  /* Recursively call "UTIL_prepareFileList" with the new path. */
-            if (*bufStart == NULL) { closedir(dir); return 0; }
+            if (*bufStart == NULL) { free(path); closedir(dir); return 0; }
         } else {
             if (*bufStart + *pos + pathLength >= *bufEnd) {
                 ptrdiff_t newListSize = (*bufEnd - *bufStart) + LIST_SIZE_INCREASE;
-                *bufStart = (char*)realloc(*bufStart, newListSize);
+                *bufStart = (char*)UTIL_realloc(*bufStart, newListSize);
                 *bufEnd = *bufStart + newListSize;
-                if (*bufStart == NULL) { closedir(dir); return 0; }
+                if (*bufStart == NULL) { free(path); closedir(dir); return 0; }
             }
             if (*bufStart + *pos + pathLength < *bufEnd) {
                 strncpy(*bufStart + *pos, path, *bufEnd - (*bufStart + *pos));
                 *pos += pathLength + 1;
                 nbFiles++;
             }
-         //   printf ("%s/%s nbFiles=%d left=%d\n", dirName, entry->d_name, nbFiles, (int)(bufEnd - *bufStart));
         }
-        errno = 0; // clear errno after UTIL_isDirectory, UTIL_prepareFileList
+        free(path);
+        errno = 0; /* clear errno after UTIL_isDirectory, UTIL_prepareFileList */
     }
 
     if (errno != 0) {
@@ -335,7 +410,7 @@ UTIL_STATIC int UTIL_prepareFileList(const char *dirName, char** bufStart, size_
     return 0;
 }
 
-#endif // #ifdef _WIN32
+#endif /* #ifdef _WIN32 */
 
 /*
  * UTIL_createFileList - takes a list of files and directories (params: inputNames, inputNamesNb), scans directories,
@@ -359,7 +434,7 @@ UTIL_STATIC const char** UTIL_createFileList(const char **inputNames, unsigned i
             size_t len = strlen(inputNames[i]);
             if (buf + pos + len >= bufend) {
                 ptrdiff_t newListSize = (bufend - buf) + LIST_SIZE_INCREASE;
-                buf = (char*)realloc(buf, newListSize);
+                buf = (char*)UTIL_realloc(buf, newListSize);
                 bufend = buf + newListSize;
                 if (!buf) return NULL;
             }
@@ -405,4 +480,3 @@ UTIL_STATIC void UTIL_freeFileList(const char** filenameTable, char* allocatedBu
 #endif
 
 #endif /* UTIL_H_MODULE */
-

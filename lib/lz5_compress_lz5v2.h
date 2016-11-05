@@ -253,7 +253,7 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
             token = LZ5_LAST_LONG_OFF;
             if (len >= (1<<16)) price += 32;
             else if (len >= 254) price += 24;
-            else len += 8;
+            else price += 8;
         }
         else
         {
