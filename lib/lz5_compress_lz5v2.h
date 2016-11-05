@@ -111,7 +111,9 @@ FORCE_INLINE int LZ5_encodeLastLiterals_LZ5v2 (
 }
 
 
-FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, size_t litLength, U32 offset, size_t matchLength)
+#define LZ5_24BIT_OFFSET_LOAD   price += LZ5_highbit32(offset)
+
+FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const BYTE *ip, const BYTE *off24pos, size_t litLength, U32 offset, size_t matchLength) 
 {
     int lz5_flag_weight = 8, lz5_literal_weight = 8, offset_load;
     size_t price = 0;

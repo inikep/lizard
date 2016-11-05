@@ -72,7 +72,8 @@ extern "C" {
 //#define USE_LZ4_ONLY
 //#define LZ5_USE_TEST
 
-#define WILDCOPYLENGTH 16
+#define LZ5_DICT_SIZE       (1<<24)
+#define WILDCOPYLENGTH      16
 #define LASTLITERALS WILDCOPYLENGTH
 #define MFLIMIT (WILDCOPYLENGTH+MINMATCH)
 
@@ -103,7 +104,6 @@ extern "C" {
 #define MAX_SHORT_LITLEN    7
 #define MAX_SHORT_MATCHLEN  15
 #define LZ5_LAST_LONG_OFF   31
-#define LZ5_24BIT_OFFSET_LOAD   price += LZ5_highbit32(offset)
 
 /* header byte */
 #define LZ5_FLAG_LITERALS       1
@@ -148,6 +148,7 @@ struct LZ5_stream_s
     U32*  chainTable;
     U32*  hashTable;
     int   last_off;
+    const BYTE* off24pos;
     U32   huffType;
     U32   comprStreamLen;
 
@@ -168,6 +169,13 @@ struct LZ5_stream_s
     BYTE*  lenEnd;
     BYTE*  literalsEnd;
     BYTE*  flagsEnd;
+    U32 flagFreq[256];
+    U32 litFreq[256];
+    U32 litSum, flagSum;
+    U32 litPriceSum, log2LitSum, log2FlagSum;
+    U32  cachedPrice;
+    U32  cachedLitLength;
+    const BYTE* cachedLiterals; 
     const BYTE* diffBase;
     const BYTE* srcBase;
     const BYTE* destBase;
@@ -270,7 +278,6 @@ static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1] =
 #define ALLOCATOR(n,s) calloc(n,s)
 #define FREEMEM        free
 #define MEM_INIT       memset
-#define LZ5_DICT_SIZE (1 << 24)
 #ifndef MAX
     #define MAX(a,b) ((a)>(b))?(a):(b)
 #endif

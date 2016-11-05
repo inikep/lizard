@@ -7,12 +7,12 @@
 #define REPMINMATCH             1
 
 
-FORCE_INLINE size_t LZ5_get_price(LZ5_stream_t* const ctx, size_t litLength, U32 offset, size_t matchLength)
+FORCE_INLINE size_t LZ5_get_price(LZ5_stream_t* const ctx, int rep, const BYTE *ip, const BYTE *off24pos, size_t litLength, U32 offset, size_t matchLength)
 {
     if (ctx->params.decompressType == LZ5_coderwords_LZ4)
         return LZ5_get_price_LZ4(ctx, litLength, offset, matchLength);
 
-    return LZ5_get_price_LZ5v2(ctx, litLength, offset, matchLength);
+    return LZ5_get_price_LZ5v2(ctx, rep, ip, off24pos, litLength, offset, matchLength);
 }
 
 
@@ -31,6 +31,7 @@ typedef struct
     int mlen;
     int litlen;
     int rep;
+    const BYTE* off24pos;
 } LZ5_optimal_t; 
 
 
@@ -250,11 +251,12 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
         nbAttempts--;
         if (matchIndex >= dictLimit) {
             match = base + matchIndex;
-            if (MEM_readMINMATCH(match) == MEM_readMINMATCH(ip)) {
-                mlt = MINMATCH + LZ5_count(ip+MINMATCH, match+MINMATCH, iHighLimit);
+            if (ip[mlt] == match[mlt]) {
+                mlt = LZ5_count(ip, match, iHighLimit);
                 if ((U32)(ip - match) >= LZ5_OPTIMAL_MIN_OFFSET)
                 if ((mlt >= minMatchLongOff) || ((U32)(ip - match) < LZ5_MAX_16BIT_OFFSET))
-                if (mlt > best_mlen) {
+                if (mlt > best_mlen) 
+                {
                     best_mlen = mlt;
                     matches[mnum].off = (int)(ip - match);
                     matches[mnum].len = (int)mlt;
@@ -379,7 +381,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
                 do
                 {
                     litlen = 0;
-                    price = LZ5_get_price(ctx, llen, 0, mlen);
+                    price = LZ5_get_price(ctx, ctx->last_off, ip, ctx->off24pos, llen, 0, mlen);
                     if (mlen > last_pos || price < (size_t)opt[mlen].price)
                         SET_PRICE(mlen, mlen, 0, litlen, price);
                     mlen--;
@@ -421,7 +423,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
             LZ5_LOG_PARSER("%d: start Found mlen=%d off=%d best_mlen=%d last_pos=%d\n", (int)(ip-source), matches[i].len, matches[i].off, best_mlen, last_pos);
             while (mlen <= best_mlen){
                 litlen = 0;
-                price = LZ5_get_price(ctx, llen + litlen, matches[i].off, mlen);
+                price = LZ5_get_price(ctx, ctx->last_off, ip, ctx->off24pos, llen + litlen, matches[i].off, mlen);
 
                 if ((mlen >= minMatchLongOff) || (matches[i].off < LZ5_MAX_16BIT_OFFSET))
                 if (mlen > last_pos || price < (size_t)opt[mlen].price)
@@ -432,29 +434,30 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
 
         if (last_pos < repMinMatch) { ip++; continue; }
 
+        opt[0].off24pos = ctx->off24pos;
         opt[0].rep = ctx->last_off;
         opt[0].mlen = 1;
         opt[0].off = -1;
 
         // check further positions
-        for (skip_num = 0, cur = 1; cur <= last_pos; cur++) { 
+        for (skip_num = 0, cur = 1; cur <= last_pos; cur++) {
+            int rep;
             inr = ip + cur;
 
-            //           if ((opt[cur-1].mlen == 1))// && (opt[cur-1].off != -1))
-            if (opt[cur-1].off == -1){
+            if (opt[cur-1].off == -1) { // -1 = literals, 0 = rep
                 litlen = opt[cur-1].litlen + 1;
-                
+
                 if (cur != litlen) {
-                    price = opt[cur - litlen].price + LZ5_get_price(ctx, litlen, 0, 0);
+                    price = opt[cur - litlen].price + LZ5_get_price(ctx, opt[cur-litlen].rep, inr, ctx->off24pos, litlen, 0, 0);
                     LZ5_LOG_PRICE("%d: TRY1 opt[%d].price=%d price=%d cur=%d litlen=%d\n", (int)(inr-source), cur - litlen, opt[cur - litlen].price, price, cur, litlen);
                 } else {
-                    price = LZ5_get_price(ctx, llen + litlen, 0, 0);
+                    price = LZ5_get_price(ctx, ctx->last_off, inr, ctx->off24pos, llen + litlen, 0, 0);
                     LZ5_LOG_PRICE("%d: TRY2 price=%d cur=%d litlen=%d llen=%d\n", (int)(inr-source), price, cur, litlen, llen);
                 }
             } else {
                 litlen = 1;
-                price = opt[cur - 1].price + LZ5_get_price(ctx, litlen, 0, 0);
-                LZ5_LOG_PRICE("%d: TRY3 price=%d cur=%d litlen=%d litonly=%d\n", (int)(inr-source), price, cur, litlen, LZ5_get_price(ctx, litlen, 0, 0));
+                price = opt[cur - 1].price + LZ5_get_price(ctx, opt[cur-1].rep, inr, ctx->off24pos, litlen, 0, 0);
+                LZ5_LOG_PRICE("%d: TRY3 price=%d cur=%d litlen=%d litonly=%d\n", (int)(inr-source), price, cur, litlen, LZ5_get_price(ctx, rep, inr, ctx->off24pos, litlen, 0, 0));
             }
            
             mlen = 1;
@@ -466,25 +469,29 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
 
             if (cur == last_pos) break;
 
-        //           if (opt[cur].mlen > 1)
+
+
+            /* set rep code */
             if (opt[cur].off != -1) {
                 mlen = opt[cur].mlen;
                 offset = opt[cur].off;
                 if (offset < 1) {
                     opt[cur].rep = opt[cur-mlen].rep;
+                    opt[cur].off24pos = opt[cur-mlen].off24pos;
                     LZ5_LOG_PARSER("%d: COPYREP1 cur=%d mlen=%d rep=%d\n", (int)(inr-source), cur, mlen, opt[cur-mlen].rep);
                 } else {
                     opt[cur].rep = (int)offset;
+                    opt[cur].off24pos = (offset >= LZ5_MAX_16BIT_OFFSET) ? inr : opt[cur-mlen].off24pos;
                     LZ5_LOG_PARSER("%d: COPYREP2 cur=%d offset=%d rep=%d\n", (int)(inr-source), cur, offset, opt[cur].rep);
                 }
             } else {
                 opt[cur].rep = opt[cur-1].rep; // copy rep
+                opt[cur].off24pos = opt[cur-1].off24pos;
             }
 
-
+            rep = opt[cur].rep;
             LZ5_LOG_PARSER("%d: CURRENT price[%d/%d]=%d off=%d mlen=%d litlen=%d rep=%d\n", (int)(inr-source), cur, last_pos, opt[cur].price, opt[cur].off, opt[cur].mlen, opt[cur].litlen, opt[cur].rep); 
 
-            // best_mlen = 0;
 
             /* check rep code */
             if (opt[cur].rep >= lz5OptimalMinOffset) {
@@ -497,7 +504,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
                         mlen = LZ5_count_2segments(inr, dictBase + matchIndexLO, matchlimit, dictEnd, lowPrefixPtr);
                     }
                 }
-                if (mlen >= REPMINMATCH && mlen > best_mlen) {
+                if (mlen >= REPMINMATCH/* && mlen > best_mlen*/) {
                     LZ5_LOG_PARSER("%d: try REP rep=%d mlen=%d\n", (int)(inr-source), opt[cur].rep, mlen);   
                     LZ5_LOG_PARSER("%d: Found REP mlen=%d off=%d rep=%d opt[%d].off=%d\n", (int)(inr-source), mlen, 0, opt[cur].rep, cur, opt[cur].off);
 
@@ -520,16 +527,16 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
                             litlen = opt[cur].litlen;
 
                             if (cur != litlen) {
-                                price = opt[cur - litlen].price + LZ5_get_price(ctx, litlen, 0, mlen);
+                                price = opt[cur - litlen].price + LZ5_get_price(ctx, rep, inr, opt[cur].off24pos, litlen, 0, mlen);
                                 LZ5_LOG_PRICE("%d: TRY1 opt[%d].price=%d price=%d cur=%d litlen=%d\n", (int)(inr-source), cur - litlen, opt[cur - litlen].price, price, cur, litlen);
                             } else {
-                                price = LZ5_get_price(ctx, llen + litlen, 0, mlen);
+                                price = LZ5_get_price(ctx, rep, inr, ctx->off24pos, llen + litlen, 0, mlen);
                                 LZ5_LOG_PRICE("%d: TRY2 price=%d cur=%d litlen=%d llen=%d\n", (int)(inr-source), price, cur, litlen, llen);
                             }
                         } else {
                             litlen = 0;
-                            price = opt[cur].price + LZ5_get_price(ctx, litlen, 0, mlen);
-                            LZ5_LOG_PRICE("%d: TRY3 price=%d cur=%d litlen=%d getprice=%d\n", (int)(inr-source), price, cur, litlen, LZ5_get_price(ctx, litlen, 0, mlen - MINMATCH));
+                            price = opt[cur].price + LZ5_get_price(ctx, rep, inr, opt[cur].off24pos, litlen, 0, mlen);
+                            LZ5_LOG_PRICE("%d: TRY3 price=%d cur=%d litlen=%d getprice=%d\n", (int)(inr-source), price, cur, litlen, LZ5_get_price(ctx, rep, inr, opt[cur].off24pos, litlen, 0, mlen - MINMATCH));
                         }
 
                         LZ5_LOG_PARSER("%d: Found REP mlen=%d off=%d price=%d litlen=%d price[%d]=%d\n", (int)(inr-source), mlen, 0, price, litlen, cur - litlen, opt[cur - litlen].price);
@@ -585,12 +592,12 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
                         litlen = opt[cur2].litlen;
 
                         if (cur2 != litlen)
-                            price = opt[cur2 - litlen].price + LZ5_get_price(ctx, litlen, matches[i].off, mlen);
+                            price = opt[cur2 - litlen].price + LZ5_get_price(ctx, rep, inr, opt[cur2].off24pos, litlen, matches[i].off, mlen);
                         else
-                            price = LZ5_get_price(ctx, llen + litlen, matches[i].off, mlen);
+                            price = LZ5_get_price(ctx, rep, inr, ctx->off24pos, llen + litlen, matches[i].off, mlen);
                     } else {
                         litlen = 0;
-                        price = opt[cur2].price + LZ5_get_price(ctx, litlen, matches[i].off, mlen);
+                        price = opt[cur2].price + LZ5_get_price(ctx, rep, inr, opt[cur2].off24pos, litlen, matches[i].off, mlen);
                     }
 
                     LZ5_LOG_PARSER("%d: Found2 pred=%d mlen=%d best_mlen=%d off=%d price=%d litlen=%d price[%d]=%d\n", (int)(inr-source), matches[i].back, mlen, best_mlen, matches[i].off, price, litlen, cur - litlen, opt[cur - litlen].price);
