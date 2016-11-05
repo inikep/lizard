@@ -163,7 +163,6 @@ static int usage_advanced(void)
     DISPLAY( "--content-size : compressed frame includes original size (default:not present)\n");
     DISPLAY( "--[no-]sparse  : sparse mode (default:enabled on file, disabled on stdout)\n");
     DISPLAY( "Benchmark arguments :\n");
-    DISPLAY( "Benchmark arguments :\n");
     DISPLAY( " -b#    : benchmark file(s), using # compression level (default : 1) \n");
     DISPLAY( " -e#    : test all compression levels from -bX to # (default: 1)\n");
     DISPLAY( " -i#    : iteration loops [1-9](default : 3), benchmark mode only\n");
@@ -253,7 +252,7 @@ static unsigned readU32FromChar(const char** stringPtr)
 int main(int argc, const char** argv)
 {
     int i,
-        huffType = LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS, // + LZ5_FLAG_OFF16LEN + LZ5_FLAG_OFF24LEN;
+        huffType = LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS, // + LZ5_FLAG_OFFSET16 + LZ5_FLAG_OFFSET24;
         cLevel=0,
         cLevelLast=0,
         decode=0,

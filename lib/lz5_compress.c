@@ -207,11 +207,11 @@ int LZ5_writeBlock(LZ5_stream_t* ctx, const BYTE* ip, uint32_t inputSize, BYTE**
     res = LZ5_writeStream(0, ctx, ctx->lenBase, lenLen, op, oend);
     if (res < 0) goto _output_error; else *start += (BYTE)(res*LZ5_FLAG_LEN);
 
-    res = LZ5_writeStream(ctx->huffType&LZ5_FLAG_OFF16LEN, ctx, ctx->offset16Base, offset16Len, op, oend);
-    if (res < 0) goto _output_error; else *start += (BYTE)(res*LZ5_FLAG_OFF16LEN);
+    res = LZ5_writeStream(ctx->huffType&LZ5_FLAG_OFFSET16, ctx, ctx->offset16Base, offset16Len, op, oend);
+    if (res < 0) goto _output_error; else *start += (BYTE)(res*LZ5_FLAG_OFFSET16);
 
-    res = LZ5_writeStream(ctx->huffType&LZ5_FLAG_OFF24LEN, ctx, ctx->offset24Base, offset24Len, op, oend);
-    if (res < 0) goto _output_error; else *start += (BYTE)(res*LZ5_FLAG_OFF24LEN);
+    res = LZ5_writeStream(ctx->huffType&LZ5_FLAG_OFFSET24, ctx, ctx->offset24Base, offset24Len, op, oend);
+    if (res < 0) goto _output_error; else *start += (BYTE)(res*LZ5_FLAG_OFFSET24);
 
     res = LZ5_writeStream(ctx->huffType&LZ5_FLAG_FLAGS, ctx, ctx->flagsBase, flagsLen, op, oend);
     if (res < 0) goto _output_error; else *start += (BYTE)(res*LZ5_FLAG_FLAGS);
@@ -364,7 +364,7 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel, int huffTy
     ctx->chainTableSize = chainTableSize;
     ctx->params = params;
     ctx->compressionLevel = (unsigned)compressionLevel;
-    ctx->huffType = huffType; //LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS + LZ5_FLAG_OFF16LEN + LZ5_FLAG_OFF24LEN;
+    ctx->huffType = huffType; //LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS + LZ5_FLAG_OFFSET16 + LZ5_FLAG_OFFSET24;
 #ifndef LZ5_USE_HUFFMAN
     ctx->huffType = 0;
 #endif

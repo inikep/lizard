@@ -192,10 +192,10 @@ FORCE_INLINE int LZ5_decompress_generic(
             const BYTE* ipos;
             size_t comprFlagsLen, comprLiteralsLen, total;
 #endif
-            streamLen = LZ5_readStream(res&LZ5_FLAG_OFF16LEN, &ip, iend, decompOff16Base, decompOff16Base + LZ5_HUF_BLOCK_SIZE, &ctx.offset16Ptr, &ctx.offset16End);
+            streamLen = LZ5_readStream(res&LZ5_FLAG_OFFSET16, &ip, iend, decompOff16Base, decompOff16Base + LZ5_HUF_BLOCK_SIZE, &ctx.offset16Ptr, &ctx.offset16End);
             if (streamLen == 0) goto _output_error;
 
-            streamLen = LZ5_readStream(res&LZ5_FLAG_OFF24LEN, &ip, iend, decompOff24Base, decompOff24Base + LZ5_HUF_BLOCK_SIZE, &ctx.offset24Ptr, &ctx.offset24End);
+            streamLen = LZ5_readStream(res&LZ5_FLAG_OFFSET24, &ip, iend, decompOff24Base, decompOff24Base + LZ5_HUF_BLOCK_SIZE, &ctx.offset24Ptr, &ctx.offset24End);
             if (streamLen == 0) goto _output_error;
 
 #ifdef LZ5_USE_LOGS

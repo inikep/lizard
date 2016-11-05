@@ -109,8 +109,8 @@ extern "C" {
 /* header byte */
 #define LZ5_FLAG_LITERALS       1
 #define LZ5_FLAG_FLAGS          2
-#define LZ5_FLAG_OFF16LEN       4
-#define LZ5_FLAG_OFF24LEN       8
+#define LZ5_FLAG_OFFSET16       4
+#define LZ5_FLAG_OFFSET24       8
 #define LZ5_FLAG_LEN            16
 #define LZ5_FLAG_UNCOMPRESSED   128
 
