@@ -1,7 +1,7 @@
 #define LZ5_LOWESTPRICE_MIN_OFFSET 8
 
 
-FORCE_INLINE size_t LZ5_more_profitable(LZ5_stream_t* const ctx, const BYTE *ip, size_t best_off, size_t best_common, size_t off, size_t common, size_t literals, size_t last_off)
+FORCE_INLINE size_t LZ5_more_profitable(LZ5_stream_t* const ctx, const BYTE *ip, size_t best_off, size_t best_common, size_t off, size_t common, size_t literals, int last_off)
 {
     size_t sum;
 
@@ -10,17 +10,17 @@ FORCE_INLINE size_t LZ5_more_profitable(LZ5_stream_t* const ctx, const BYTE *ip,
     else
         sum = MAX(common, best_common - literals);
 
-    if (off == last_off) off = 0; // rep code
-    if (best_off == last_off) best_off = 0;
+    if ((int)off == last_off) off = 0; // rep code
+    if ((int)best_off == last_off) best_off = 0;
 
     return LZ5_get_price_LZ5v2(ctx, last_off, ip, ctx->off24pos, sum - common, (U32)off, common) <= LZ5_get_price_LZ5v2(ctx, last_off, ip, ctx->off24pos, sum - best_common, (U32)best_off, best_common);
 } 
 
 
-FORCE_INLINE size_t LZ5_better_price(LZ5_stream_t* const ctx, const BYTE *ip, size_t best_off, size_t best_common, size_t off, size_t common, size_t last_off)
+FORCE_INLINE size_t LZ5_better_price(LZ5_stream_t* const ctx, const BYTE *ip, size_t best_off, size_t best_common, size_t off, size_t common, int last_off)
 {
-    if (best_off == last_off) best_off = 0;
-    if (off == last_off) off = 0; // rep code
+    if ((int)best_off == last_off) best_off = 0;
+    if ((int)off == last_off) off = 0; // rep code
 
     return LZ5_get_price_LZ5v2(ctx, last_off, ip, ctx->off24pos, 0, (U32)off, common) < LZ5_get_price_LZ5v2(ctx, last_off, ip, ctx->off24pos, common - best_common, (U32)best_off, best_common);
 }
