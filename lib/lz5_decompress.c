@@ -101,7 +101,7 @@ FORCE_INLINE size_t LZ5_readStream(int flag, const BYTE** ip, const BYTE* const 
 #endif
         return 1;
 #else
-        LZ5_LOG_DECOMPRESS("compiled without LZ5_USE_HUFFMAN\n");
+        fprintf(stderr, "compiled without LZ5_USE_HUFFMAN\n");
         (void)op; (void)oend;
         return 0;
 #endif

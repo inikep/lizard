@@ -260,7 +260,10 @@ test-lz5-basic: lz5 datagen
 
 test-lz5: lz5 datagen test-lz5-basic test-lz5-multiple test-lz5-sparse test-lz5-contentSize test-lz5-frame-concatenation
 	@echo "\n ---- test pass-through ----"
-	./datagen | ./lz5 -tf
+	./datagen | ./lz5 -t             && false || true
+	./datagen | ./lz5 -tf            && false || true
+	./datagen | ./lz5 -d  > $(VOID)  && false || true
+	./datagen | ./lz5 -df > $(VOID)
 
 test-interop-32-64: lz5 lz5c32 datagen
 	@echo "\n ---- test interoperability 32-bits -vs- 64 bits ----"

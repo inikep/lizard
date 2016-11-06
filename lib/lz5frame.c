@@ -116,7 +116,7 @@ static void LZ5F_writeLE64 (BYTE* dstPtr, U64 value64)
 #define LZ5F_MAGIC_SKIPPABLE_START  0x184D2A50U
 #define LZ5F_MAGICNUMBER            0x184D2206U
 #define LZ5F_BLOCKUNCOMPRESSED_FLAG 0x80000000U
-#define LZ5F_BLOCKSIZEID_DEFAULT LZ5F_max4MB
+#define LZ5F_BLOCKSIZEID_DEFAULT LZ5F_max128KB
 
 static const size_t minFHSize = 7;
 static const size_t maxFHSize = 15;
