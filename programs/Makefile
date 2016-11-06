@@ -110,13 +110,13 @@ fullbench  : $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5fr
 fullbench32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash/xxhash.c fullbench.c
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
-fuzzer  : $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/xxhash/xxhash.o fuzzer.c
+fuzzer  : $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress_huf.o $(LZ5DIR)/xxhash/xxhash.o fuzzer.c $(ENTROPY_FILES)
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
 fuzzer32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/xxhash/xxhash.c fuzzer.c
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
-frametest: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/xxhash/xxhash.o frametest.c
+frametest: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/lz5_compress_huf.o $(LZ5DIR)/xxhash/xxhash.o frametest.c $(ENTROPY_FILES)
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
 frametest32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/xxhash/xxhash.c frametest.c

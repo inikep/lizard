@@ -330,7 +330,7 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
         U32 testNb = 0;
         char* dict;
         char* block;
-        int dictSize, blockSize, blockStart, compressedSize, HCcompressedSize;
+        int huffType, dictSize, blockSize, blockStart, compressedSize, HCcompressedSize;
         int blockContinueCompressedSize;
 
         FUZ_displayUpdate(cycleNb);
@@ -341,6 +341,7 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
         blockSize  = (FUZ_rand(&randState) % (FUZ_MAX_BLOCK_SIZE-1)) + 1;
         blockStart = FUZ_rand(&randState) % (COMPRESSIBLE_NOISE_LENGTH - blockSize);
         dictSize   = FUZ_rand(&randState) % FUZ_MAX_DICT_SIZE;
+        huffType   = (FUZ_rand(&randState) % 2) * 3;
         if (dictSize > blockStart) dictSize = blockStart;
         block = ((char*)CNBuffer) + blockStart;
         dict = block - dictSize;
@@ -349,7 +350,7 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
 
         /* Test compression HC */
         FUZ_DISPLAYTEST;
-        ret = LZ5_compress(block, compressedBuffer, blockSize, LZ5_compressBound(blockSize), 0);
+        ret = LZ5_compress_Huf(block, compressedBuffer, blockSize, LZ5_compressBound(blockSize), 0, huffType);
         FUZ_CHECKTEST(ret==0, "LZ5_compress() failed");
         HCcompressedSize = ret;
 
@@ -449,7 +450,7 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
 
         /* Test HC compression with output size being exactly what's necessary (should work) */
         FUZ_DISPLAYTEST;
-        ret = LZ5_compress(block, compressedBuffer, blockSize, HCcompressedSize, 0);
+        ret = LZ5_compress_Huf(block, compressedBuffer, blockSize, HCcompressedSize, 0, huffType);
         FUZ_CHECKTEST(ret==0, "LZ5_compress() (limitedOutput) failed despite sufficient space");
 
         /* Test HC compression with output size being exactly what's necessary (should work) */
@@ -474,7 +475,7 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
             if (missingBytes >= HCcompressedSize) missingBytes = HCcompressedSize-1;
             missingBytes += !missingBytes;   /* avoid special case missingBytes==0 */
             compressedBuffer[HCcompressedSize-missingBytes] = 0;
-            ret = LZ5_compress(block, compressedBuffer, blockSize, HCcompressedSize-missingBytes, 0);
+            ret = LZ5_compress_Huf(block, compressedBuffer, blockSize, HCcompressedSize-missingBytes, 0, huffType);
             FUZ_CHECKTEST(ret, "LZ5_compress(limitedOutput) should have failed (output buffer too small by %i byte)", missingBytes);
             FUZ_CHECKTEST(compressedBuffer[HCcompressedSize-missingBytes], "LZ5_compress overran output buffer ! (%i missingBytes)", missingBytes)
         }
