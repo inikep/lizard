@@ -135,8 +135,7 @@ static int usage(void)
     DISPLAY( "input   : a filename\n");
     DISPLAY( "          with no FILE, or when FILE is - or %s, read standard input\n", stdinmark);
     DISPLAY( "Arguments :\n");
-    DISPLAY( " -0       : Fast compression (default) \n");
-    DISPLAY( " -1...-%d : High compression; higher number == more compression but slower\n", LZ5_MAX_CLEVEL);
+    DISPLAY( " -1...-%d : compression level; higher number == more compression but slower\n", LZ5_MAX_CLEVEL);
     DISPLAY( " -d     : decompression (default for %s extension)\n", LZ5_EXTENSION);
     DISPLAY( " -z     : force compression\n");
     DISPLAY( " -f     : overwrite output without prompting \n");
@@ -165,8 +164,8 @@ static int usage_advanced(void)
     DISPLAY( "Benchmark arguments :\n");
     DISPLAY( " -b#    : benchmark file(s), using # compression level (default : 1) \n");
     DISPLAY( " -e#    : test all compression levels from -bX to # (default: 1)\n");
-    DISPLAY( " -i#    : iteration loops [1-9](default : 3), benchmark mode only\n");
-    DISPLAY( " -l#    : use Huffman compressions of streams (1=literals, 2=flags, 4=off16, 8=off24)\n");
+    DISPLAY( " -i#    : minimum evaluation time in seconds (default : 3s)\n");
+ //   DISPLAY( " -l#    : use Huffman compressions of streams (1=literals, 2=flags, 4=off16, 8=off24)\n");
     EXTENDED_HELP;
     return 0;
 }
@@ -193,8 +192,7 @@ static int usage_longhelp(void)
     DISPLAY( "\n");
     DISPLAY( "Compression levels : \n");
     DISPLAY( "---------------------\n");
-    DISPLAY( "-0 => Fast compression\n");
-    DISPLAY( "-1 ... -%d => High compression; higher number == more compression but slower\n", LZ5_MAX_CLEVEL);
+    DISPLAY( "-1 ... -%d => higher number == more compression but slower\n", LZ5_MAX_CLEVEL);
     DISPLAY( "\n");
     DISPLAY( "stdin, stdout and the console : \n");
     DISPLAY( "--------------------------------\n");
@@ -291,7 +289,7 @@ int main(int argc, const char** argv)
         if ((!strcmp(argument, "--decompress"))
          || (!strcmp(argument, "--uncompress"))) { decode = 1; continue; }
         if (!strcmp(argument,  "--multiple")) { multiple_inputs = 1; if (inFileNames==NULL) inFileNames = (const char**)malloc(argc * sizeof(char*)); continue; }
-        if (!strcmp(argument,  "--test")) { decode = 1; LZ5IO_setOverwrite(1); output_filename=nulmark; continue; }
+        if (!strcmp(argument,  "--test")) { decode = 1; LZ5IO_setTestMode(1); output_filename=nulmark; continue; }
         if (!strcmp(argument,  "--force")) { LZ5IO_setOverwrite(1); continue; }
         if (!strcmp(argument,  "--no-force")) { LZ5IO_setOverwrite(0); continue; }
         if ((!strcmp(argument, "--stdout"))
@@ -354,7 +352,7 @@ int main(int argc, const char** argv)
                 case 'c': forceStdout=1; output_filename=stdoutmark; displayLevel=1; break;
 
                     /* Test integrity */
-                case 't': decode=1; LZ5IO_setOverwrite(1); output_filename=nulmark; break;
+                case 't': decode=1; LZ5IO_setTestMode(1); output_filename=nulmark; break;
 
                     /* Overwrite */
                 case 'f': LZ5IO_setOverwrite(1); break;
