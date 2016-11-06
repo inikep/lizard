@@ -132,6 +132,7 @@ static clock_t g_time = 0;
 *  Local Parameters
 **************************************/
 static int g_overwrite = 1;
+static int g_testMode = 0;
 static int g_blockSizeId = LZ5IO_BLOCKSIZEID_DEFAULT;
 static int g_blockChecksum = 0;
 static int g_streamChecksum = 1;
@@ -176,6 +177,12 @@ int LZ5IO_setOverwrite(int yes)
 {
    g_overwrite = (yes!=0);
    return g_overwrite;
+}/* Default setting : testMode = 0; return : testMode (0/1) */
+
+int LZ5IO_setTestMode(int yes)
+{
+   g_testMode = (yes!=0);
+   return g_testMode;
 }
 
 /* blockSizeID : valid values : 1-7 */
@@ -186,6 +193,18 @@ int LZ5IO_setBlockSizeID(int bsid)
     g_blockSizeId = bsid;
     return blockSizeTable[g_blockSizeId-minBlockSizeID];
 } 
+
+//static int LZ5IO_GetBlockSize_FromBlockId (int id) { return (1 << (8 + (2 * id))); }
+static size_t LZ5IO_GetBlockSize_FromBlockId(unsigned blockSizeID)
+{
+    static const size_t blockSizes[7] = { 128 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
+
+    if (blockSizeID == 0) blockSizeID = LZ5IO_BLOCKSIZEID_DEFAULT;
+    blockSizeID -= 1;
+    if (blockSizeID >= 7) blockSizeID = LZ5IO_BLOCKSIZEID_DEFAULT;
+
+    return blockSizes[blockSizeID];
+}
 
 int LZ5IO_setBlockMode(LZ5IO_blockMode_t blockMode)
 {
@@ -254,10 +273,7 @@ static unsigned long long LZ5IO_GetFileSize(const char* infilename)
 ** ********************** LZ5 File / Pipe compression ********************* **
 ** ************************************************************************ */
 
-static int LZ5IO_GetBlockSize_FromBlockId (int id) { return (1 << (14 + (2 * id))); }
-//static int LZ5IO_GetBlockSize_FromBlockId (int id) { return (1 << (8 + (2 * id))); }
 static int LZ5IO_isSkippableMagicNumber(unsigned int magic) { return (magic & LZ5IO_SKIPPABLEMASK) == LZ5IO_SKIPPABLE0; }
-
 
 static int LZ5IO_getFiles(const char* input_filename, const char* output_filename, FILE** pfinput, FILE** pfoutput)
 {
@@ -294,7 +310,7 @@ static int LZ5IO_getFiles(const char* input_filename, const char* output_filenam
     {
         /* Check if destination file already exists */
         *pfoutput=0;
-        if (output_filename != nulmark) *pfoutput = fopen( output_filename, "rb" );
+        if (strcmp(output_filename, nulmark)) *pfoutput = fopen( output_filename, "rb" );
         if (*pfoutput!=0)
         {
             fclose(*pfoutput);
@@ -809,7 +825,7 @@ static unsigned long long selectDecoder(dRess_t ress, FILE* finput, FILE* foutpu
     default:
         if (nbCalls == 1)   /* just started */
         {
-            if (g_overwrite)
+            if (!g_testMode && g_overwrite)
                 return LZ5IO_passThrough(finput, foutput, MNstore);
             EXM_THROW(44,"Unrecognized header : file cannot be decoded");   /* Wrong magic number at the beginning of 1st stream */
         }
