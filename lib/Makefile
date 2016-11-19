@@ -40,12 +40,15 @@ LIBVER_MINOR := $(shell echo $(LIBVER_MINOR_SCRIPT))
 LIBVER_PATCH := $(shell echo $(LIBVER_PATCH_SCRIPT))
 LIBVER := $(shell echo $(LIBVER_SCRIPT))
 
+BUILD_STATIC:= yes
 
 DESTDIR?=
 PREFIX ?= /usr/local
 CPPFLAGS= -DXXH_NAMESPACE=LZ5_
 CFLAGS ?= -O3
-CFLAGS += -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes
+CFLAGS += -Wall -Wextra -Wcast-qual -Wcast-align -Wshadow \
+          -Wswitch-enum -Wdeclaration-after-statement -Wstrict-prototypes -Wundef \
+          -Wpointer-arith -Wstrict-aliasing=1
 CFLAGS  += $(MOREFLAGS) 
 FLAGS   = $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)
 
@@ -67,22 +70,33 @@ else
 	SHARED_EXT_VER = $(SHARED_EXT).$(LIBVER)
 endif
 
-default: liblz5
+default: lib
 
-all: liblz5
+all: lib
 
-liblz5: *.c xxhash/*.c
+lib: liblz5.a liblz5
+
+liblz5.a: *.c xxhash/*.c entropy/*.c
+ifeq ($(BUILD_STATIC),yes)
 	@echo compiling static library
 	@$(CC) $(FLAGS) -c $^
-	@$(AR) rcs $@.a *.o
+	@$(AR) rcs $@ *.o
+endif
+
+liblz5: *.c xxhash/*.c entropy/*.c
 	@echo compiling dynamic library $(LIBVER)
+ifneq (,$(filter Windows%,$(OS)))
+	@$(CC) $(FLAGS) -DLZ5_DLL_EXPORT=1 -shared $^ -o dll\$@.dll
+	dlltool -D dll\liblz5.dll -d dll\liblz5.def -l dll\liblz5.lib
+else
 	@$(CC) $(FLAGS) -shared $^ -fPIC $(SONAME_FLAGS) -o $@.$(SHARED_EXT_VER)
 	@echo creating versioned links
 	@ln -sf $@.$(SHARED_EXT_VER) $@.$(SHARED_EXT_MAJOR)
 	@ln -sf $@.$(SHARED_EXT_VER) $@.$(SHARED_EXT)
+endif
 
 clean:
-	@rm -f core entropy/*.o xxhash/*.o *.o *.a *.$(SHARED_EXT) *.$(SHARED_EXT).* liblz5.pc
+	@rm -f core entropy/*.o xxhash/*.o *.o *.a *.$(SHARED_EXT) *.$(SHARED_EXT).* liblz5.pc dll/liblz5.dll dll/liblz5.lib
 	@echo Cleaning library completed
 
 
