@@ -246,7 +246,6 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
     if (best_mlen < MINMATCH-1) best_mlen = MINMATCH-1;
 
     while ((matchIndex < current) && (matchIndex >= lowLimit) && (nbAttempts)) {
-        mlt = 0;
         nbAttempts--;
         if (matchIndex >= dictLimit) {
             match = base + matchIndex;

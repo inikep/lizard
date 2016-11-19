@@ -364,6 +364,7 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel)
     ctx->chainTableSize = chainTableSize;
     ctx->params = params;
     ctx->compressionLevel = (unsigned)compressionLevel;
+    ctx->huffType = 0; //huffType; //LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS + LZ5_FLAG_OFFSET16 + LZ5_FLAG_OFFSET24;
 
     ctx->literalsBase = (BYTE*)ctx->hashTable + ctx->hashTableSize + ctx->chainTableSize;
     ctx->flagsBase    = ctx->literalsEnd = ctx->literalsBase + LZ5_BLOCK_SIZE_PAD;
