@@ -66,7 +66,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
 
         /* Copy Literals */
         LZ5_wildCopy(ctx->literalsPtr, *anchor, (ctx->literalsPtr) + length);
-#ifdef LZ5_USE_HUFFMAN
+#ifndef LZ5_NO_HUFFMAN
         if (ctx->huffType) { 
             ctx->litSum += (U32)length;
             ctx->litPriceSum += (U32)(length * ctx->log2LitSum);
@@ -83,7 +83,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
         if (offset >= LZ5_MAX_16BIT_OFFSET) {
             COMPLOG_CODEWORDS_LZ5v2("T32+ literal=%u match=%u offset=%d\n", (U32)length, 0, 0);
             *token+=(1<<ML_RUN_BITS);
-#ifdef LZ5_USE_HUFFMAN
+#ifndef LZ5_NO_HUFFMAN
             if (ctx->huffType) { 
                 ctx->flagFreq[*token]++;
                 ctx->flagSum++;
@@ -148,7 +148,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
         else *token += (BYTE)(length<<RUN_BITS_LZ5v2);
     }
 
-#ifdef LZ5_USE_HUFFMAN
+#ifndef LZ5_NO_HUFFMAN
     if (ctx->huffType) { 
         ctx->flagFreq[*token]++;
         ctx->flagSum++;
@@ -186,7 +186,7 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
 {
     size_t price = 0;
     BYTE token = 0;
-#ifdef LZ5_USE_HUFFMAN
+#ifndef LZ5_NO_HUFFMAN
     const BYTE* literals = ip - litLength;
     U32 u;
     if ((ctx->huffType) && (ctx->params.parserType != LZ5_parser_lowestPrice)) {

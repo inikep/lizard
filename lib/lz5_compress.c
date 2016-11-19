@@ -142,7 +142,7 @@ void LZ5_initBlock(LZ5_stream_t* ctx)
 FORCE_INLINE int LZ5_writeStream(int useHuff, LZ5_stream_t* ctx, BYTE* streamPtr, uint32_t streamLen, BYTE** op, BYTE* oend)
 {
     if (useHuff && streamLen > 1024) {
-#ifdef LZ5_USE_HUFFMAN
+#ifndef LZ5_NO_HUFFMAN
         int useHuffBuf;
         if (*op + 6 > oend) { LZ5_LOG_COMPRESS("*op[%p] + 6 > oend[%p]\n", *op, oend); return -1; }
 
@@ -168,7 +168,7 @@ FORCE_INLINE int LZ5_writeStream(int useHuff, LZ5_stream_t* ctx, BYTE* streamPtr
             } else { LZ5_LOG_COMPRESS("HUF_compress ERROR comprStreamLen=%d streamLen=%d\n", (int)ctx->comprStreamLen, (int)streamLen); }
         } else { LZ5_LOG_COMPRESS("HUF_compress ERROR %d: %s\n", (int)ctx->comprStreamLen, HUF_getErrorName(ctx->comprStreamLen)); }
 #else
-        LZ5_LOG_COMPRESS("compiled without LZ5_USE_HUFFMAN\n");
+        LZ5_LOG_COMPRESS("compiled with LZ5_NO_HUFFMAN\n");
         (void)ctx;
         return -1; 
 #endif

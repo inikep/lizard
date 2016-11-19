@@ -84,7 +84,7 @@ extern "C" {
 #define MM_LONGOFF              16
 #define LZ5_BLOCK_SIZE_PAD      (LZ5_BLOCK_SIZE+32)
 #define LZ5_COMPRESS_ADD_BUF    (5*LZ5_BLOCK_SIZE_PAD)
-#ifdef LZ5_USE_HUFFMAN
+#ifndef LZ5_NO_HUFFMAN
     #define LZ5_COMPRESS_ADD_HUF    HUF_compressBound(LZ5_BLOCK_SIZE_PAD)
     #define LZ5_HUF_BLOCK_SIZE      LZ5_BLOCK_SIZE
 #else
