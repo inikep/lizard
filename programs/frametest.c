@@ -603,7 +603,7 @@ int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressi
         prefs.frameInfo.contentSize = frameContentSize;
         prefs.autoFlush = autoflush;
         prefs.huffType = (FUZ_rand(&randState) % 2) * 3;
-        prefs.compressionLevel = FUZ_rand(&randState) % LZ5_MAX_CLEVEL;
+        prefs.compressionLevel = LZ5_MIN_CLEVEL + (FUZ_rand(seed) % (1+LZ5_MAX_CLEVEL-LZ5_MIN_CLEVEL));
         if ((FUZ_rand(&randState) & 0x1F) == 1) prefsPtr = NULL;
 
         DISPLAYUPDATE(2, "\r%5u   ", testNb);

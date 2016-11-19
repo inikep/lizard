@@ -184,7 +184,7 @@ static int FUZ_AddressOverflow(U32* seed)
             char* const input = buffers[nbBuff-1];
             char* output = buffers[nbBuff];
             int r;
-            BYTE cLevel = FUZ_rand(seed) % LZ5_MAX_CLEVEL;
+            BYTE cLevel = LZ5_MIN_CLEVEL + (FUZ_rand(seed) % (1+LZ5_MAX_CLEVEL-LZ5_MIN_CLEVEL));
             for(i = 5; i < nbOf255; i++) input[i] = (char)0xff;
             for(i = 5; i < nbOf255; i+=(FUZ_rand(seed) % 128)) input[i] = (BYTE)(FUZ_rand(seed)%256);
 

@@ -135,7 +135,11 @@ static int usage(void)
     DISPLAY( "input   : a filename\n");
     DISPLAY( "          with no FILE, or when FILE is - or %s, read standard input\n", stdinmark);
     DISPLAY( "Arguments :\n");
-    DISPLAY( " -1...-%d : compression level; higher number == more compression but slower\n", LZ5_MAX_CLEVEL);
+    DISPLAY( " -10...-19 : compression method fastLZ4 = 16-bit bytewise codewords\n");
+    DISPLAY( "             higher number == more compression but slower\n");
+    DISPLAY( " -20...-29 : compression method LZ5v2 = 24-bit bytewise codewords\n");
+    DISPLAY( " -30...-39 : compression method fastLZ4 + Huffman\n");
+    DISPLAY( " -40...-49 : compression method LZ5v2 + Huffman\n");
     DISPLAY( " -d     : decompression (default for %s extension)\n", LZ5_EXTENSION);
     DISPLAY( " -z     : force compression\n");
     DISPLAY( " -f     : overwrite output without prompting \n");
@@ -189,10 +193,6 @@ static int usage_longhelp(void)
     DISPLAY( "               + for compression, output to filename%s \n", LZ5_EXTENSION);
     DISPLAY( "               + for decompression, output to filename without '%s'\n", LZ5_EXTENSION);
     DISPLAY( "                    > if input filename has no '%s' extension : error \n", LZ5_EXTENSION);
-    DISPLAY( "\n");
-    DISPLAY( "Compression levels : \n");
-    DISPLAY( "---------------------\n");
-    DISPLAY( "-1 ... -%d => higher number == more compression but slower\n", LZ5_MAX_CLEVEL);
     DISPLAY( "\n");
     DISPLAY( "stdin, stdout and the console : \n");
     DISPLAY( "--------------------------------\n");

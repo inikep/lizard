@@ -304,7 +304,7 @@ int LZ5_verifyCompressionLevel(int compressionLevel)
     (void)LZ5_hashPtr;
     (void)LZ5_wildCopy16;
     if (compressionLevel > LZ5_MAX_CLEVEL) compressionLevel = LZ5_MAX_CLEVEL;
-    if (compressionLevel < 1) compressionLevel = LZ5_DEFAULT_CLEVEL;
+    if (compressionLevel < LZ5_MIN_CLEVEL) compressionLevel = LZ5_DEFAULT_CLEVEL;
     return compressionLevel;
 }
 
@@ -315,7 +315,7 @@ int LZ5_sizeofState(int compressionLevel)
     U32 hashTableSize, chainTableSize;
 
     compressionLevel = LZ5_verifyCompressionLevel(compressionLevel);
-    params = LZ5_defaultParameters[compressionLevel];
+    params = LZ5_defaultParameters[compressionLevel - LZ5_MIN_CLEVEL];
     hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog3)+((size_t)1 << params.hashLog)));
     chainTableSize = (U32)(sizeof(U32)*((size_t)1 << params.contentLog));
 
@@ -346,7 +346,7 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel, int huffTy
     U32 hashTableSize, chainTableSize;
 
     compressionLevel = LZ5_verifyCompressionLevel(compressionLevel);
-    params = LZ5_defaultParameters[compressionLevel];
+    params = LZ5_defaultParameters[compressionLevel - LZ5_MIN_CLEVEL];
     hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog3)+((size_t)1 << params.hashLog)));
     chainTableSize = (U32)(sizeof(U32)*((size_t)1 << params.contentLog));
     
