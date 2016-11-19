@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{00000000-3E71-41B3-BF68-4A7BDD8A5476}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>liblz5</RootNamespace>
+    <RootNamespace>liblz5-dll</RootNamespace>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin\obj\$(RootNamespace)_$(Platform)_$(Configuration)\</IntDir>
   </PropertyGroup>

@@ -14,17 +14,15 @@ environment:
     CONFIGURATION: "Release"
     PLATFORM: "Win32"
   - COMPILER: "gcc"
-    MAKE_PARAMS: "-C programs lz5 fullbench"
     PLATFORM: "mingw64"
   - COMPILER: "gcc"
-    MAKE_PARAMS: "-C programs lz5 fullbench"
     PLATFORM: "mingw32"
   - COMPILER: "gcc"
-    MAKE_PARAMS: '-C programs lz5 fullbench CC=clang MOREFLAGS="--target=x86_64-w64-mingw32 -Werror -Wconversion -Wno-sign-conversion"'
     PLATFORM: "clang"
 
 install:
   - ECHO Installing %COMPILER% %PLATFORM% %CONFIGURATION%
+  - MKDIR bin
   - if [%COMPILER%]==[gcc] SET PATH_ORIGINAL=%PATH%
   - if [%COMPILER%]==[gcc] (
       SET "PATH_MINGW32=c:\MinGW\bin;c:\MinGW\usr\bin" &&
@@ -36,9 +34,9 @@ install:
     )
 
 build_script:
-  - if [%PLATFORM%]==[mingw32] SET PATH=%PATH_MINGW32%;%PATH_ORIGINAL% 
-  - if [%PLATFORM%]==[mingw64] SET PATH=%PATH_MINGW64%;%PATH_ORIGINAL% 
-  - if [%PLATFORM%]==[clang] SET PATH=%PATH_MINGW64%;%PATH_ORIGINAL% 
+  - if [%PLATFORM%]==[mingw32] SET PATH=%PATH_MINGW32%;%PATH_ORIGINAL%
+  - if [%PLATFORM%]==[mingw64] SET PATH=%PATH_MINGW64%;%PATH_ORIGINAL%
+  - if [%PLATFORM%]==[clang] SET PATH=%PATH_MINGW64%;%PATH_ORIGINAL%
   - ECHO *** &&
       ECHO Building %COMPILER% %PLATFORM% %CONFIGURATION% &&
       ECHO ***
@@ -48,9 +46,39 @@ build_script:
       echo ----- &&
       make -v &&
       echo ----- &&
-      ECHO make -%MAKE_PARAMS%- &&
-      make %MAKE_PARAMS%
-    ) ELSE (
+      if not [%PLATFORM%]==[clang] (
+        make -C programs lz5 && make -C tests fullbench && make -C lib lib
+      ) ELSE (
+        make -C programs lz5 CC=clang MOREFLAGS="--target=x86_64-w64-mingw32 -Werror -Wconversion -Wno-sign-conversion" &&
+        make -C tests fullbench CC=clang MOREFLAGS="--target=x86_64-w64-mingw32 -Werror -Wconversion -Wno-sign-conversion" &&
+        make -C lib lib CC=clang MOREFLAGS="--target=x86_64-w64-mingw32 -Werror -Wconversion -Wno-sign-conversion"
+      )
+    )
+  - if [%COMPILER%]==[gcc] if not [%PLATFORM%]==[clang] (
+      MKDIR bin\dll bin\static bin\example bin\include &&
+      COPY tests\fullbench.c bin\example\ &&
+      COPY lib\xxhash.c bin\example\ &&
+      COPY lib\xxhash.h bin\example\ &&
+      COPY lib\lz5.h bin\include\ &&
+      COPY lib\lz5hc.h bin\include\ &&
+      COPY lib\lz5frame.h bin\include\ &&
+      COPY lib\liblz5.a bin\static\liblz5_static.lib &&
+      COPY lib\dll\liblz5.* bin\dll\ &&
+      COPY lib\dll\example\Makefile bin\example\ &&
+      COPY lib\dll\example\fullbench-dll.* bin\example\ &&
+      COPY lib\dll\example\README.md bin\ &&
+      COPY programs\lz5.exe bin\lz5.exe
+    )
+  - if [%COMPILER%]==[gcc] if [%PLATFORM%]==[mingw64] (
+      7z.exe a bin\lz5_x64.zip NEWS .\bin\lz5.exe .\bin\README.md .\bin\example .\bin\dll .\bin\static .\bin\include &&
+      appveyor PushArtifact bin\lz5_x64.zip
+    )
+  - if [%COMPILER%]==[gcc] if [%PLATFORM%]==[mingw32] (
+      7z.exe a bin\lz5_x86.zip NEWS .\bin\lz5.exe .\bin\README.md .\bin\example .\bin\dll .\bin\static .\bin\include &&
+      appveyor PushArtifact bin\lz5_x86.zip
+    )
+  - if [%COMPILER%]==[gcc] (COPY tests\fullbench.exe programs\)
+  - if [%COMPILER%]==[visual] (
       ECHO *** &&
       ECHO *** Building Visual Studio 2010 %PLATFORM%\%CONFIGURATION% &&
       ECHO *** &&
@@ -67,7 +95,7 @@ build_script:
       ECHO *** Building Visual Studio 2015 %PLATFORM%\%CONFIGURATION% &&
       ECHO *** &&
       msbuild "visual\VS2010\lz5.sln" /m /verbosity:minimal /property:PlatformToolset=v140 /t:Clean,Build /p:Platform=%PLATFORM% /p:Configuration=%CONFIGURATION% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" &&
-      COPY visual\VS2010\bin\%PLATFORM%\%CONFIGURATION%\*.exe programs\
+      COPY visual\VS2010\bin\%PLATFORM%_%CONFIGURATION%\*.exe programs\
     )
 
 test_script:
@@ -77,10 +105,37 @@ test_script:
   - if not [%COMPILER%]==[unknown] (
       CD programs &&
       lz5 -h &&
-      lz5 -i1b lz5.exe && 
+      lz5 -i1b lz5.exe &&
       lz5 -i1b5 lz5.exe &&
       lz5 -i1b10 lz5.exe &&
       lz5 -i1b15 lz5.exe &&
-      echo lz5 tested && 
+      echo ------- lz5 tested ------- &&
       fullbench.exe -i1 fullbench.exe
     )
+
+artifacts:
+  - path: bin\lz5_x64.zip
+  - path: bin\lz5_x86.zip
+
+deploy:
+- provider: GitHub
+  artifact: bin\lz5_x64.zip
+  auth_token:
+    secure: w6UJaGie0qbZvffr/fqyhO/Vj8rMiQWnv9a8qm3gxfngdHDTMT42wYupqJpIExId
+  force_update: true
+  prerelease: true
+  on:
+    COMPILER: gcc
+    PLATFORM: "mingw64"
+    appveyor_repo_tag: true
+
+- provider: GitHub
+  artifact: bin\lz5_x86.zip
+  auth_token:
+    secure: w6UJaGie0qbZvffr/fqyhO/Vj8rMiQWnv9a8qm3gxfngdHDTMT42wYupqJpIExId
+  force_update: true
+  prerelease: true
+  on:
+    COMPILER: gcc
+    PLATFORM: "mingw32"
+    appveyor_repo_tag: true
