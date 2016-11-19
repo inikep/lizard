@@ -113,7 +113,7 @@ liblz5.pc: liblz5.pc.in Makefile
             -e 's|@VERSION@|$(LIBVER)|' \
              $< >$@
 
-install: liblz5 liblz5.pc
+install: lib liblz5.pc
 	@install -d -m 755 $(DESTDIR)$(LIBDIR)/pkgconfig/ $(DESTDIR)$(INCLUDEDIR)/
 	@install -m 755 liblz5.$(SHARED_EXT_VER) $(DESTDIR)$(LIBDIR)
 	@ln -sf liblz5.$(SHARED_EXT_VER) $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT_MAJOR)
