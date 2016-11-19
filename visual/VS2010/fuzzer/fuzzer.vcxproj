@@ -22,7 +22,8 @@
     <ProjectGuid>{18B9F1A7-9C66-4352-898B-30804DADE0FD}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>fuzzer</RootNamespace>
-    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)bin\obj\$(RootNamespace)_$(Platform)_$(Configuration)\</IntDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -121,7 +122,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
       <EnablePREfast>false</EnablePREfast>
     </ClCompile>
     <Link>
@@ -140,7 +141,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
       <EnablePREfast>true</EnablePREfast>
       <AdditionalOptions>/analyze:stacksize295252 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -152,10 +153,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\lib\entropy\entropy_common.c" />
+    <ClCompile Include="..\..\..\lib\entropy\fse_compress.c" />
+    <ClCompile Include="..\..\..\lib\entropy\fse_decompress.c" />
+    <ClCompile Include="..\..\..\lib\entropy\huf_compress.c" />
+    <ClCompile Include="..\..\..\lib\entropy\huf_decompress.c" />
     <ClCompile Include="..\..\..\lib\lz5_compress.c" />
     <ClCompile Include="..\..\..\lib\lz5_decompress.c" />
     <ClCompile Include="..\..\..\lib\xxhash\xxhash.c" />
-    <ClCompile Include="..\..\..\programs\fuzzer.c" />
+    <ClCompile Include="..\..\..\tests\fuzzer.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\lib\lz5_compress.h" />

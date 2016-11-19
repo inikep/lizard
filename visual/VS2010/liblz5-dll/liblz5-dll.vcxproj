@@ -160,6 +160,11 @@
     <ClInclude Include="..\..\..\lib\xxhash\xxhash.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\lib\entropy\entropy_common.c" />
+    <ClCompile Include="..\..\..\lib\entropy\fse_compress.c" />
+    <ClCompile Include="..\..\..\lib\entropy\fse_decompress.c" />
+    <ClCompile Include="..\..\..\lib\entropy\huf_compress.c" />
+    <ClCompile Include="..\..\..\lib\entropy\huf_decompress.c" />
     <ClCompile Include="..\..\..\lib\lz5_compress.c" />
     <ClCompile Include="..\..\..\lib\lz5_decompress.c" />
     <ClCompile Include="..\..\..\lib\lz5frame.c" />

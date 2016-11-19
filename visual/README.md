@@ -10,7 +10,7 @@ The following projects are included with the lz5 distribution:
 #### How to compile lz5 with Visual Studio
 
 1. Install Visual Studio e.g. VS 2015 Community Edition (it's free).
-2. Download the latest version of lz5 from https://github.com/lz5/lz5/releases
+2. Download the latest version of lz5 from https://github.com/inikep/lz5/releases
 3. Decompress ZIP archive.
 4. Go to decompressed directory then to `visual` then `VS2010` and open `lz5.sln`
 5. Visual Studio will ask about converting VS2010 project to VS2015 and you should agree.
