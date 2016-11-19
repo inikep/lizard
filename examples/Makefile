@@ -33,7 +33,7 @@ FLAGS  := -I../lib $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)
 TESTFILE= Makefile
 LZ5DIR := ../lib
 LZ5 = ../programs/lz5
-#ENTROPY_FILES := $(LZ5DIR)/entropy/*.c
+ENTROPY_FILES := $(LZ5DIR)/entropy/*.c
 
 
 # Define *.exe as extension for Windows systems

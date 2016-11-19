@@ -32,6 +32,8 @@ VOID = /dev/null
 BINDIR  := $(PREFIX)/bin
 MANDIR  := $(PREFIX)/share/man/man1
 LZ5DIR  := ../lib
+ENTROPY_FILES := $(LZ5DIR)/entropy/*.c
+#TEST_CODEWORDS := $(LZ5DIR)/test/*.h
 
 CFLAGS  ?= -O3   # allows custom optimization flags. For example : CFLAGS="-O2 -g" make
 CFLAGS  += -Wall -Wextra -Wundef -Wcast-qual -Wcast-align -Wshadow \
@@ -40,8 +42,6 @@ CFLAGS  += -Wall -Wextra -Wundef -Wcast-qual -Wcast-align -Wshadow \
 CFLAGS  += $(MOREFLAGS)
 CPPFLAGS:= -I$(LZ5DIR) -DXXH_NAMESPACE=LZ5_
 FLAGS   := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
-ENTROPY_FILES := $(LZ5DIR)/entropy/*.c
-#TEST_CODEWORDS := $(LZ5DIR)/test/*.h
 
 # Define *.exe as extension for Windows systems
 ifneq (,$(filter Windows%,$(OS)))

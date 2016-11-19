@@ -215,15 +215,15 @@ test-lz5-multiple: lz5 datagen
 test-lz5-basic: lz5 datagen
 	@echo "\n ---- test lz5 basic compression/decompression ----"
 	./datagen -g0     | $(PRGDIR)/lz5 -v     | $(PRGDIR)/lz5 -t
-	./datagen -g16KB  | $(PRGDIR)/lz5 -9     | $(PRGDIR)/lz5 -t
+	./datagen -g16KB  | $(PRGDIR)/lz5 -19    | $(PRGDIR)/lz5 -t
 	./datagen -g20KB > tmpSrc
 	$(PRGDIR)/lz5 < tmpSrc | $(PRGDIR)/lz5 -d > tmpRes
 	diff -q tmpSrc tmpRes
 	$(PRGDIR)/lz5 --no-frame-crc < tmpSrc | $(PRGDIR)/lz5 -d > tmpRes
 	diff -q tmpSrc tmpRes
 	./datagen         | $(PRGDIR)/lz5        | $(PRGDIR)/lz5 -t
-	./datagen -g6M -P99 | $(PRGDIR)/lz5 -9BD | $(PRGDIR)/lz5 -t
-	./datagen -g17M   | $(PRGDIR)/lz5 -9v    | $(PRGDIR)/lz5 -qt
+	./datagen -g6M -P99 | $(PRGDIR)/lz5 -19BD | $(PRGDIR)/lz5 -t
+	./datagen -g17M   | $(PRGDIR)/lz5 -19v    | $(PRGDIR)/lz5 -qt
 	./datagen -g33M   | $(PRGDIR)/lz5 --no-frame-crc | $(PRGDIR)/lz5 -t
 	./datagen -g256MB | $(PRGDIR)/lz5 -vqB4D | $(PRGDIR)/lz5 -t
 	@$(RM) tmp*
@@ -231,7 +231,7 @@ test-lz5-basic: lz5 datagen
 test-lz5-hugefile: lz5 datagen
 	@echo "\n ---- test huge files compression/decompression ----"
 	./datagen -g6GB   | $(PRGDIR)/lz5 -vB5D  | $(PRGDIR)/lz5 -qt
-	./datagen -g6GB   | $(PRGDIR)/lz5 -v5BD  | $(PRGDIR)/lz5 -qt
+	./datagen -g6GB   | $(PRGDIR)/lz5 -v15BD  | $(PRGDIR)/lz5 -qt
 	@$(RM) tmp*
 
 test-lz5-testmode: lz5 datagen
@@ -263,24 +263,24 @@ test-lz5c: lz5c datagen
 
 test-interop-32-64: lz5 lz5c32 datagen
 	@echo "\n ---- test interoperability 32-bits -vs- 64 bits ----"
-	./datagen -g16KB  | $(PRGDIR)/lz5c32 -9     | $(PRGDIR)/lz5    -t
-	./datagen -P10    | $(PRGDIR)/lz5    -9B4   | $(PRGDIR)/lz5c32 -t
+	./datagen -g16KB  | $(PRGDIR)/lz5c32 -19    | $(PRGDIR)/lz5    -t
+	./datagen -P10    | $(PRGDIR)/lz5    -19B4  | $(PRGDIR)/lz5c32 -t
 	./datagen         | $(PRGDIR)/lz5c32        | $(PRGDIR)/lz5    -t
-	./datagen -g1M    | $(PRGDIR)/lz5    -3B5   | $(PRGDIR)/lz5c32 -t
+	./datagen -g1M    | $(PRGDIR)/lz5    -13B5  | $(PRGDIR)/lz5c32 -t
 	./datagen -g256MB | $(PRGDIR)/lz5c32 -vqB4D | $(PRGDIR)/lz5    -qt
 	./datagen -g1G -P90 | $(PRGDIR)/lz5         | $(PRGDIR)/lz5c32 -t
-	./datagen -g6GB   | $(PRGDIR)/lz5c32 -vq9BD | $(PRGDIR)/lz5    -qt
+	./datagen -g6GB   | $(PRGDIR)/lz5c32 -vq15BD | $(PRGDIR)/lz5    -qt
 
 test-lz5c32-basic: lz5c32 datagen
 	@echo "\n ---- test lz5c32 32-bits version ----"
-	./datagen -g16KB  | $(PRGDIR)/lz5c32 -9     | $(PRGDIR)/lz5c32 -t
+	./datagen -g16KB  | $(PRGDIR)/lz5c32 -19    | $(PRGDIR)/lz5c32 -t
 	./datagen         | $(PRGDIR)/lz5c32        | $(PRGDIR)/lz5c32 -t
 	./datagen -g256MB | $(PRGDIR)/lz5c32 -vqB4D | $(PRGDIR)/lz5c32 -qt
 	./datagen -g6GB   | $(PRGDIR)/lz5c32 -vqB5D | $(PRGDIR)/lz5c32 -qt
 
 test-platform:
 	@echo "\n ---- test lz5 $(QEMU_SYS) platform ----"
-	$(QEMU_SYS) ./datagen -g16KB  | $(QEMU_SYS) $(PRGDIR)/lz5 -9     | $(QEMU_SYS) $(PRGDIR)/lz5 -t
+	$(QEMU_SYS) ./datagen -g16KB  | $(QEMU_SYS) $(PRGDIR)/lz5 -19    | $(QEMU_SYS) $(PRGDIR)/lz5 -t
 	$(QEMU_SYS) ./datagen         | $(QEMU_SYS) $(PRGDIR)/lz5        | $(QEMU_SYS) $(PRGDIR)/lz5 -t
 	$(QEMU_SYS) ./datagen -g256MB | $(QEMU_SYS) $(PRGDIR)/lz5 -vqB4D | $(QEMU_SYS) $(PRGDIR)/lz5 -qt
 ifneq ($(QEMU_SYS),qemu-arm-static)
@@ -314,12 +314,12 @@ test-mem: lz5 datagen fuzzer frametest fullbench
 	@echo "\n ---- valgrind tests : memory analyzer ----"
 	valgrind --leak-check=yes --error-exitcode=1 ./datagen -g50M > $(VOID)
 	./datagen -g16KB > tmp
-	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lz5 -9 -BD -f tmp $(VOID)
+	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lz5 -19 -BD -f tmp $(VOID)
 	./datagen -g16KB -s2 > tmp2
 	./datagen -g16KB -s3 > tmp3
 	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lz5 --force --multiple tmp tmp2 tmp3
 	./datagen -g16MB > tmp
-	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lz5 -9 -B5D -f tmp tmp2
+	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lz5 -19 -B5D -f tmp tmp2
 	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lz5 -t tmp2
 	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lz5 -bi1 tmp
 	valgrind --leak-check=yes --error-exitcode=1 ./fullbench -i1 tmp tmp2

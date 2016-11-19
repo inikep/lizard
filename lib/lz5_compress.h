@@ -85,7 +85,7 @@ typedef struct LZ5_stream_s LZ5_stream_t;
 
 #define LZ5_MIN_CLEVEL      10  /* minimum compression level */
 #define LZ5_MAX_CLEVEL      29  /* maximum compression level */
-#define LZ5_DEFAULT_CLEVEL  18
+#define LZ5_DEFAULT_CLEVEL  17
 
 
 /*-************************************

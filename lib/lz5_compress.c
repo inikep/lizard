@@ -344,6 +344,7 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel)
 { 
     LZ5_parameters params;
     U32 hashTableSize, chainTableSize;
+    void *tempPtr;
 
     compressionLevel = LZ5_verifyCompressionLevel(compressionLevel);
     params = LZ5_defaultParameters[compressionLevel - LZ5_MIN_CLEVEL];
@@ -358,7 +359,8 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel)
       //  printf("malloc from=%p to=%p hashTable=%p hashEnd=%p chainTable=%p chainEnd=%p\n", ctx, ((BYTE*)ctx)+sizeof(LZ5_stream_t) + hashTableSize + chainTableSize, ctx->hashTable, ((BYTE*)ctx->hashTable) + hashTableSize, ctx->chainTable, ((BYTE*)ctx->chainTable)+chainTableSize);
     }
     
-    ctx->hashTable = (U32*)ctx + sizeof(LZ5_stream_t)/4;
+    tempPtr = ctx;
+    ctx->hashTable = (U32*)(tempPtr) + sizeof(LZ5_stream_t)/4;
     ctx->hashTableSize = hashTableSize;
     ctx->chainTable = ctx->hashTable + hashTableSize/4;
     ctx->chainTableSize = chainTableSize;
