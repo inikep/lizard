@@ -114,6 +114,16 @@ extern "C" {
 #define LZ5_FLAG_LEN            16
 #define LZ5_FLAG_UNCOMPRESSED   128
 
+/* stream numbers */
+#define LZ5_STREAM_LITERALS       0
+#define LZ5_STREAM_FLAGS          1
+#define LZ5_STREAM_OFFSET16       2
+#define LZ5_STREAM_OFFSET24       3
+#define LZ5_STREAM_LEN            4
+#define LZ5_STREAM_UNCOMPRESSED   5
+
+
+
 
 typedef enum { LZ5_parser_fast, LZ5_parser_noChain, LZ5_parser_hashChain, LZ5_parser_priceFast, LZ5_parser_lowestPrice, LZ5_parser_optimalPrice, LZ5_parser_optimalPriceBT } LZ5_parser_type;   /* from faster to stronger */ 
 typedef enum { LZ5_coderwords_LZ4, LZ5_coderwords_LZ5v2 } LZ5_decompress_type;

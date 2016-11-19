@@ -40,7 +40,6 @@
 #include "lz5_common.h"
 #include <stdio.h>
 #include <stdint.h> // intptr_t
-#include "lz5_compress_lz4.h"
 #ifndef USE_LZ4_ONLY
     #ifdef LZ5_USE_TEST
         #include "test/lz5_common_test.h"
@@ -49,6 +48,7 @@
         #include "lz5_compress_lz5v2.h"
     #endif
 #endif
+#include "lz5_compress_lz4.h"
 #include "entropy/huf.h"
 
 
@@ -506,9 +506,8 @@ FORCE_INLINE int LZ5_compress_generic (
     while (inputSize > 0)
     {
         int inputPart = MIN(LZ5_BLOCK_SIZE, inputSize);
-#ifdef LZ5_USE_HUFFMAN
-        LZ5_rescaleFreqs(ctx);
-#endif
+
+        if (ctx->huffType) LZ5_rescaleFreqs(ctx);
         LZ5_initBlock(ctx);
         ctx->diffBase = ip;
 

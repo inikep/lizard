@@ -43,7 +43,7 @@
 *  Constants
 ***************************************/
 #define NBLOOPS               3
-#define TIMELOOP_MICROSEC     1*1000000ULL /* 2 seconds */
+#define TIMELOOP_MICROSEC     1*1000000ULL   /* 1 second */
 #define ACTIVEPERIOD_MICROSEC 120*1000000ULL /* 120 seconds */
 #define COOLPERIOD_SEC        10
 
