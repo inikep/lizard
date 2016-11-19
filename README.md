@@ -97,5 +97,5 @@ Organizing these blocks and providing a common header format to handle their con
 is the purpose of the Frame format, defined into [lz5_Frame_format].
 Interoperable versions of LZ5 must respect this frame format.
 
-[lz5_Block_format]: lz5_Block_format.md
-[lz5_Frame_format]: lz5_Frame_format.md
+[lz5_Block_format]: doc/lz5_Block_format.md
+[lz5_Frame_format]: doc/lz5_Frame_format.md

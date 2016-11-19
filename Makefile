@@ -29,20 +29,26 @@
 #  - LZ5 source repository : https://github.com/inikep/lz5
 # ################################################################
 
-DESTDIR?=
-PREFIX ?= /usr/local
+DESTDIR ?=
+PREFIX  ?= /usr/local
+VOID    := /dev/null
 
 LIBDIR ?= $(PREFIX)/lib
 INCLUDEDIR=$(PREFIX)/include
 PRGDIR  = programs
 LZ5DIR  = lib
+TESTDIR = tests
 
 
 # Define nul output
-VOID = /dev/null
+ifneq (,$(filter Windows%,$(OS)))
+EXT = .exe
+else
+EXT =
+endif
 
 
-.PHONY: default all lib lz5 clean test examples
+.PHONY: default all lib lz5 clean test versionsTest examples
 
 default: lz5
 
@@ -53,20 +59,22 @@ lib:
 
 lz5:
 	@$(MAKE) -C $(PRGDIR)
-	@cp $(PRGDIR)/lz5 .
+	@cp $(PRGDIR)/lz5$(EXT) .
 
 clean:
 	@$(MAKE) -C $(PRGDIR) $@ > $(VOID)
+	@$(MAKE) -C $(TESTDIR) $@ > $(VOID)
 	@$(MAKE) -C $(LZ5DIR) $@ > $(VOID)
 	@$(MAKE) -C examples $@ > $(VOID)
-	@$(RM) lz5
+	@$(RM) lz5$(EXT)
 	@echo Cleaning completed
 
 
 #------------------------------------------------------------------------
 #make install is validated only for Linux, OSX, kFreeBSD, Hurd and
 #FreeBSD targets
-ifneq (,$(filter Linux Darwin GNU/kFreeBSD GNU FreeBSD MSYS%, $(shell uname)))
+ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU FreeBSD))
+HOST_OS = POSIX
 
 install:
 	@$(MAKE) -C $(LZ5DIR) $@
@@ -77,33 +85,82 @@ uninstall:
 	@$(MAKE) -C $(PRGDIR) $@
 
 travis-install:
-	sudo $(MAKE) install
+	$(MAKE) install PREFIX=~/install_test_dir
 
 test:
-	$(MAKE) -C $(PRGDIR) test
-
-cmake:
-	@cd cmake_unofficial; cmake CMakeLists.txt; $(MAKE)
-
-gpptest: clean
-	$(MAKE) all CC=g++ CFLAGS="-O3 -I../lib -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
+	$(MAKE) -C $(TESTDIR) test
 
 clangtest: clean
-	CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) all CC=clang
+	clang -v
+	@CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) -C $(LZ5DIR)  all CC=clang
+	@CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) -C $(PRGDIR)  all CC=clang
+	@CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) -C $(TESTDIR) all CC=clang
+
+clangtest-native: clean
+	clang -v
+	@CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) -C $(LZ5DIR)  all    CC=clang
+	@CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) -C $(PRGDIR)  native CC=clang
+	@CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) -C $(TESTDIR) native CC=clang
 
 sanitize: clean
-	CFLAGS="-O1 -g -fsanitize=undefined" $(MAKE) test CC=clang FUZZER_TIME="-T1mn" NB_LOOPS=-i1
+	CFLAGS="-O3 -g -fsanitize=undefined" $(MAKE) test CC=clang FUZZER_TIME="-T1mn" NB_LOOPS=-i1
 
 staticAnalyze: clean
 	CFLAGS=-g scan-build --status-bugs -v $(MAKE) all
 
-armtest: clean
-	CFLAGS="-O3 -Werror" $(MAKE) -C $(LZ5DIR) all CC=arm-linux-gnueabi-gcc
-	CFLAGS="-O3 -Werror" $(MAKE) -C $(PRGDIR) bins CC=arm-linux-gnueabi-gcc
+platformTest: clean
+	@echo "\n ---- test lz5 with $(CC) compiler ----"
+	@$(CC) -v
+	CFLAGS="-O3 -Werror"         $(MAKE) -C $(LZ5DIR) all
+	CFLAGS="-O3 -Werror -static" $(MAKE) -C $(PRGDIR) native
+	CFLAGS="-O3 -Werror -static" $(MAKE) -C $(TESTDIR) native
+	$(MAKE) -C $(TESTDIR) test-platform
+
+versionsTest: clean
+	$(MAKE) -C $(TESTDIR) $@
 
 examples:
 	$(MAKE) -C $(LZ5DIR)
 	$(MAKE) -C $(PRGDIR) lz5
 	$(MAKE) -C examples test
+
+endif
+
+
+ifneq (,$(filter MSYS%,$(shell uname)))
+HOST_OS = MSYS
+CMAKE_PARAMS = -G"MSYS Makefiles"
+endif
+
+
+#------------------------------------------------------------------------
+#make tests validated only for MSYS, Linux, OSX, kFreeBSD and Hurd targets
+#------------------------------------------------------------------------
+ifneq (,$(filter $(HOST_OS),MSYS POSIX))
+
+cmake:
+	@cd contrib/cmake_unofficial; cmake $(CMAKE_PARAMS) CMakeLists.txt; $(MAKE)
+
+gpptest: clean
+	g++ -v
+	CC=g++ $(MAKE) -C $(LZ5DIR)  all CFLAGS="-O3 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
+	CC=g++ $(MAKE) -C $(PRGDIR)  all CFLAGS="-O3 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
+	CC=g++ $(MAKE) -C $(TESTDIR) all CFLAGS="-O3 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
+
+gpptest-native: clean
+	g++ -v
+	CC=g++ $(MAKE) -C $(LZ5DIR)  all    CFLAGS="-O3 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
+	CC=g++ $(MAKE) -C $(PRGDIR)  native CFLAGS="-O3 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
+	CC=g++ $(MAKE) -C $(TESTDIR) native CFLAGS="-O3 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
+
+c_standards: clean
+	$(MAKE) all MOREFLAGS="-std=gnu90 -Werror"
+	$(MAKE) clean
+	$(MAKE) all MOREFLAGS="-std=c99 -Werror"
+	$(MAKE) clean
+	$(MAKE) all MOREFLAGS="-std=gnu99 -Werror"
+	$(MAKE) clean
+	$(MAKE) all MOREFLAGS="-std=c11 -Werror"
+	$(MAKE) clean
 
 endif
