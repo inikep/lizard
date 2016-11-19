@@ -230,11 +230,11 @@ static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1-LZ5_MIN_CLEVE
     {   LZ5_WINDOWLOG_LZ4,                     0,   LZ5_HASHLOG_LZ4,   0,     0,  0,           0,     0,  0, LZ5_parser_fast,           LZ5_coderwords_LZ4   }, // level 11
     {   LZ5_WINDOWLOG_LZ4,                     0,   LZ5_HASHLOG_LZ4,   0,     0,  0,           0,     0,  0, LZ5_parser_noChain,        LZ5_coderwords_LZ4   }, // level 12
     {   LZ5_WINDOWLOG_LZ4,      LZ5_CHAINLOG_LZ4,   LZ5_HASHLOG_LZ4,   0,     2,  5,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 13
-    {   LZ5_WINDOWLOG_LZ4,      LZ5_CHAINLOG_LZ4,   LZ5_HASHLOG_LZ4,   0,     6,  5,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 14
+    {   LZ5_WINDOWLOG_LZ4,      LZ5_CHAINLOG_LZ4,   LZ5_HASHLOG_LZ4,   0,     4,  5,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 14
     {   LZ5_WINDOWLOG_LZ4,      LZ5_CHAINLOG_LZ4,   LZ5_HASHLOG_LZ4,   0,     8,  5,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 15
     {   LZ5_WINDOWLOG_LZ4,      LZ5_CHAINLOG_LZ4,   LZ5_HASHLOG_LZ4,   0,    16,  4,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 16
     {   LZ5_WINDOWLOG_LZ4,      LZ5_CHAINLOG_LZ4,   LZ5_HASHLOG_LZ4,   0,   256,  4,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 17
-    {   LZ5_WINDOWLOG_LZ4,   LZ5_WINDOWLOG_LZ4+1,   LZ5_HASHLOG_LZ4,  16,   256,  4,           0, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ4   }, // level 18
+    {   LZ5_WINDOWLOG_LZ4,   LZ5_WINDOWLOG_LZ4+1,   LZ5_HASHLOG_LZ4,  16,    16,  4,           0, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ4   }, // level 18
     {   LZ5_WINDOWLOG_LZ4,   LZ5_WINDOWLOG_LZ4+1,                23,  16,   256,  4,           0, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ4   }, // level 19
 
     { LZ5_WINDOWLOG_LZ5v2,    LZ5_CHAINLOG_LZ5v2,                14,  13,     1,  5,  MM_LONGOFF,     0,  0, LZ5_parser_priceFast,      LZ5_coderwords_LZ5v2 }, // level 20

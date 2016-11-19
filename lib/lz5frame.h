@@ -118,7 +118,6 @@ typedef struct {
 typedef struct {
   LZ5F_frameInfo_t frameInfo;
   int      compressionLevel;       /* 0 == default (fast mode); values above 16 count as 16; values below 0 count as 0 */
-  int      huffType;
   unsigned autoFlush;              /* 1 == always flush (reduce need for tmp buffer) */
   unsigned reserved[4];            /* must be zero for forward compatibility */
 } LZ5F_preferences_t;

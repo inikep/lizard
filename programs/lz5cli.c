@@ -250,7 +250,6 @@ static unsigned readU32FromChar(const char** stringPtr)
 int main(int argc, const char** argv)
 {
     int i,
-        huffType = LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS, // + LZ5_FLAG_OFFSET16 + LZ5_FLAG_OFFSET24;
         cLevel=0,
         cLevelLast=0,
         decode=0,
@@ -333,12 +332,6 @@ int main(int argc, const char** argv)
                 case 'e':
                     argument++;
                     cLevelLast = readU32FromChar(&argument);
-                    argument--;
-                    break;
-
-                case 'l':
-                    argument++;
-                    huffType = readU32FromChar(&argument);
                     argument--;
                     break;
 
@@ -457,7 +450,7 @@ int main(int argc, const char** argv)
 
     /* Check if benchmark is selected */
     if (bench) {
-        int bmkResult = BMK_benchFiles(inFileNames, ifnIdx, cLevel, cLevelLast, huffType);
+        int bmkResult = BMK_benchFiles(inFileNames, ifnIdx, cLevel, cLevelLast);
         free((void*)inFileNames);
         return bmkResult;
     }
@@ -513,9 +506,9 @@ int main(int argc, const char** argv)
     } else {
         /* compression is default action */
         if (multiple_inputs)
-            operationResult = LZ5IO_compressMultipleFilenames(inFileNames, ifnIdx, LZ5_EXTENSION, cLevel, huffType);
+            operationResult = LZ5IO_compressMultipleFilenames(inFileNames, ifnIdx, LZ5_EXTENSION, cLevel);
         else
-            operationResult = LZ5IO_compressFilename(input_filename, output_filename, cLevel, huffType);
+            operationResult = LZ5IO_compressFilename(input_filename, output_filename, cLevel);
     }
 
 _cleanup:

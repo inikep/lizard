@@ -340,7 +340,7 @@ static void LZ5_init(LZ5_stream_t* ctx, const BYTE* start)
 
 
 /* if ctx==NULL memory is allocated and returned as value */
-LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel, int huffType) 
+LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel) 
 { 
     LZ5_parameters params;
     U32 hashTableSize, chainTableSize;
@@ -364,10 +364,6 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel, int huffTy
     ctx->chainTableSize = chainTableSize;
     ctx->params = params;
     ctx->compressionLevel = (unsigned)compressionLevel;
-    ctx->huffType = huffType; //LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS + LZ5_FLAG_OFFSET16 + LZ5_FLAG_OFFSET24;
-#ifndef LZ5_USE_HUFFMAN
-    ctx->huffType = 0;
-#endif
 
     ctx->literalsBase = (BYTE*)ctx->hashTable + ctx->hashTableSize + ctx->chainTableSize;
     ctx->flagsBase    = ctx->literalsEnd = ctx->literalsBase + LZ5_BLOCK_SIZE_PAD;
@@ -382,22 +378,16 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel, int huffTy
 
 
 
-LZ5_stream_t* LZ5_createStream_Huf(int compressionLevel, int huffType) 
+LZ5_stream_t* LZ5_createStream(int compressionLevel) 
 { 
-    LZ5_stream_t* ctx = LZ5_initStream(NULL, compressionLevel, huffType);
+    LZ5_stream_t* ctx = LZ5_initStream(NULL, compressionLevel);
 //    if (ctx) printf("LZ5_createStream ctx=%p ctx->compressionLevel=%d\n", ctx, ctx->compressionLevel);
     return ctx; 
 }
 
 
-LZ5_stream_t* LZ5_createStream(int compressionLevel) 
-{
-    return LZ5_createStream_Huf(compressionLevel, 0);
-}
-
-
 /* initialization */
-LZ5_stream_t* LZ5_resetStream_Huf(LZ5_stream_t* ctx, int compressionLevel, int huffType)
+LZ5_stream_t* LZ5_resetStream(LZ5_stream_t* ctx, int compressionLevel)
 {
     size_t wanted = LZ5_sizeofState(compressionLevel);
 
@@ -406,20 +396,15 @@ LZ5_stream_t* LZ5_resetStream_Huf(LZ5_stream_t* ctx, int compressionLevel, int h
     {
   //      printf("REALLOC ctx=%p cLevel=%d have=%d wanted=%d\n", ctx, compressionLevel, (int)have, (int)wanted);
         LZ5_freeStream(ctx);
-        ctx = LZ5_createStream_Huf(compressionLevel, huffType);
+        ctx = LZ5_createStream(compressionLevel);
     }
     else
     {
-        LZ5_initStream(ctx, compressionLevel, huffType);
+        LZ5_initStream(ctx, compressionLevel);
     }
 
     if (ctx) ctx->base = NULL;
     return ctx;
-}
-
-LZ5_stream_t* LZ5_resetStream(LZ5_stream_t* ctx, int compressionLevel)
-{
-    return LZ5_resetStream_Huf(ctx, compressionLevel, 0);
 }
 
 
@@ -588,40 +573,29 @@ int LZ5_compress_continue (LZ5_stream_t* ctxPtr,
 }
 
 
-int LZ5_compress_extState_Huf (void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel, int huffType)
+int LZ5_compress_extState (void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel)
 {
     LZ5_stream_t* ctx = (LZ5_stream_t*) state;
     if (((size_t)(state)&(sizeof(void*)-1)) != 0) return 0;   /* Error : state is not aligned for pointers (32 or 64 bits) */
 
     /* initialize stream */
-    LZ5_initStream(ctx, compressionLevel, huffType);
+    LZ5_initStream(ctx, compressionLevel);
     LZ5_init ((LZ5_stream_t*)state, (const BYTE*)src);
 
     return LZ5_compress_generic (state, src, dst, srcSize, maxDstSize);
 }
 
 
-int LZ5_compress_extState (void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel)
-{
-    return LZ5_compress_extState_Huf(state, src, dst, srcSize, maxDstSize, compressionLevel, 0);
-}
-
-
-int LZ5_compress_Huf(const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel, int huffType)
+int LZ5_compress(const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel)
 {
     int cSize;
-    LZ5_stream_t* statePtr = LZ5_createStream_Huf(compressionLevel, huffType);
+    LZ5_stream_t* statePtr = LZ5_createStream(compressionLevel);
 
     if (!statePtr) return 0;
-    cSize = LZ5_compress_extState_Huf(statePtr, src, dst, srcSize, maxDstSize, compressionLevel, huffType);
+    cSize = LZ5_compress_extState(statePtr, src, dst, srcSize, maxDstSize, compressionLevel);
 
     LZ5_freeStream(statePtr);
     return cSize;
-}
-
-int LZ5_compress(const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel)
-{
-    return LZ5_compress_Huf(src, dst, srcSize, maxDstSize, compressionLevel, 0);
 }
 
 
