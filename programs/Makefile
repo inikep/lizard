@@ -57,14 +57,13 @@ ifeq ($(shell $(CC) -v 2>&1 | grep -c "gcc version "), 1)
 endif
 
 
-
 default: lz5
 
 m32: lz5c32
 
-bins: lz5
+native: lz5
 
-all: bins m32
+all: native m32
 
 # dependencies
 $(LZ5DIR)/lz5_compress.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress*.h $(LZ5DIR)/lz5_parser_*.h $(TEST_CODEWORDS)
@@ -93,7 +92,7 @@ lz5: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5frame.o $(
 lz5nohuf: $(LZ5DIR)/lz5_decompress_nohuf.o $(LZ5DIR)/lz5_compress_nohuf.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o bench.o lz5io.o lz5cli.o datagen.o
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-lz5c32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash/xxhash.c bench.c lz5io.c lz5cli.c datagen.c
+lz5c32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash/xxhash.c bench.c lz5io.c lz5cli.c datagen.c $(ENTROPY_FILES)
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
 
