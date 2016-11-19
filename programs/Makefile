@@ -1,6 +1,7 @@
 # ##########################################################################
 # LZ5 programs - Makefile
 # Copyright (C) Yann Collet 2011-2016
+# Copyright (C) Przemyslaw Skibinski 2016
 #
 # GPL v2 License
 #
@@ -23,24 +24,19 @@
 # ##########################################################################
 # lz5 : Command Line Utility, supporting gzip-like arguments
 # lz5c32: Same as lz5, but forced to compile in 32-bits mode
-# fuzzer  : Test tool, to check lz5 integrity on target platform
-# fuzzer32: Same as fuzzer, but forced to compile in 32-bits mode
-# frametest  : Test tool, to check lz5frame integrity on target platform
-# frametest32: Same as frametest, but forced to compile in 32-bits mode
-# fullbench  : Precisely measure speed for each LZ5 function variant
-# fullbench32: Same as fullbench, but forced to compile in 32-bits mode
-# datagen : generates synthetic data samples for tests & benchmarks
 # ##########################################################################
 
 DESTDIR ?=
-CC      ?= gcc
 PREFIX  ?= /usr/local
+VOID = /dev/null
 BINDIR  := $(PREFIX)/bin
 MANDIR  := $(PREFIX)/share/man/man1
 LZ5DIR  := ../lib
 
-CFLAGS  ?= -O3   # can select custom flags. For example : CFLAGS="-O2 -g" make
-CFLAGS  += -Wall -Wextra -Wundef -Wcast-qual -Wcast-align -Wshadow -Wswitch-enum -Wdeclaration-after-statement -Wstrict-prototypes
+CFLAGS  ?= -O3   # allows custom optimization flags. For example : CFLAGS="-O2 -g" make
+CFLAGS  += -Wall -Wextra -Wundef -Wcast-qual -Wcast-align -Wshadow \
+           -Wswitch-enum -Wdeclaration-after-statement -Wstrict-prototypes \
+		   -Wpointer-arith -Wstrict-aliasing=1
 CFLAGS  += $(MOREFLAGS)
 CPPFLAGS:= -I$(LZ5DIR) -DXXH_NAMESPACE=LZ5_
 FLAGS   := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
@@ -53,7 +49,7 @@ EXT =.exe
 else
 EXT =
 endif
-VOID = /dev/null
+
 
 
 ifeq ($(shell $(CC) -v 2>&1 | grep -c "gcc version "), 1)
@@ -61,16 +57,12 @@ ifeq ($(shell $(CC) -v 2>&1 | grep -c "gcc version "), 1)
 endif
 
 
-# Default test parameters
-TEST_FILES   := COPYING
-FUZZER_TIME  := -T9mn
-
 
 default: lz5
 
-m32: lz5c32 fullbench32 fuzzer32 frametest32
+m32: lz5c32
 
-bins: lz5 fullbench fuzzer frametest datagen
+bins: lz5
 
 all: bins m32
 
@@ -81,8 +73,8 @@ $(LZ5DIR)/lz5_compress.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_common.h $(LZ5D
 $(LZ5DIR)/lz5_compress32.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress*.h $(LZ5DIR)/lz5_parser_*.h $(TEST_CODEWORDS)
 	$(CC) -m32 $(FLAGS) $< -c -o $@
 
-$(LZ5DIR)/lz5_compress_huf.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress*.h $(LZ5DIR)/lz5_parser_*.h $(TEST_CODEWORDS)
-	$(CC) -DLZ5_USE_HUFFMAN $(FLAGS) $< -c -o $@
+$(LZ5DIR)/lz5_compress_nohuf.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress*.h $(LZ5DIR)/lz5_parser_*.h $(TEST_CODEWORDS)
+	$(CC) -DLZ5_NO_HUFFMAN $(FLAGS) $< -c -o $@
 
 $(LZ5DIR)/lz5_decompress.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress*.h $(TEST_CODEWORDS)
 	$(CC) $(FLAGS) $(ALIGN_LOOP) $< -c -o $@
@@ -90,49 +82,25 @@ $(LZ5DIR)/lz5_decompress.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.h 
 $(LZ5DIR)/lz5_decompress32.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress*.h $(TEST_CODEWORDS)
 	$(CC) -m32 $(FLAGS) $< -c -o $@
 
-$(LZ5DIR)/lz5_decompress_huf.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress*.h $(TEST_CODEWORDS)
-	$(CC) -DLZ5_USE_HUFFMAN $(FLAGS) $(ALIGN_LOOP) $< -c -o $@
+$(LZ5DIR)/lz5_decompress_nohuf.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress*.h $(TEST_CODEWORDS)
+	$(CC) -DLZ5_NO_HUFFMAN $(FLAGS) $(ALIGN_LOOP) $< -c -o $@
 
 
 
-lz5: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o bench.o lz5io.o lz5cli.o datagen.o
+lz5: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o bench.o lz5io.o lz5cli.o datagen.o $(ENTROPY_FILES)
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-lz5huf: $(LZ5DIR)/lz5_decompress_huf.o $(LZ5DIR)/lz5_compress_huf.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o bench.o lz5io.o lz5cli.o datagen.o $(ENTROPY_FILES)
+lz5nohuf: $(LZ5DIR)/lz5_decompress_nohuf.o $(LZ5DIR)/lz5_compress_nohuf.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o bench.o lz5io.o lz5cli.o datagen.o
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
 lz5c32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash/xxhash.c bench.c lz5io.c lz5cli.c datagen.c
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
-fullbench  : $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o fullbench.c
-	$(CC) $(FLAGS) $^ -o $@$(EXT)
-
-fullbench32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash/xxhash.c fullbench.c
-	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
-
-fuzzer  : $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress_huf.o $(LZ5DIR)/xxhash/xxhash.o fuzzer.c $(ENTROPY_FILES)
-	$(CC) $(FLAGS) $^ -o $@$(EXT)
-
-fuzzer32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/xxhash/xxhash.c fuzzer.c
-	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
-
-frametest: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/lz5_compress_huf.o $(LZ5DIR)/xxhash/xxhash.o frametest.c $(ENTROPY_FILES)
-	$(CC) $(FLAGS) $^ -o $@$(EXT)
-
-frametest32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/xxhash/xxhash.c frametest.c
-	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
-
-datagen : datagen.o datagencli.c
-	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
 clean:
 	@$(MAKE) -C $(LZ5DIR) $@ > $(VOID)
 	@rm -f core *.o *.test tmp* \
         lz5$(EXT) lz5c32$(EXT) \
-        fullbench$(EXT) fullbench32$(EXT) \
-        fuzzer$(EXT) fuzzer32$(EXT) \
-        frametest$(EXT) frametest32$(EXT) \
-        datagen$(EXT)
 	@echo Cleaning completed
 
 
@@ -161,169 +129,5 @@ uninstall:
 	rm -f $(DESTDIR)$(MANDIR)/lz5cat.1
 	rm -f $(DESTDIR)$(MANDIR)/unlz5.1
 	@echo lz5 programs successfully uninstalled
-
-test: test-lz5 test-frametest test-fullbench test-fuzzer test-mem
-
-test32: test-lz5c32 test-frametest32 test-fullbench32 test-fuzzer32 test-mem32
-
-test-all: test test32
-
-test-lz5-sparse: lz5 datagen
-	@echo "\n ---- test sparse file support ----"
-	./datagen -g5M  -P100 > tmpSrc
-	./lz5 -B4D tmpSrc | ./lz5 -dv --sparse > tmpB4
-	diff -s tmpSrc tmpB4
-	./lz5 -B5D tmpSrc | ./lz5 -dv --sparse > tmpB5
-	diff -s tmpSrc tmpB5
-	./lz5 -B6D tmpSrc | ./lz5 -dv --sparse > tmpB6
-	diff -s tmpSrc tmpB6
-	./lz5 -B7D tmpSrc | ./lz5 -dv --sparse > tmpB7
-	diff -s tmpSrc tmpB7
-	./lz5 tmpSrc | ./lz5 -dv --no-sparse > tmpNoSparse
-	diff -s tmpSrc tmpNoSparse
-	ls -ls tmp*
-	./datagen -s1 -g1200007 -P100 | ./lz5 | ./lz5 -dv --sparse > tmpOdd   # Odd size file (to generate non-full last block)
-	./datagen -s1 -g1200007 -P100 | diff -s - tmpOdd
-	ls -ls tmpOdd
-	@rm tmp*
-	@echo "\n Compatibility with Console :"
-	echo "Hello World 1 !" | ./lz5 | ./lz5 -d -c
-	echo "Hello World 2 !" | ./lz5 | ./lz5 -d | cat
-	echo "Hello World 3 !" | ./lz5 --no-frame-crc | ./lz5 -d -c
-	@echo "\n Compatibility with Append :"
-	./datagen -P100 -g1M > tmp1M
-	cat tmp1M tmp1M > tmp2M
-	./lz5 -8B5 -v tmp1M tmpC
-	./lz5 -d -v tmpC tmpR
-	./lz5 -d -v tmpC >> tmpR
-	ls -ls tmp*
-	diff tmp2M tmpR
-	@rm tmp*
-
-test-lz5-contentSize: lz5 datagen
-	@echo "\n ---- test original size support ----"
-	./datagen -g15M > tmp
-	./lz5 -v tmp | ./lz5 -t
-	./lz5 -v --content-size tmp | ./lz5 -d > tmp2
-	diff -s tmp tmp2
-	# test large size [2-4] GB
-	@./datagen -g3G -P100 | ./lz5 -4 | ./lz5 --decompress --force --sparse - tmp
-	@ls -ls tmp
-	./lz5 -5 --quiet --content-size tmp | ./lz5 --verbose --decompress --force --sparse - tmp2
-	@ls -ls tmp2
-	@rm tmp*
-
-test-lz5-frame-concatenation: lz5 datagen
-	@echo "\n ---- test frame concatenation ----"
-	@echo -n > empty.test
-	@echo hi > nonempty.test
-	cat nonempty.test empty.test nonempty.test > orig.test
-	@./lz5 -zq empty.test > empty.lz5.test
-	@./lz5 -zq nonempty.test > nonempty.lz5.test
-	cat nonempty.lz5.test empty.lz5.test nonempty.lz5.test > concat.lz5.test
-	./lz5 -d concat.lz5.test > result.test
-	sdiff orig.test result.test
-	@rm *.test
-	@echo frame concatenation test completed
-
-test-lz5-multiple: lz5 datagen
-	@echo "\n ---- test multiple files ----"
-	@./datagen -s1        > tmp1 2> $(VOID)
-	@./datagen -s2 -g100K > tmp2 2> $(VOID)
-	@./datagen -s3 -g1M   > tmp3 2> $(VOID)
-	./lz5 -f -m tmp*
-	ls -ls tmp*
-	rm tmp1 tmp2 tmp3
-	./lz5 -df -m *.lz5
-	ls -ls tmp*
-	./lz5 -f -m tmp1 notHere tmp2; echo $$?
-	@rm tmp*
-
-test-lz5-basic: lz5 datagen
-	@echo "\n ---- test lz5 basic compression/decompression ----"
-	./datagen -g0     | ./lz5 -v     | ./lz5 -t
-	./datagen -g16KB  | ./lz5 -9     | ./lz5 -t
-	./datagen -g20KB > tmpSrc
-	./lz5 < tmpSrc | ./lz5 -d > tmpRes
-	diff -q tmpSrc tmpRes
-	./lz5 --no-frame-crc < tmpSrc | ./lz5 -d > tmpRes
-	diff -q tmpSrc tmpRes
-	./datagen         | ./lz5        | ./lz5 -t
-	./datagen -g1M    | ./lz5 -6B1D  | ./lz5 -t
-	./datagen -g6M -P99 | ./lz5 -9BD | ./lz5 -t
-	./datagen -g17M   | ./lz5 -8v    | ./lz5 -t
-	./datagen -g33M   | ./lz5 --no-frame-crc | ./lz5 -t
-	./datagen -g256MB | ./lz5 -4B4D  | ./lz5 -t
-	./datagen -g6GB   | ./lz5 -2B5D  | ./lz5 -t
-	./datagen -g6GB   | ./lz5 -1B3D  | ./lz5 -t
-	@rm tmp*
-
-test-lz5: lz5 datagen test-lz5-basic test-lz5-multiple test-lz5-sparse test-lz5-contentSize test-lz5-frame-concatenation
-	@echo "\n ---- test pass-through ----"
-	./datagen | ./lz5 -t             && false || true
-	./datagen | ./lz5 -tf            && false || true
-	./datagen | ./lz5 -d  > $(VOID)  && false || true
-	./datagen | ./lz5 -df > $(VOID)
-
-test-interop-32-64: lz5 lz5c32 datagen
-	@echo "\n ---- test interoperability 32-bits -vs- 64 bits ----"
-	./datagen -g16KB  | ./lz5c32 -9     | ./lz5    -t
-	./datagen -P10    | ./lz5    -9B4   | ./lz5c32 -t
-	./datagen         | ./lz5c32        | ./lz5    -t
-	./datagen -g1M    | ./lz5    -7B5   | ./lz5c32 -t
-	./datagen -g256MB | ./lz5c32 -5B4D  | ./lz5    -t
-	./datagen -g1G -P90 | ./lz5  -6     | ./lz5c32 -t
-	./datagen -g6GB   | ./lz5c32 -2BD   | ./lz5    -t
-
-test-lz5c32-basic: lz5c32 datagen
-	@echo "\n ---- test lz5c32 32-bits version ----"
-	./datagen -g16KB  | ./lz5c32 -9      | ./lz5c32 -t
-	./datagen         | ./lz5c32         | ./lz5c32 -t
-	./datagen -g256MB | ./lz5c32 -1B4D   | ./lz5c32 -t
-	./datagen -g6GB   | ./lz5c32 -3B5D   | ./lz5c32 -t
-
-test-lz5c32: test-lz5c32-basic test-interop-32-64
-
-test-fullbench: fullbench
-	./fullbench --no-prompt $(NB_LOOPS) $(TEST_FILES)
-
-test-fullbench32: fullbench32
-	./fullbench32 --no-prompt $(NB_LOOPS) $(TEST_FILES)
-
-test-fuzzer: fuzzer
-	./fuzzer $(FUZZER_TIME)
-
-test-fuzzer32: fuzzer32
-	./fuzzer32 $(FUZZER_TIME)
-
-test-frametest: frametest
-	./frametest $(FUZZER_TIME)
-
-test-frametest32: frametest32
-	./frametest32 $(FUZZER_TIME)
-
-#test-mem: CFLAGS = -O2 -g
-#test-mem: FLAGS = $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
-test-mem: lz5 datagen fuzzer frametest fullbench
-	@echo "\n ---- valgrind tests : memory analyzer ----"
-	valgrind --leak-check=yes --error-exitcode=1 ./datagen -g50M > $(VOID)
-	./datagen -g16KB > tmp
-	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -8 -BD -f tmp $(VOID)
-	./datagen -g16KB -s2 > tmp2
-	./datagen -g16KB -s3 > tmp3
-	valgrind --leak-check=yes --error-exitcode=1 ./lz5 --force --multiple tmp tmp2 tmp3
-	./datagen -g16MB > tmp
-	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -7 -B5D -f tmp tmp2
-	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -t tmp2
-	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -bi1 tmp
-	valgrind --leak-check=yes --error-exitcode=1 ./fullbench -i1 tmp tmp2
-	./datagen -g256MB > tmp
-	valgrind --leak-check=yes --error-exitcode=1 ./lz5 -B4D -f -vq tmp $(VOID)
-	rm tmp*
-	valgrind --leak-check=yes --error-exitcode=1 ./fuzzer -i64 -t1
-	valgrind --leak-check=yes --error-exitcode=1 ./frametest -i256
-
-test-mem32: lz5c32 datagen
-# unfortunately, valgrind doesn't seem to work with non-native binary...
 
 endif
