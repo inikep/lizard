@@ -10,13 +10,16 @@ The improvement in compression ratio is caused mainly because of:
 |Branch      |Status   |
 |------------|---------|
 |master      | [![Build Status][travisMasterBadge]][travisLink] [![Build status][AppveyorMasterBadge]][AppveyorLink]  |
-|lz5_v1.5    | [![Build Status][travisDevBadge]][travisLink]    [![Build status][AppveyorDevBadge]][AppveyorLink]     |
+|lz5_v1.5    | [![Build Status][travis15Badge]][travisLink]    [![Build status][Appveyor15Badge]][AppveyorLink]     |
+|lz5_v2.0    | [![Build Status][travis20Badge]][travisLink]    [![Build status][Appveyor20Badge]][AppveyorLink]     |
 
 [travisMasterBadge]: https://travis-ci.org/inikep/lz5.svg?branch=master "Continuous Integration test suite"
-[travisDevBadge]: https://travis-ci.org/inikep/lz5.svg?branch=lz5_v1.5 "Continuous Integration test suite"
+[travis15Badge]: https://travis-ci.org/inikep/lz5.svg?branch=lz5_v1.5 "Continuous Integration test suite"
+[travis20Badge]: https://travis-ci.org/inikep/lz5.svg?branch=lz5_v2.0 "Continuous Integration test suite"
 [travisLink]: https://travis-ci.org/inikep/lz5
 [AppveyorMasterBadge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/master?svg=true "Visual test suite"
-[AppveyorDevBadge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v1.5?svg=true "Visual test suite"
+[Appveyor15Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v1.5?svg=true "Visual test suite"
+[Appveyor20Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v2.0?svg=true "Visual test suite"
 [AppveyorLink]: https://ci.appveyor.com/project/inikep/lz5
 [LZ4]: https://github.com/Cyan4973/lz4
 

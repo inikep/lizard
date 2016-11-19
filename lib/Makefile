@@ -1,6 +1,7 @@
 # ################################################################
 # LZ5 library - Makefile
 # Copyright (C) Yann Collet 2011-2015
+# Copyright (C) 2016, Przemyslaw Skibinski <inikep@gmail.com>
 # All rights reserved.
 #
 # BSD license
