@@ -54,7 +54,7 @@ build_script:
         make -C lib lib CC=clang MOREFLAGS="--target=x86_64-w64-mingw32 -Werror -Wconversion -Wno-sign-conversion"
       )
     )
-  - if [%COMPILER%]==[gcc] if not [%PLATFORM%]==[clang] (
+  - if [%COMPILER%]==[gccX] if not [%PLATFORM%]==[clang] (
       MKDIR bin\dll bin\static bin\example bin\include &&
       COPY tests\fullbench.c bin\example\ &&
       COPY lib\xxhash.c bin\example\ &&
@@ -69,11 +69,11 @@ build_script:
       COPY lib\dll\example\README.md bin\ &&
       COPY programs\lz5.exe bin\lz5.exe
     )
-  - if [%COMPILER%]==[gcc] if [%PLATFORM%]==[mingw64] (
+  - if [%COMPILER%]==[gccX] if [%PLATFORM%]==[mingw64] (
       7z.exe a bin\lz5_x64.zip NEWS .\bin\lz5.exe .\bin\README.md .\bin\example .\bin\dll .\bin\static .\bin\include &&
       appveyor PushArtifact bin\lz5_x64.zip
     )
-  - if [%COMPILER%]==[gcc] if [%PLATFORM%]==[mingw32] (
+  - if [%COMPILER%]==[gccX] if [%PLATFORM%]==[mingw32] (
       7z.exe a bin\lz5_x86.zip NEWS .\bin\lz5.exe .\bin\README.md .\bin\example .\bin\dll .\bin\static .\bin\include &&
       appveyor PushArtifact bin\lz5_x86.zip
     )

@@ -1,6 +1,6 @@
 /*
     bench.h - Demo program to benchmark open-source compression algorithm
-    Copyright (C) Yann Collet 2012-2015
+    Copyright (C) Yann Collet 2012-2016
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,15 +19,18 @@
     You can contact the author at :
     - LZ5 source repository : https://github.com/inikep/lz5
 */
-#ifndef BENCH_H_1212
-#define BENCH_H_1212
+#ifndef BENCH_H_12
+#define BENCH_H_12
 
-/* Main function */
-int BMK_benchFiles(const char** fileNamesTable, unsigned nbFiles, int cLevel, int cLevelLast);
+#include <stddef.h>
+
+int BMK_benchFiles(const char** fileNamesTable, unsigned nbFiles,
+                   int cLevel, int cLevelLast);
 
 /* Set Parameters */
-void BMK_SetBlockSize(size_t bsize);
-void BMK_SetNbIterations(unsigned nbLoops);
+void BMK_SetNbSeconds(unsigned nbLoops);
+void BMK_SetBlockSize(size_t blockSize);
+void BMK_setAdditionalParam(int additionalParam);
+void BMK_setNotificationLevel(unsigned level);
 
-
-#endif   /* BENCH_H_1212 */ 
+#endif   /* BENCH_H_125623623633 */

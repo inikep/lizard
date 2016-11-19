@@ -28,18 +28,23 @@
   - The license of this source file is GPLv2.
 */
 
-#pragma once
+#ifndef LZ5IO_H_23
+#define LZ5IO_H_23
+
+/*---   Dependency   ---*/
+#include <stddef.h>   /* size_t */
+
 
 /* ************************************************** */
 /* Special input/output values                        */
 /* ************************************************** */
 #define NULL_OUTPUT "null"
-static char const stdinmark[] = "stdin";
-static char const stdoutmark[] = "stdout";
+static const char stdinmark[]  = "stdin";
+static const char stdoutmark[] = "stdout";
 #ifdef _WIN32
-static char const nulmark[] = "nul";
+static const char nulmark[] = "nul";
 #else
-static char const nulmark[] = "/dev/null";
+static const char nulmark[] = "/dev/null";
 #endif
 
 
@@ -50,9 +55,9 @@ static char const nulmark[] = "/dev/null";
 int LZ5IO_compressFilename  (const char* input_filename, const char* output_filename, int compressionlevel);
 int LZ5IO_decompressFilename(const char* input_filename, const char* output_filename);
 
-
 int LZ5IO_compressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix, int compressionlevel);
 int LZ5IO_decompressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix);
+
 
 /* ************************************************** */
 /* ****************** Parameters ******************** */
@@ -66,9 +71,9 @@ int LZ5IO_setOverwrite(int yes);
    return : testMode (0/1) */
 int LZ5IO_setTestMode(int yes);
 
-/* blockSizeID : valid values : 1-7
-   return : -1 if error, blockSize if OK */
-int LZ5IO_setBlockSizeID(int blockSizeID);
+/* blockSizeID : valid values : 4-5-6-7
+   return : 0 if error, blockSize if OK */
+size_t LZ5IO_setBlockSizeID(unsigned blockSizeID);
 
 /* Default setting : independent blocks */
 typedef enum { LZ5IO_blockLinked=0, LZ5IO_blockIndependent} LZ5IO_blockMode_t;
@@ -88,3 +93,8 @@ int LZ5IO_setSparseFile(int enable);
 
 /* Default setting : 0 (disabled) */
 int LZ5IO_setContentSize(int enable);
+
+void LZ5IO_setRemoveSrcFile(unsigned flag);
+
+
+#endif  /* LZ5IO_H_237902873 */

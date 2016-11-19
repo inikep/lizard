@@ -33,13 +33,6 @@
 /**************************************
 *  Compiler Options
 ***************************************/
-/* Disable some Visual warning messages */
-#ifdef _MSC_VER
-#  define _CRT_SECURE_NO_WARNINGS
-#  define _CRT_SECURE_NO_DEPRECATE     /* VS2005 */
-#  pragma warning(disable : 4127)      /* disable: C4127: conditional expression is constant */
-#endif
-
 /* cf. http://man7.org/linux/man-pages/man7/feature_test_macros.7.html */
 #define _XOPEN_VERSION 600 /* POSIX.2001, for fileno() within <stdio.h> on unix */
 
@@ -47,29 +40,26 @@
 /****************************
 *  Includes
 *****************************/
+#include "util.h"     /* Compiler options, UTIL_HAS_CREATEFILELIST */
 #include <stdio.h>    /* fprintf, getchar */
 #include <stdlib.h>   /* exit, calloc, free */
 #include <string.h>   /* strcmp, strlen */
-#include "bench.h"    /* BMK_benchFile, BMK_SetNbIterations, BMK_SetBlocksize */
+#include "bench.h"    /* BMK_benchFile, BMK_SetNbIterations, BMK_SetBlocksize, BMK_SetPause */
 #include "lz5io.h"    /* LZ5IO_compressFilename, LZ5IO_decompressFilename, LZ5IO_compressMultipleFilenames */
-#include "lz5_common.h"      /* LZ5_VERSION_STRING, LZ5_FLAG_* */
-#define LZ5_NO_MEM_FUNCTIONS
+#include "lz5_compress.h" /* LZ5HC_DEFAULT_CLEVEL, LZ5_VERSION_STRING */
 
 
-/****************************
+/*-************************************
 *  OS-specific Includes
-*****************************/
-#if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(_WIN32)
-#  include <io.h>       /* _isatty */
-#  if defined(__DJGPP__)
-#    include <unistd.h>
-#    define _isatty isatty
-#    define _fileno fileno
-#  endif
-#  define IS_CONSOLE(stdStream) _isatty(_fileno(stdStream))
-#else
+**************************************/
+#if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) || defined(_XOPEN_SOURCE) || (defined(__APPLE__) && defined(__MACH__)) || defined(__DJGPP__)  /* https://sourceforge.net/p/predef/wiki/OperatingSystems/ */
 #  include <unistd.h>   /* isatty */
 #  define IS_CONSOLE(stdStream) isatty(fileno(stdStream))
+#elif defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(_WIN32) || defined(__CYGWIN__)
+#  include <io.h>       /* _isatty */
+#  define IS_CONSOLE(stdStream) _isatty(_fileno(stdStream))
+#else
+#  define IS_CONSOLE(stdStream) 0
 #endif
 
 
@@ -83,6 +73,10 @@
 #define LZ5CAT "lz5cat"
 #define UNLZ5 "unlz5"
 
+#define KB *(1U<<10)
+#define MB *(1U<<20)
+#define GB *(1U<<30)
+
 #define LZ5_BLOCKSIZEID_DEFAULT 4
 
 
@@ -92,12 +86,6 @@
 #define DISPLAY(...)           fprintf(stderr, __VA_ARGS__)
 #define DISPLAYLEVEL(l, ...)   if (displayLevel>=l) { DISPLAY(__VA_ARGS__); }
 static unsigned displayLevel = 2;   /* 0 : no display ; 1: errors only ; 2 : downgradable normal ; 3 : non-downgradable normal; 4 : + information */
-
-
-/*-************************************
-*  Local Variables
-***************************************/
-static const char* programName;
 
 
 /*-************************************
@@ -121,16 +109,18 @@ static const char* programName;
 #define EXTENDED_ARGUMENTS
 #define EXTENDED_HELP
 #define EXTENDED_FORMAT
+#define DEFAULT_COMPRESSOR   LZ5IO_compressFilename
+#define DEFAULT_DECOMPRESSOR LZ5IO_decompressFilename
 int LZ5IO_compressFilename_Legacy(const char* input_filename, const char* output_filename, int compressionlevel);   /* hidden function */
 
 
 /*-***************************
 *  Functions
 *****************************/
-static int usage(void)
+static int usage(const char* exeName)
 {
     DISPLAY( "Usage :\n");
-    DISPLAY( "      %s [arg] [input] [output]\n", programName);
+    DISPLAY( "      %s [arg] [input] [output]\n", exeName);
     DISPLAY( "\n");
     DISPLAY( "input   : a filename\n");
     DISPLAY( "          with no FILE, or when FILE is - or %s, read standard input\n", stdinmark);
@@ -143,14 +133,15 @@ static int usage(void)
     DISPLAY( " -d     : decompression (default for %s extension)\n", LZ5_EXTENSION);
     DISPLAY( " -z     : force compression\n");
     DISPLAY( " -f     : overwrite output without prompting \n");
+    DISPLAY( "--rm    : remove source file(s) after successful de/compression \n");
     DISPLAY( " -h/-H  : display help/long help and exit\n");
     return 0;
 }
 
-static int usage_advanced(void)
+static int usage_advanced(const char* exeName)
 {
     DISPLAY(WELCOME_MESSAGE);
-    usage();
+    usage(exeName);
     DISPLAY( "\n");
     DISPLAY( "Advanced arguments :\n");
     DISPLAY( " -V     : display Version number and exit\n");
@@ -159,6 +150,10 @@ static int usage_advanced(void)
     DISPLAY( " -c     : force write to standard output, even if it is the console\n");
     DISPLAY( " -t     : test compressed file integrity\n");
     DISPLAY( " -m     : multiple input files (implies automatic output filenames)\n");
+#ifdef UTIL_HAS_CREATEFILELIST
+    DISPLAY( " -r     : operate recursively on directories (sets also -m)\n");
+#endif
+    DISPLAY( " -l     : compress using Legacy format (Linux kernel compression)\n");
     DISPLAY( " -B#    : Block size [1-7] = 128KB, 256KB, 1MB, 4MB, 16MB, 64MB, 256MB (default : 4 = 4MB)\n");
     DISPLAY( " -BD    : Block dependency (improve compression ratio)\n");
     /* DISPLAY( " -BX    : enable block checksum (default:disabled)\n");   *//* Option currently inactive */
@@ -167,16 +162,17 @@ static int usage_advanced(void)
     DISPLAY( "--[no-]sparse  : sparse mode (default:enabled on file, disabled on stdout)\n");
     DISPLAY( "Benchmark arguments :\n");
     DISPLAY( " -b#    : benchmark file(s), using # compression level (default : 1) \n");
-    DISPLAY( " -e#    : test all compression levels from -bX to # (default: 1)\n");
+    DISPLAY( " -e#    : test all compression levels from -bX to # (default : 1)\n");
     DISPLAY( " -i#    : minimum evaluation time in seconds (default : 3s)\n");
- //   DISPLAY( " -l#    : use Huffman compressions of streams (1=literals, 2=flags, 4=off16, 8=off24)\n");
+    DISPLAY( " -B#    : cut file into independent blocks of size # bytes [32+]\n");
+    DISPLAY( "                      or predefined block size [1-7] (default: 4)\n");
     EXTENDED_HELP;
     return 0;
 }
 
-static int usage_longhelp(void)
+static int usage_longhelp(const char* exeName)
 {
-    usage_advanced();
+    usage_advanced(exeName);
     DISPLAY( "\n");
     DISPLAY( "****************************\n");
     DISPLAY( "***** Advanced comment *****\n");
@@ -197,32 +193,32 @@ static int usage_longhelp(void)
     DISPLAY( "stdin, stdout and the console : \n");
     DISPLAY( "--------------------------------\n");
     DISPLAY( "To protect the console from binary flooding (bad argument mistake)\n");
-    DISPLAY( "%s will refuse to read from console, or write to console \n", programName);
+    DISPLAY( "%s will refuse to read from console, or write to console \n", exeName);
     DISPLAY( "except if '-c' command is specified, to force output to console \n");
     DISPLAY( "\n");
     DISPLAY( "Simple example :\n");
     DISPLAY( "----------------\n");
     DISPLAY( "1 : compress 'filename' fast, using default output name 'filename.lz5'\n");
-    DISPLAY( "          %s filename\n", programName);
+    DISPLAY( "          %s filename\n", exeName);
     DISPLAY( "\n");
     DISPLAY( "Short arguments can be aggregated. For example :\n");
     DISPLAY( "----------------------------------\n");
     DISPLAY( "2 : compress 'filename' in high compression mode, overwrite output if exists\n");
-    DISPLAY( "          %s -9 -f filename \n", programName);
+    DISPLAY( "          %s -9 -f filename \n", exeName);
     DISPLAY( "    is equivalent to :\n");
-    DISPLAY( "          %s -9f filename \n", programName);
+    DISPLAY( "          %s -9f filename \n", exeName);
     DISPLAY( "\n");
-    DISPLAY( "%s can be used in 'pure pipe mode'. For example :\n", programName);
+    DISPLAY( "%s can be used in 'pure pipe mode'. For example :\n", exeName);
     DISPLAY( "-------------------------------------\n");
     DISPLAY( "3 : compress data stream from 'generator', send result to 'consumer'\n");
-    DISPLAY( "          generator | %s | consumer \n", programName);
+    DISPLAY( "          generator | %s | consumer \n", exeName);
     return 0;
 }
 
-static int badusage(void)
+static int badusage(const char* exeName)
 {
     DISPLAYLEVEL(1, "Incorrect parameters\n");
-    if (displayLevel >= 1) usage();
+    if (displayLevel >= 1) usage(exeName);
     exit(1);
 }
 
@@ -246,36 +242,50 @@ static unsigned readU32FromChar(const char** stringPtr)
     return result;
 }
 
+typedef enum { om_auto, om_compress, om_decompress, om_test, om_bench } operationMode_e;
 
 int main(int argc, const char** argv)
 {
     int i,
-        cLevel=0,
-        cLevelLast=0,
-        decode=0,
-        bench=0,
+        cLevel=1,
+        cLevelLast=1,
         forceStdout=0,
-        forceCompress=0,
         main_pause=0,
         multiple_inputs=0,
         operationResult=0;
-    const char* input_filename=0;
-    const char* output_filename=0;
-    char* dynNameSpace=0;
-    const char** inFileNames = NULL;
+    operationMode_e mode = om_auto;
+    const char* input_filename = NULL;
+    const char* output_filename= NULL;
+    char* dynNameSpace = NULL;
+    const char** inFileNames = (const char**) calloc(argc, sizeof(char*));
     unsigned ifnIdx=0;
-    char nullOutput[] = NULL_OUTPUT;
-    char extension[] = LZ5_EXTENSION;
-    int  blockSize;
+    const char nullOutput[] = NULL_OUTPUT;
+    const char extension[] = LZ5_EXTENSION;
+    size_t blockSize = LZ5IO_setBlockSizeID(LZ5_BLOCKSIZEID_DEFAULT);
+    const char* const exeName = argv[0];
+#ifdef UTIL_HAS_CREATEFILELIST
+    const char** extendedFileList = NULL;
+    char* fileNamesBuf = NULL;
+    unsigned fileNamesNb, recursive=0;
+#endif
 
     /* Init */
-    programName = argv[0];
+    if (inFileNames==NULL) {
+        DISPLAY("Allocation error : not enough memory \n");
+        return 1;
+    }
     LZ5IO_setOverwrite(0);
-    blockSize = LZ5IO_setBlockSizeID(LZ5_BLOCKSIZEID_DEFAULT);
 
     /* lz5cat predefined behavior */
-    if (!strcmp(programName, LZ5CAT)) { decode=1; forceStdout=1; output_filename=stdoutmark; displayLevel=1; }
-    if (!strcmp(programName, UNLZ5)) { decode=1; }
+    if (!strcmp(exeName, LZ5CAT)) {
+        mode = om_decompress;
+        LZ5IO_setOverwrite(1);
+        forceStdout=1;
+        output_filename=stdoutmark;
+        displayLevel=1;
+        multiple_inputs=1;
+    }
+    if (!strcmp(exeName, UNLZ5)) { mode = om_decompress; }
 
     /* command switches */
     for(i=1; i<argc; i++) {
@@ -283,33 +293,38 @@ int main(int argc, const char** argv)
 
         if(!argument) continue;   /* Protection if argument empty */
 
-        /* long commands (--long-word) */
-        if (!strcmp(argument,  "--compress")) { forceCompress = 1; continue; }
-        if ((!strcmp(argument, "--decompress"))
-         || (!strcmp(argument, "--uncompress"))) { decode = 1; continue; }
-        if (!strcmp(argument,  "--multiple")) { multiple_inputs = 1; if (inFileNames==NULL) inFileNames = (const char**)malloc(argc * sizeof(char*)); continue; }
-        if (!strcmp(argument,  "--test")) { decode = 1; LZ5IO_setTestMode(1); output_filename=nulmark; continue; }
-        if (!strcmp(argument,  "--force")) { LZ5IO_setOverwrite(1); continue; }
-        if (!strcmp(argument,  "--no-force")) { LZ5IO_setOverwrite(0); continue; }
-        if ((!strcmp(argument, "--stdout"))
-         || (!strcmp(argument, "--to-stdout"))) { forceStdout=1; output_filename=stdoutmark; displayLevel=1; continue; }
-        if (!strcmp(argument,  "--frame-crc")) { LZ5IO_setStreamChecksumMode(1); continue; }
-        if (!strcmp(argument,  "--no-frame-crc")) { LZ5IO_setStreamChecksumMode(0); continue; }
-        if (!strcmp(argument,  "--content-size")) { LZ5IO_setContentSize(1); continue; }
-        if (!strcmp(argument,  "--no-content-size")) { LZ5IO_setContentSize(0); continue; }
-        if (!strcmp(argument,  "--sparse")) { LZ5IO_setSparseFile(2); continue; }
-        if (!strcmp(argument,  "--no-sparse")) { LZ5IO_setSparseFile(0); continue; }
-        if (!strcmp(argument,  "--verbose")) { displayLevel=4; continue; }
-        if (!strcmp(argument,  "--quiet")) { if (displayLevel) displayLevel--; continue; }
-        if (!strcmp(argument,  "--version")) { DISPLAY(WELCOME_MESSAGE); return 0; }
-        if (!strcmp(argument,  "--keep")) { continue; }   /* keep source file (default anyway; just for xz/lzma compatibility) */
-
         /* Short commands (note : aggregated short commands are allowed) */
         if (argument[0]=='-') {
             /* '-' means stdin/stdout */
             if (argument[1]==0) {
                 if (!input_filename) input_filename=stdinmark;
                 else output_filename=stdoutmark;
+                continue;
+            }
+
+            /* long commands (--long-word) */
+            if (argument[1]=='-') {
+                if (!strcmp(argument,  "--compress")) { mode = om_compress; continue; }
+                if ((!strcmp(argument, "--decompress"))
+                    || (!strcmp(argument, "--uncompress"))) { mode = om_decompress; continue; }
+                if (!strcmp(argument,  "--multiple")) { multiple_inputs = 1; continue; }
+                if (!strcmp(argument,  "--test")) { mode = om_test; continue; }
+                if (!strcmp(argument,  "--force")) { LZ5IO_setOverwrite(1); continue; }
+                if (!strcmp(argument,  "--no-force")) { LZ5IO_setOverwrite(0); continue; }
+                if ((!strcmp(argument, "--stdout"))
+                    || (!strcmp(argument, "--to-stdout"))) { forceStdout=1; output_filename=stdoutmark; continue; }
+                if (!strcmp(argument,  "--frame-crc")) { LZ5IO_setStreamChecksumMode(1); continue; }
+                if (!strcmp(argument,  "--no-frame-crc")) { LZ5IO_setStreamChecksumMode(0); continue; }
+                if (!strcmp(argument,  "--content-size")) { LZ5IO_setContentSize(1); continue; }
+                if (!strcmp(argument,  "--no-content-size")) { LZ5IO_setContentSize(0); continue; }
+                if (!strcmp(argument,  "--sparse")) { LZ5IO_setSparseFile(2); continue; }
+                if (!strcmp(argument,  "--no-sparse")) { LZ5IO_setSparseFile(0); continue; }
+                if (!strcmp(argument,  "--verbose")) { displayLevel++; continue; }
+                if (!strcmp(argument,  "--quiet")) { if (displayLevel) displayLevel--; continue; }
+                if (!strcmp(argument,  "--version")) { DISPLAY(WELCOME_MESSAGE); return 0; }
+                if (!strcmp(argument,  "--help")) { usage_advanced(exeName); goto _cleanup; }
+                if (!strcmp(argument,  "--keep")) { LZ5IO_setRemoveSrcFile(0); continue; }   /* keep source file (default) */
+                if (!strcmp(argument,  "--rm")) { LZ5IO_setRemoveSrcFile(1); continue; }
             }
 
             while (argument[1]!=0) {
@@ -326,8 +341,8 @@ int main(int argc, const char** argv)
                 {
                     /* Display help */
                 case 'V': DISPLAY(WELCOME_MESSAGE); goto _cleanup;   /* Version */
-                case 'h': usage_advanced(); goto _cleanup;
-                case 'H': usage_longhelp(); goto _cleanup;
+                case 'h': usage_advanced(exeName); goto _cleanup;
+                case 'H': usage_longhelp(exeName); goto _cleanup;
 
                 case 'e':
                     argument++;
@@ -336,28 +351,28 @@ int main(int argc, const char** argv)
                     break;
 
                     /* Compression (default) */
-                case 'z': forceCompress = 1; break;
+                case 'z': mode = om_compress; break;
 
                     /* Decoding */
-                case 'd': decode=1; break;
+                case 'd': mode = om_decompress; break;
 
                     /* Force stdout, even if stdout==console */
-                case 'c': forceStdout=1; output_filename=stdoutmark; displayLevel=1; break;
+                case 'c': forceStdout=1; output_filename=stdoutmark; break;
 
                     /* Test integrity */
-                case 't': decode=1; LZ5IO_setTestMode(1); output_filename=nulmark; break;
+                case 't': mode = om_test; break;
 
                     /* Overwrite */
                 case 'f': LZ5IO_setOverwrite(1); break;
 
                     /* Verbose mode */
-                case 'v': displayLevel=4; break;
+                case 'v': displayLevel++; break;
 
                     /* Quiet mode */
                 case 'q': if (displayLevel) displayLevel--; break;
 
                     /* keep source file (default anyway, so useless) (for xz/lzma compatibility) */
-                case 'k': break;
+                case 'k': LZ5IO_setRemoveSrcFile(0); break;
 
                     /* Modify Block Properties */
                 case 'B':
@@ -365,54 +380,69 @@ int main(int argc, const char** argv)
                         int exitBlockProperties=0;
                         switch(argument[1])
                         {
-                        case '1':
-                        case '2':
-                        case '3':
-                        case '4':
-                        case '5':
-                        case '6':
-                        case '7':
-                            {   int B = argument[1] - '0';
-                                blockSize = LZ5IO_setBlockSizeID(B);
-                                BMK_SetBlockSize(blockSize);
+                        case 'D': LZ5IO_setBlockMode(LZ5IO_blockLinked); argument++; break;
+                        case 'X': LZ5IO_setBlockChecksumMode(1); argument ++; break;   /* disabled by default */
+                        default :
+                            if (argument[1] < '0' || argument[1] > '9') {
+                                exitBlockProperties=1;
+                                break;
+                            } else {
+                                unsigned B;
                                 argument++;
+                                B = readU32FromChar(&argument);
+                                argument--;
+                                if (B < 1) badusage(exeName);
+                                if (B <= 7) {
+                                    blockSize = LZ5IO_setBlockSizeID(B);
+                                    BMK_SetBlockSize(blockSize);
+                                    DISPLAYLEVEL(2, "using blocks of size %u KB \n", (U32)(blockSize>>10));
+                                } else {
+                                    if (B < 32) badusage(exeName);
+                                    BMK_SetBlockSize(B);
+                                    if (B >= 1024) {
+                                        DISPLAYLEVEL(2, "bench: using blocks of size %u KB \n", (U32)(B>>10));
+                                    } else {
+                                        DISPLAYLEVEL(2, "bench: using blocks of size %u bytes \n", (U32)(B));
+                                    }
+                                }
                                 break;
                             }
-                        case 'D': LZ5IO_setBlockMode(LZ5IO_blockLinked); argument++; break;
-                        case 'X': LZ5IO_setBlockChecksumMode(1); argument ++; break;   /* currently disabled */
-                        default : exitBlockProperties=1;
                         }
                         if (exitBlockProperties) break;
                     }
                     break;
 
                     /* Benchmark */
-                case 'b': bench=1; multiple_inputs=1;
-                    if (inFileNames == NULL)
-                        inFileNames = (const char**) malloc(argc * sizeof(char*));
+                case 'b': mode = om_bench; multiple_inputs=1;
                     break;
 
+#ifdef UTIL_HAS_CREATEFILELIST
+                        /* recursive */
+                case 'r': recursive=1;  /* without break */
+#endif
                     /* Treat non-option args as input files.  See https://code.google.com/p/lz5/issues/detail?id=151 */
                 case 'm': multiple_inputs=1;
-                    if (inFileNames == NULL)
-                        inFileNames = (const char**) malloc(argc * sizeof(char*));
                     break;
 
-                    /* Modify Nb Iterations (benchmark only) */
+                    /* Modify Nb Seconds (benchmark only) */
                 case 'i':
                     {   unsigned iters;
                         argument++;
                         iters = readU32FromChar(&argument);
                         argument--;
-                        BMK_SetNbIterations(iters);
+                        BMK_setNotificationLevel(displayLevel);
+                        BMK_SetNbSeconds(iters);
                     }
                     break;
+
+                    /* Pause at the end (hidden option) */
+                case 'p': main_pause=1; break;
 
                     /* Specific commands for customized versions */
                 EXTENDED_ARGUMENTS;
 
                     /* Unrecognised command */
-                default : badusage();
+                default : badusage(exeName);
                 }
             }
             continue;
@@ -436,54 +466,79 @@ int main(int argc, const char** argv)
     }
 
     DISPLAYLEVEL(3, WELCOME_MESSAGE);
-    if (!decode) DISPLAYLEVEL(4, "Blocks size : %i KB\n", blockSize>>10);
+    if ((mode == om_compress) || (mode == om_bench)) DISPLAYLEVEL(4, "Blocks size : %i KB\n", (U32)(blockSize>>10));
 
-    /* No input filename ==> use stdin */
-    if (multiple_inputs) input_filename = inFileNames[0], output_filename = (const char*)(inFileNames[0]);
-    if(!input_filename) { input_filename=stdinmark; }
+    if (multiple_inputs) {
+        input_filename = inFileNames[0];
+#ifdef UTIL_HAS_CREATEFILELIST
+        if (recursive) {  /* at this stage, filenameTable is a list of paths, which can contain both files and directories */
+            extendedFileList = UTIL_createFileList(inFileNames, ifnIdx, &fileNamesBuf, &fileNamesNb);
+            if (extendedFileList) {
+                unsigned u;
+                for (u=0; u<fileNamesNb; u++) DISPLAYLEVEL(4, "%u %s\n", u, extendedFileList[u]);
+                free((void*)inFileNames);
+                inFileNames = extendedFileList;
+                ifnIdx = fileNamesNb;
+            }
+        }
+#endif
+    }
 
+    /* benchmark and test modes */
+    if (mode == om_bench) {
+        BMK_setNotificationLevel(displayLevel);
+        operationResult = BMK_benchFiles(inFileNames, ifnIdx, cLevel, cLevelLast);
+        goto _cleanup;
+    }
+
+    if (mode == om_test) {
+        LZ5IO_setTestMode(1);
+        output_filename = nulmark;
+        mode = om_decompress;   /* defer to decompress */
+    }
+
+    /* compress or decompress */
+    if (!input_filename) input_filename = stdinmark;
     /* Check if input is defined as console; trigger an error in this case */
     if (!strcmp(input_filename, stdinmark) && IS_CONSOLE(stdin) ) {
         DISPLAYLEVEL(1, "refusing to read from a console\n");
         exit(1);
     }
 
-    /* Check if benchmark is selected */
-    if (bench) {
-        int bmkResult = BMK_benchFiles(inFileNames, ifnIdx, cLevel, cLevelLast);
-        free((void*)inFileNames);
-        return bmkResult;
-    }
-
     /* No output filename ==> try to select one automatically (when possible) */
     while (!output_filename) {
         if (!IS_CONSOLE(stdout)) { output_filename=stdoutmark; break; }   /* Default to stdout whenever possible (i.e. not a console) */
-        if ((!decode) && !(forceCompress)) {  /* auto-determine compression or decompression, based on file extension */
-            size_t const l = strlen(input_filename);
-            if (!strcmp(input_filename+(l-4), LZ5_EXTENSION)) decode=1;
+        if (mode == om_auto) {  /* auto-determine compression or decompression, based on file extension */
+            size_t const inSize  = strlen(input_filename);
+            size_t const extSize = strlen(LZ5_EXTENSION);
+            size_t const extStart= (inSize > extSize) ? inSize-extSize : 0;
+            if (!strcmp(input_filename+extStart, LZ5_EXTENSION)) mode = om_decompress;
+            else mode = om_compress;
         }
-        if (!decode) {   /* compression to file */
+        if (mode == om_compress) {   /* compression to file */
             size_t const l = strlen(input_filename);
             dynNameSpace = (char*)calloc(1,l+5);
-            if (dynNameSpace==NULL) exit(1);
+            if (dynNameSpace==NULL) { perror(exeName); exit(1); }
             strcpy(dynNameSpace, input_filename);
             strcat(dynNameSpace, LZ5_EXTENSION);
             output_filename = dynNameSpace;
             DISPLAYLEVEL(2, "Compressed filename will be : %s \n", output_filename);
             break;
         }
-        /* decompression to file (automatic name will work only if input filename has correct format extension) */
-        {   size_t outl;
-            size_t inl = strlen(input_filename);
+        if (mode == om_decompress) {/* decompression to file (automatic name will work only if input filename has correct format extension) */
+            size_t outl;
+            size_t const inl = strlen(input_filename);
             dynNameSpace = (char*)calloc(1,inl+1);
+            if (dynNameSpace==NULL) { perror(exeName); exit(1); }
             strcpy(dynNameSpace, input_filename);
             outl = inl;
             if (inl>4)
                 while ((outl >= inl-4) && (input_filename[outl] ==  extension[outl-inl+4])) dynNameSpace[outl--]=0;
-            if (outl != inl-5) { DISPLAYLEVEL(1, "Cannot determine an output filename\n"); badusage(); }
+            if (outl != inl-5) { DISPLAYLEVEL(1, "Cannot determine an output filename\n"); badusage(exeName); }
             output_filename = dynNameSpace;
             DISPLAYLEVEL(2, "Decoding file %s \n", output_filename);
         }
+        break;
     }
 
     /* Check if output is defined as console; trigger an error in this case */
@@ -492,28 +547,34 @@ int main(int argc, const char** argv)
         exit(1);
     }
 
-    /* Downgrade notification level in pure pipe mode (stdin + stdout) and multiple file mode */
-    if (!strcmp(input_filename, stdinmark) && !strcmp(output_filename,stdoutmark) && (displayLevel==2)) displayLevel=1;
+    /* Downgrade notification level in stdout and multiple file mode */
+    if (!strcmp(output_filename,stdoutmark) && (displayLevel==2)) displayLevel=1;
     if ((multiple_inputs) && (displayLevel==2)) displayLevel=1;
 
     /* IO Stream/File */
     LZ5IO_setNotificationLevel(displayLevel);
-    if (decode) {
+    if (mode == om_decompress) {
         if (multiple_inputs)
-            operationResult = LZ5IO_decompressMultipleFilenames(inFileNames, ifnIdx, LZ5_EXTENSION);
+            operationResult = LZ5IO_decompressMultipleFilenames(inFileNames, ifnIdx, !strcmp(output_filename,stdoutmark) ? stdoutmark : LZ5_EXTENSION);
         else
             operationResult = LZ5IO_decompressFilename(input_filename, output_filename);
-    } else {
-        /* compression is default action */
-        if (multiple_inputs)
-            operationResult = LZ5IO_compressMultipleFilenames(inFileNames, ifnIdx, LZ5_EXTENSION, cLevel);
-        else
-            operationResult = LZ5IO_compressFilename(input_filename, output_filename, cLevel);
+    } else {   /* compression is default action */
+        {
+            if (multiple_inputs)
+                operationResult = LZ5IO_compressMultipleFilenames(inFileNames, ifnIdx, LZ5_EXTENSION, cLevel);
+            else
+                operationResult = LZ5IO_compressFilename(input_filename, output_filename, cLevel);
+        }
     }
 
 _cleanup:
     if (main_pause) waitEnter();
-    free(dynNameSpace);
-    free((void*)inFileNames);
+    if (dynNameSpace) free(dynNameSpace);
+#ifdef UTIL_HAS_CREATEFILELIST
+    if (extendedFileList)
+        UTIL_freeFileList(extendedFileList, fileNamesBuf);
+    else
+#endif
+        free((void*)inFileNames);
     return operationResult;
 }

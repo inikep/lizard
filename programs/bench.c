@@ -1,5 +1,5 @@
 /*
-    bench.c - open-source compression benchmark module
+    bench.c - Demo program to benchmark open-source compression algorithms
     Copyright (C) Yann Collet 2012-2016
 
     GPL v2 License
@@ -19,8 +19,9 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     You can contact the author at :
-    - lz5 source repository : https://github.com/inikep/lz5
+    - LZ5 source repository : https://github.com/inikep/lz5
 */
+
 
 /* *************************************
 *  Includes
@@ -29,23 +30,31 @@
 #include <stdlib.h>      /* malloc, free */
 #include <string.h>      /* memset */
 #include <stdio.h>       /* fprintf, fopen, ftello64 */
-#include <time.h>         /* clock_t, clock, CLOCKS_PER_SEC */
+#include <time.h>        /* clock_t, clock, CLOCKS_PER_SEC */
 
-#include "entropy/mem.h"
 #include "datagen.h"     /* RDG_genBuffer */
 #include "xxhash/xxhash.h"
 #include "lz5_common.h"
 #include "lz5_decompress.h"
 
+
 #define LZ5_isError(errcode) (errcode==0)
+
 
 /* *************************************
 *  Constants
 ***************************************/
-#define NBLOOPS               3
-#define TIMELOOP_MICROSEC     1*1000000ULL   /* 1 second */
-#define ACTIVEPERIOD_MICROSEC 120*1000000ULL /* 120 seconds */
+#ifndef LZ5_GIT_COMMIT_STRING
+#  define LZ5_GIT_COMMIT_STRING ""
+#else
+#  define LZ5_GIT_COMMIT_STRING LZ5_EXPAND_AND_QUOTE(LZ5_GIT_COMMIT)
+#endif
+
+#define NBSECONDS             3
+#define TIMELOOP_MICROSEC     1*1000000ULL /* 1 second */
+#define ACTIVEPERIOD_MICROSEC 70*1000000ULL /* 70 seconds */
 #define COOLPERIOD_SEC        10
+#define DECOMP_MULT           2 /* test decompression DECOMP_MULT times longer than compression */
 
 #define KB *(1 <<10)
 #define MB *(1 <<20)
@@ -91,7 +100,7 @@ static clock_t g_time = 0;
 /* *************************************
 *  Benchmark Parameters
 ***************************************/
-static U32 g_nbIterations = NBLOOPS;
+static U32 g_nbSeconds = NBSECONDS;
 static size_t g_blockSize = 0;
 int g_additionalParam = 0;
 
@@ -99,24 +108,22 @@ void BMK_setNotificationLevel(unsigned level) { g_displayLevel=level; }
 
 void BMK_setAdditionalParam(int additionalParam) { g_additionalParam=additionalParam; }
 
-void BMK_SetNbIterations(unsigned nbLoops)
+void BMK_SetNbSeconds(unsigned nbSeconds)
 {
-    g_nbIterations = nbLoops;
-    DISPLAYLEVEL(3, "- test >= %u seconds per compression / decompression -\n", g_nbIterations);
+    g_nbSeconds = nbSeconds;
+    DISPLAYLEVEL(3, "- test >= %u seconds per compression / decompression -\n", g_nbSeconds);
 }
 
 void BMK_SetBlockSize(size_t blockSize)
 {
     g_blockSize = blockSize;
-    DISPLAYLEVEL(2, "using blocks of size %u KB \n", (U32)(blockSize>>10));
 }
 
 
 /* ********************************************************
 *  Bench functions
 **********************************************************/
-typedef struct
-{
+typedef struct {
     const char* srcPtr;
     size_t srcSize;
     char*  cPtr;
@@ -125,6 +132,7 @@ typedef struct
     char*  resPtr;
     size_t resSize;
 } blockParam_t;
+
 
 
 static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
@@ -177,7 +185,7 @@ static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
     {   U64 fastestC = (U64)(-1LL), fastestD = (U64)(-1LL);
         U64 const crcOrig = XXH64(srcBuffer, srcSize, 0);
         UTIL_time_t coolTime;
-        U64 const maxTime = (g_nbIterations * TIMELOOP_MICROSEC) + 100;
+        U64 const maxTime = (g_nbSeconds * TIMELOOP_MICROSEC) + 100;
         U64 totalCTime=0, totalDTime=0;
         U32 cCompleted=0, dCompleted=0;
 #       define NB_MARKS 4
@@ -190,7 +198,7 @@ static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
         DISPLAYLEVEL(2, "\r%79s\r", "");
         while (!cCompleted | !dCompleted) {
             UTIL_time_t clockStart;
-            U64 clockLoop = g_nbIterations ? TIMELOOP_MICROSEC : 1;
+            U64 clockLoop = g_nbSeconds ? TIMELOOP_MICROSEC : 1;
 
             /* overheat protection */
             if (UTIL_clockSpanMicro(coolTime, ticksPerSecond) > ACTIVEPERIOD_MICROSEC) {
@@ -215,7 +223,7 @@ static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
                         size_t const rSize = LZ5_compress(blockTable[blockNb].srcPtr, blockTable[blockNb].cPtr, (int)blockTable[blockNb].srcSize, (int)blockTable[blockNb].cRoom, cLevel);
                         if (LZ5_isError(rSize)) EXM_THROW(1, "LZ5_compress() failed");
                         blockTable[blockNb].cSize = rSize;
-                    }                   
+                    }
                     nbLoops++;
                 } while (UTIL_clockSpanMicro(clockStart, ticksPerSecond) < clockLoop);
                 {   U64 const clockSpan = UTIL_clockSpanMicro(clockStart, ticksPerSecond);
@@ -226,6 +234,7 @@ static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
 
             cSize = 0;
             { U32 blockNb; for (blockNb=0; blockNb<nbBlocks; blockNb++) cSize += blockTable[blockNb].cSize; }
+            cSize += !cSize;  /* avoid div by 0 */
             ratio = (double)srcSize / (double)cSize;
             markNb = (markNb+1) % NB_MARKS;
             DISPLAYLEVEL(2, "%2s-%-17.17s :%10u ->%10u (%5.3f),%6.1f MB/s\r",
@@ -235,7 +244,7 @@ static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
             (void)fastestD; (void)crcOrig;   /*  unused when decompression disabled */
 #if 1
             /* Decompression */
-            memset(resultBuffer, 0xD6, srcSize);  /* warm result buffer */
+            if (!dCompleted) memset(resultBuffer, 0xD6, srcSize);  /* warm result buffer */
 
             UTIL_sleepMilli(1); /* give processor time to other processes */
             UTIL_waitForNextTick(ticksPerSecond);
@@ -247,21 +256,20 @@ static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
                     U32 blockNb;
                     for (blockNb=0; blockNb<nbBlocks; blockNb++) {
                         size_t const regenSize = LZ5_decompress_safe(blockTable[blockNb].cPtr, blockTable[blockNb].resPtr, (int)blockTable[blockNb].cSize, (int)blockTable[blockNb].srcSize);
-
                         if (LZ5_isError(regenSize)) {
                             DISPLAY("LZ5_decompress_safe() failed on block %u  \n", blockNb);
                             clockLoop = 0;   /* force immediate test end */
                             break;
                         }
+
                         blockTable[blockNb].resSize = regenSize;
                     }
                     nbLoops++;
-                } while (UTIL_clockSpanMicro(clockStart, ticksPerSecond) < 2*clockLoop);
-             //   printf("nbLoops=%d\n", nbLoops);
+                } while (UTIL_clockSpanMicro(clockStart, ticksPerSecond) < DECOMP_MULT*clockLoop);
                 {   U64 const clockSpan = UTIL_clockSpanMicro(clockStart, ticksPerSecond);
                     if (clockSpan < fastestD*nbLoops) fastestD = clockSpan / nbLoops;
                     totalDTime += clockSpan;
-                    dCompleted = totalDTime>(maxTime*2);
+                    dCompleted = totalDTime>(DECOMP_MULT*maxTime);
             }   }
 
             markNb = (markNb+1) % NB_MARKS;
@@ -274,14 +282,7 @@ static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
             {   U64 const crcCheck = XXH64(resultBuffer, srcSize, 0);
                 if (crcOrig!=crcCheck) {
                     size_t u;
-#if 0
-                    FILE* f = fopen("_decomp_error", "wb");
-                    if (f) {
-                        fwrite(resultBuffer, 1, srcSize, f);
-                        fclose(f);
-                    }
-#endif
-                    DISPLAY("\n!!! WARNING !!! %14s : Invalid Checksum : %x != %x   \n", displayName, (unsigned)crcOrig, (unsigned)crcCheck);
+                    DISPLAY("!!! WARNING !!! %14s : Invalid Checksum : %x != %x   \n", displayName, (unsigned)crcOrig, (unsigned)crcCheck);
                     for (u=0; u<srcSize; u++) {
                         if (((const BYTE*)srcBuffer)[u] != ((const BYTE*)resultBuffer)[u]) {
                             U32 segNb, bNb, pos;
@@ -302,7 +303,7 @@ static int BMK_benchMem(const void* srcBuffer, size_t srcSize,
                     break;
             }   }   /* CRC Checking */
 #endif
-        }   /* for (testNb = 1; testNb <= (g_nbIterations + !g_nbIterations); testNb++) */
+        }   /* for (testNb = 1; testNb <= (g_nbSeconds + !g_nbSeconds); testNb++) */
 
         if (g_displayLevel == 1) {
             double cSpeed = (double)srcSize / fastestC;
@@ -360,7 +361,7 @@ static void BMK_benchCLevel(void* srcBuffer, size_t benchedSize,
     SET_HIGH_PRIORITY;
 
     if (g_displayLevel == 1 && !g_additionalParam)
-        DISPLAY("bench %s: input %u bytes, %u iterations, %u KB blocks\n", LZ5_VERSION_STRING, (U32)benchedSize, g_nbIterations, (U32)(g_blockSize>>10));
+        DISPLAY("bench %s %s: input %u bytes, %u seconds, %u KB blocks\n", LZ5_VERSION_STRING, LZ5_GIT_COMMIT_STRING, (U32)benchedSize, g_nbSeconds, (U32)(g_blockSize>>10));
 
     if (cLevelLast < cLevel) cLevelLast = cLevel;
 
@@ -404,7 +405,8 @@ static void BMK_loadFiles(void* buffer, size_t bufferSize,
     if (totalSize == 0) EXM_THROW(12, "no data to bench");
 }
 
-static void BMK_benchFileTable(const char** fileNamesTable, unsigned nbFiles, int cLevel, int cLevelLast)
+static void BMK_benchFileTable(const char** fileNamesTable, unsigned nbFiles,
+                               int cLevel, int cLevelLast)
 {
     void* srcBuffer;
     size_t benchedSize;
@@ -420,7 +422,7 @@ static void BMK_benchFileTable(const char** fileNamesTable, unsigned nbFiles, in
     if ((U64)benchedSize > totalSizeToLoad) benchedSize = (size_t)totalSizeToLoad;
     if (benchedSize < totalSizeToLoad)
         DISPLAY("Not enough memory; testing %u MB only...\n", (U32)(benchedSize >> 20));
-    srcBuffer = malloc(benchedSize);
+    srcBuffer = malloc(benchedSize + !benchedSize);   /* avoid alloc of zero */
     if (!srcBuffer) EXM_THROW(12, "not enough memory");
 
     /* Load input buffer */
@@ -461,7 +463,8 @@ static void BMK_syntheticTest(int cLevel, int cLevelLast, double compressibility
 }
 
 
-int BMK_benchFiles(const char** fileNamesTable, unsigned nbFiles, int cLevel, int cLevelLast)
+int BMK_benchFiles(const char** fileNamesTable, unsigned nbFiles,
+                   int cLevel, int cLevelLast)
 {
     double const compressibility = (double)g_compressibilityDefault / 100;
 
