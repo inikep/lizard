@@ -281,7 +281,9 @@ test-platform:
 	$(QEMU_SYS) ./datagen         | $(QEMU_SYS) $(PRGDIR)/lz5        | $(QEMU_SYS) $(PRGDIR)/lz5 -t
 	$(QEMU_SYS) ./datagen -g256MB | $(QEMU_SYS) $(PRGDIR)/lz5 -vqB4D | $(QEMU_SYS) $(PRGDIR)/lz5 -qt
 ifneq ($(QEMU_SYS),qemu-arm-static)
+ifneq ($(QEMU_SYS),qemu-ppc-static)
 	$(QEMU_SYS) ./datagen -g3GB   | $(QEMU_SYS) $(PRGDIR)/lz5 -vqB5D | $(QEMU_SYS) $(PRGDIR)/lz5 -qt
+endif
 endif
 
 test-lz5c32: test-lz5c32-basic test-interop-32-64
