@@ -9,7 +9,7 @@ matrix:
     # Container-based 12.04 LTS Server Edition 64 bit (doesn't support 32-bit includes)
     - os: linux
       sudo: false
-      env: Ubu=12.04cont Cmd='make -C tests test-lz5 test-fasttest test-fullbench' COMPILER=cc
+      env: Ubu=12.04cont Cmd='make -C tests test-lz5 test-fullbench' COMPILER=cc
 
     - os: linux
       sudo: false
@@ -40,13 +40,13 @@ matrix:
             - libc6-dev-i386
             - gcc-multilib
 
-    - env: Ubu=14.04 Cmd='make sanitize' COMPILER=clang
-      dist: trusty
-      sudo: required
-      addons:
-        apt:
-          packages:
-            - valgrind
+    #- env: Ubu=14.04 Cmd='make sanitize' COMPILER=clang
+    #  dist: trusty
+    #  sudo: required
+    #  addons:
+    #    apt:
+    #      packages:
+    #        - valgrind
 
     #- env: Ubu=14.04 Cmd='make staticAnalyze' COMPILER=clang
     #  dist: trusty
