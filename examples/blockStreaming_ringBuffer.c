@@ -51,7 +51,7 @@ size_t read_bin(FILE* fp, void* array, int arrayBytes) {
 
 void test_compress(FILE* outFp, FILE* inpFp)
 {
-    LZ5_stream_t* lz5Stream = LZ5_createStream_Level1();
+    LZ5_stream_t* lz5Stream = LZ5_createStream_DefaultLevel();
     if (!lz5Stream) return;
 
     static char inpBuf[RING_BUFFER_BYTES];

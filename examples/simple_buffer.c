@@ -3,7 +3,7 @@
  * Copyright  : Kyle Harper
  * License    : Follows same licensing as the lz5_compress.c/lz5_compress.h program at any given time.  Currently, BSD 2.
  * Description: Example program to demonstrate the basic usage of the compress/decompress functions within lz5_compress.c/lz5_compress.h.
- *              The functions you'll likely want are LZ5_compress_Level1 and LZ5_decompress_safe.  Both of these are documented in
+ *              The functions you'll likely want are LZ5_compress_DefaultLevel and LZ5_decompress_safe.  Both of these are documented in
  *              the lz5_compress.h header file; I recommend reading them.
  */
 
@@ -46,13 +46,13 @@ int main(void) {
   char *compressed_data = malloc(max_dst_size);
   if (compressed_data == NULL)
     run_screaming("Failed to allocate memory for *compressed_data.", 1);
-  // That's all the information and preparation LZ5 needs to compress *src into *compressed_data.  Invoke LZ5_compress_Level1 now
+  // That's all the information and preparation LZ5 needs to compress *src into *compressed_data.  Invoke LZ5_compress_DefaultLevel now
   // with our size values and pointers to our memory locations.  Save the return value for error checking.
   int return_value = 0;
-  return_value = LZ5_compress_Level1(src, compressed_data, src_size, max_dst_size);
+  return_value = LZ5_compress_DefaultLevel(src, compressed_data, src_size, max_dst_size);
   // Check return_value to determine what happened.
   if (return_value < 0)
-    run_screaming("A negative result from LZ5_compress_Level1 indicates a failure trying to compress the data.  See exit code (echo $?) for value returned.", return_value);
+    run_screaming("A negative result from LZ5_compress_DefaultLevel indicates a failure trying to compress the data.  See exit code (echo $?) for value returned.", return_value);
   if (return_value == 0)
     run_screaming("A result of 0 means compression worked, but was stopped because the destination buffer couldn't hold all the information.", 1);
   if (return_value > 0)

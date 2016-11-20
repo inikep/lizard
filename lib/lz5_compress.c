@@ -55,7 +55,7 @@
 /* *************************************
 *  Local Macros
 ***************************************/
-#define LZ5_TRANSFORM_LEVEL 1
+#define LZ5_TRANSFORM_LEVEL 10
 #define DELTANEXT(p)        chainTable[(p) & contentMask]
 #define LZ5_MINIMAL_HUFF_GAIN(comprSize) (comprSize + (comprSize/8) + 512)
 #define LZ5_MINIMAL_BLOCK_GAIN(comprSize) (comprSize + (comprSize/32) + 512)
@@ -66,7 +66,7 @@
 **************************************/
 int LZ5_versionNumber (void) { return LZ5_VERSION_NUMBER; }
 int LZ5_compressBound(int isize)  { return LZ5_COMPRESSBOUND(isize); }
-int LZ5_sizeofState_Level1() { return LZ5_sizeofState(LZ5_TRANSFORM_LEVEL); }
+int LZ5_sizeofState_DefaultLevel() { return LZ5_sizeofState(LZ5_TRANSFORM_LEVEL); }
 
 
 
@@ -316,7 +316,8 @@ int LZ5_sizeofState(int compressionLevel)
 
     compressionLevel = LZ5_verifyCompressionLevel(compressionLevel);
     params = LZ5_defaultParameters[compressionLevel - LZ5_MIN_CLEVEL];
-    hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog3)+((size_t)1 << params.hashLog)));
+//    hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog3)+((size_t)1 << params.hashLog)));
+    hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog)));
     chainTableSize = (U32)(sizeof(U32)*((size_t)1 << params.contentLog));
 
     return sizeof(LZ5_stream_t) + hashTableSize + chainTableSize + LZ5_COMPRESS_ADD_BUF + (int)LZ5_COMPRESS_ADD_HUF;
@@ -348,13 +349,15 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel)
 
     compressionLevel = LZ5_verifyCompressionLevel(compressionLevel);
     params = LZ5_defaultParameters[compressionLevel - LZ5_MIN_CLEVEL];
-    hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog3)+((size_t)1 << params.hashLog)));
+//    hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog3)+((size_t)1 << params.hashLog)));
+    hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog)));
     chainTableSize = (U32)(sizeof(U32)*((size_t)1 << params.contentLog));
     
     if (!ctx)
     {
         ctx = (LZ5_stream_t*)malloc(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize + LZ5_COMPRESS_ADD_BUF + LZ5_COMPRESS_ADD_HUF);
-        if (!ctx) { printf("ERROR: Cannot allocate %d MB\n", (int)(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize)>>20); return 0; }
+        if (!ctx) { printf("ERROR: Cannot allocate %d MB (compressionLevel=%d)\n", (int)(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize)>>20, compressionLevel); return 0; }
+        printf("Allocated %d MB (compressionLevel=%d)\n", (int)(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize)>>20, compressionLevel); 
         ctx->allocatedMemory = sizeof(LZ5_stream_t) + hashTableSize + chainTableSize + LZ5_COMPRESS_ADD_BUF + (U32)LZ5_COMPRESS_ADD_HUF;
       //  printf("malloc from=%p to=%p hashTable=%p hashEnd=%p chainTable=%p chainEnd=%p\n", ctx, ((BYTE*)ctx)+sizeof(LZ5_stream_t) + hashTableSize + chainTableSize, ctx->hashTable, ((BYTE*)ctx->hashTable) + hashTableSize, ctx->chainTable, ((BYTE*)ctx->chainTable)+chainTableSize);
     }
@@ -366,7 +369,10 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel)
     ctx->chainTableSize = chainTableSize;
     ctx->params = params;
     ctx->compressionLevel = (unsigned)compressionLevel;
-    ctx->huffType = 0; //huffType; //LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS + LZ5_FLAG_OFFSET16 + LZ5_FLAG_OFFSET24;
+    if (compressionLevel < 30)
+        ctx->huffType = 0;
+    else
+        ctx->huffType = LZ5_FLAG_LITERALS + LZ5_FLAG_FLAGS; // + LZ5_FLAG_OFFSET16 + LZ5_FLAG_OFFSET24;
 
     ctx->literalsBase = (BYTE*)ctx->hashTable + ctx->hashTableSize + ctx->chainTableSize;
     ctx->flagsBase    = ctx->literalsEnd = ctx->literalsBase + LZ5_BLOCK_SIZE_PAD;
@@ -605,22 +611,22 @@ int LZ5_compress(const char* src, char* dst, int srcSize, int maxDstSize, int co
 /**************************************
 *  Level1 functions
 **************************************/
-int LZ5_compress_extState_Level1(void* state, const char* source, char* dest, int inputSize, int maxOutputSize)
+int LZ5_compress_extState_DefaultLevel(void* state, const char* source, char* dest, int inputSize, int maxOutputSize)
 {
     return LZ5_compress_extState(state, source, dest, inputSize, maxOutputSize, LZ5_TRANSFORM_LEVEL);
 }
 
-int LZ5_compress_Level1(const char* source, char* dest, int inputSize, int maxOutputSize)
+int LZ5_compress_DefaultLevel(const char* source, char* dest, int inputSize, int maxOutputSize)
 {
     return LZ5_compress(source, dest, inputSize, maxOutputSize, LZ5_TRANSFORM_LEVEL);
 }
 
-LZ5_stream_t* LZ5_createStream_Level1(void)
+LZ5_stream_t* LZ5_createStream_DefaultLevel(void)
 {
     return LZ5_createStream(LZ5_TRANSFORM_LEVEL);
 }
 
-LZ5_stream_t* LZ5_resetStream_Level1(LZ5_stream_t* LZ5_stream)
+LZ5_stream_t* LZ5_resetStream_DefaultLevel(LZ5_stream_t* LZ5_stream)
 {
     return LZ5_resetStream (LZ5_stream, LZ5_TRANSFORM_LEVEL);
 }
