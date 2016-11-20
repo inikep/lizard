@@ -2,7 +2,7 @@ LZ5 - efficient compression with very fast decompression
 --------------------------------------------------------
 
 LZ5 is a lossless compression algorithm which contains 4 compression methods:
-- fastLZ4 : compression levels -10...-19 are designed to give better decompression speed than [LZ4] (over 2000 MB/s)
+- fastLZ4 : compression levels -10...-19 are designed to give better decompression speed than [LZ4] i.e. over 2000 MB/s
 - LZ5v2 : compression levels -20...-29 are designed to give better ratio than [LZ4] keeping 75% decompression speed
 - fastLZ4 + Huffman : compression levels -30...-39 add Huffman coding to fastLZ4
 - LZ5v2 + Huffman : compression levels -40...-49 give the best ratio (comparable to zlib/zstd/brotli for 1 MB+ files) at decompression speed of 1000 MB/s
@@ -24,7 +24,7 @@ LZ5 library is provided as open-source software using BSD 2-Clause license.
 [Appveyor15Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v1.5?svg=true "Visual test suite"
 [Appveyor20Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v2.0?svg=true "Visual test suite"
 [AppveyorLink]: https://ci.appveyor.com/project/inikep/lz5
-[LZ4]: https://github.com/Cyan4973/lz4
+[LZ4]: https://github.com/lz4/lz4
 
 > **Branch Policy:**
 
@@ -39,7 +39,8 @@ LZ5 library is provided as open-source software using BSD 2-Clause license.
 Benchmarks
 -------------------------
 
-The following results are obtained with [lzbench] ("-t16,16 -eall") using 1 core of Intel Core i5-4300U, Windows 10 64-bit (MinGW-w64 compilation under gcc 6.2.0)
+The following results are obtained with [lzbench](https://github.com/inikep/lzbench) ("-t16,16 -eall") 
+using 1 core of Intel Core i5-4300U, Windows 10 64-bit (MinGW-w64 compilation under gcc 6.2.0)
 with [silesia.tar] which contains tarred files from [Silesia compression corpus](http://sun.aei.polsl.pl/~sdeor/index.php?page=silesia).
 The results sorted by ratio are available [here](lzbench13_sorted.md).
 
@@ -85,7 +86,6 @@ The results sorted by ratio are available [here](lzbench13_sorted.md).
 | brotli 0.5.2 -8         |  5.56 MB/s |   324 MB/s |    57382470 | 27.07 |
 | brotli 0.5.2 -11        |  0.39 MB/s |   266 MB/s |    51138054 | 24.13 |
 
-[lzbench]: https://github.com/inikep/lzbench
 [silesia.tar]: https://drive.google.com/file/d/0BwX7dtyRLxThenZpYU9zLTZhR1k/view?usp=sharing
 
 

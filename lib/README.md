@@ -52,7 +52,7 @@ The header files `lz5.h`, `lz5hc.h`, `lz5frame.h` and the dynamic library
 `dll\liblz5.dll` are required to compile a project using gcc/MinGW.
 The dynamic library has to be added to linking options.
 It means that if a project that uses LZ5 consists of a single `test-dll.c`
-file it should be compiled with "liblz5.lib". For example:
+file it should be compiled with `liblz5.lib`. For example:
 ```
     gcc $(CFLAGS) -Iinclude/ test-dll.c -o test-dll dll\liblz5.dll
 ```
