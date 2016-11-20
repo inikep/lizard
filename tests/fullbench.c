@@ -55,7 +55,7 @@
 
 #include "lz5_compress.h"
 #include "lz5_decompress.h"
-#include "lz5_common.h"  /* LZ5_compress_DefaultLevel, LZ5_createStream_DefaultLevel */
+#include "lz5_common.h"  /* LZ5_compress_MinLevel, LZ5_createStream_MinLevel */
 #include "lz5frame.h"
 
 #include "xxhash/xxhash.h"
@@ -193,7 +193,7 @@ static U64 BMK_GetFileSize(const char* infilename)
 LZ5_stream_t *LZ5_stream;
 static void local_LZ5_createStream(void)
 {
-    LZ5_stream = LZ5_resetStream_DefaultLevel(LZ5_stream);
+    LZ5_stream = LZ5_resetStream_MinLevel(LZ5_stream);
 }
 
 static int local_LZ5_saveDict(const char* in, char* out, int inSize)
@@ -204,22 +204,22 @@ static int local_LZ5_saveDict(const char* in, char* out, int inSize)
 
 static int local_LZ5_compress_default_large(const char* in, char* out, int inSize)
 {
-    return LZ5_compress_DefaultLevel(in, out, inSize, LZ5_compressBound(inSize));
+    return LZ5_compress_MinLevel(in, out, inSize, LZ5_compressBound(inSize));
 }
 
 static int local_LZ5_compress_default_small(const char* in, char* out, int inSize)
 {
-    return LZ5_compress_DefaultLevel(in, out, inSize, LZ5_compressBound(inSize)-1);
+    return LZ5_compress_MinLevel(in, out, inSize, LZ5_compressBound(inSize)-1);
 }
 
 static int local_LZ5_compress_withState(const char* in, char* out, int inSize)
 {
-    return LZ5_compress_extState_DefaultLevel(LZ5_stream, in, out, inSize, LZ5_compressBound(inSize));
+    return LZ5_compress_extState_MinLevel(LZ5_stream, in, out, inSize, LZ5_compressBound(inSize));
 }
 
 static int local_LZ5_compress_limitedOutput_withState(const char* in, char* out, int inSize)
 {
-    return LZ5_compress_extState_DefaultLevel(LZ5_stream, in, out, inSize, LZ5_compressBound(inSize)-1);
+    return LZ5_compress_extState_MinLevel(LZ5_stream, in, out, inSize, LZ5_compressBound(inSize)-1);
 }
 
 static int local_LZ5_compress_continue(const char* in, char* out, int inSize)
@@ -333,7 +333,7 @@ int fullSpeedBench(const char** fileNamesTable, int nbFiles)
   LZ5_streamPtr = LZ5_createStream(0);
   if (!LZ5_streamPtr) { DISPLAY("LZ5_streamPtr allocation issue \n"); return 10; }
 
-  LZ5_stream = LZ5_createStream_DefaultLevel();
+  LZ5_stream = LZ5_createStream_MinLevel();
   if (!LZ5_stream) { DISPLAY("LZ5_stream allocation issue \n"); return 10; }
 
     /* Loop for each fileName */
@@ -433,8 +433,8 @@ int fullSpeedBench(const char** fileNamesTable, int nbFiles)
             switch(cAlgNb)
             {
             case 0 : DISPLAY("Compression functions : \n"); continue;
-            case 1 : compressionFunction = local_LZ5_compress_default_large; compressorName = "LZ5_compress_DefaultLevel"; break;
-            case 2 : compressionFunction = local_LZ5_compress_default_small; compressorName = "LZ5_compress_DefaultLevel(small dst)"; break;
+            case 1 : compressionFunction = local_LZ5_compress_default_large; compressorName = "LZ5_compress_MinLevel"; break;
+            case 2 : compressionFunction = local_LZ5_compress_default_small; compressorName = "LZ5_compress_MinLevel(small dst)"; break;
 
             case 10: compressionFunction = local_LZ5_compress; compressorName = "LZ5_compress"; break;
             case 11: compressionFunction = local_LZ5_compress_limitedOutput; compressorName = "LZ5_compress limitedOutput"; break;
@@ -451,8 +451,8 @@ int fullSpeedBench(const char** fileNamesTable, int nbFiles)
             case 41: compressionFunction = local_LZ5_saveDictHC; compressorName = "LZ5_saveDict";
                         LZ5_loadDict(LZ5_streamPtr, chunkP[0].origBuffer, chunkP[0].origSize);
                         break;
-            case 16: compressionFunction = local_LZ5_compress_withState; compressorName = "LZ5_compress_extState_DefaultLevel(1)"; break;
-            case 17: compressionFunction = local_LZ5_compress_limitedOutput_withState; compressorName = "LZ5_compress_extState_DefaultLevel(1) limitedOutput"; break;
+            case 16: compressionFunction = local_LZ5_compress_withState; compressorName = "LZ5_compress_extState_MinLevel(1)"; break;
+            case 17: compressionFunction = local_LZ5_compress_limitedOutput_withState; compressorName = "LZ5_compress_extState_MinLevel(1) limitedOutput"; break;
             case 18: compressionFunction = local_LZ5_compress_continue; initFunction = local_LZ5_createStream; compressorName = "LZ5_compress_continue(1)"; break;
             case 19: compressionFunction = local_LZ5_compress_limitedOutput_continue; initFunction = local_LZ5_createStream; compressorName = "LZ5_compress_continue(1) limitedOutput"; break;
             case 60: DISPLAY("Obsolete compression functions : \n"); continue;
@@ -512,8 +512,8 @@ int fullSpeedBench(const char** fileNamesTable, int nbFiles)
           }
         }
         for (chunkNb=0; chunkNb<nbChunks; chunkNb++) {
-            chunkP[chunkNb].compressedSize = LZ5_compress_DefaultLevel(chunkP[chunkNb].origBuffer, chunkP[chunkNb].compressedBuffer, chunkP[chunkNb].origSize, LZ5_compressBound(chunkP[chunkNb].origSize));
-            if (chunkP[chunkNb].compressedSize==0) DISPLAY("ERROR ! %s() = 0 !! \n", "LZ5_compress_DefaultLevel"), exit(1);
+            chunkP[chunkNb].compressedSize = LZ5_compress_MinLevel(chunkP[chunkNb].origBuffer, chunkP[chunkNb].compressedBuffer, chunkP[chunkNb].origSize, LZ5_compressBound(chunkP[chunkNb].origSize));
+            if (chunkP[chunkNb].compressedSize==0) DISPLAY("ERROR ! %s() = 0 !! \n", "LZ5_compress_MinLevel"), exit(1);
         }
 
         /* Decompression Algorithms */

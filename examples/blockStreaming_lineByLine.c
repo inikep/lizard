@@ -40,7 +40,7 @@ static void test_compress(
     size_t messageMaxBytes,
     size_t ringBufferBytes)
 {
-    LZ5_stream_t* const lz5Stream = LZ5_createStream_DefaultLevel();
+    LZ5_stream_t* const lz5Stream = LZ5_createStream_MinLevel();
     const size_t cmpBufBytes = LZ5_COMPRESSBOUND(messageMaxBytes);
     char* const cmpBuf = (char*) malloc(cmpBufBytes);
     char* const inpBuf = (char*) malloc(ringBufferBytes);

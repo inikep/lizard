@@ -55,7 +55,6 @@
 /* *************************************
 *  Local Macros
 ***************************************/
-#define LZ5_TRANSFORM_LEVEL 10
 #define DELTANEXT(p)        chainTable[(p) & contentMask]
 #define LZ5_MINIMAL_HUFF_GAIN(comprSize) (comprSize + (comprSize/8) + 512)
 #define LZ5_MINIMAL_BLOCK_GAIN(comprSize) (comprSize + (comprSize/32) + 512)
@@ -66,7 +65,7 @@
 **************************************/
 int LZ5_versionNumber (void) { return LZ5_VERSION_NUMBER; }
 int LZ5_compressBound(int isize)  { return LZ5_COMPRESSBOUND(isize); }
-int LZ5_sizeofState_DefaultLevel() { return LZ5_sizeofState(LZ5_TRANSFORM_LEVEL); }
+int LZ5_sizeofState_MinLevel() { return LZ5_sizeofState(LZ5_MIN_CLEVEL); }
 
 
 
@@ -611,22 +610,22 @@ int LZ5_compress(const char* src, char* dst, int srcSize, int maxDstSize, int co
 /**************************************
 *  Level1 functions
 **************************************/
-int LZ5_compress_extState_DefaultLevel(void* state, const char* source, char* dest, int inputSize, int maxOutputSize)
+int LZ5_compress_extState_MinLevel(void* state, const char* source, char* dest, int inputSize, int maxOutputSize)
 {
-    return LZ5_compress_extState(state, source, dest, inputSize, maxOutputSize, LZ5_TRANSFORM_LEVEL);
+    return LZ5_compress_extState(state, source, dest, inputSize, maxOutputSize, LZ5_MIN_CLEVEL);
 }
 
-int LZ5_compress_DefaultLevel(const char* source, char* dest, int inputSize, int maxOutputSize)
+int LZ5_compress_MinLevel(const char* source, char* dest, int inputSize, int maxOutputSize)
 {
-    return LZ5_compress(source, dest, inputSize, maxOutputSize, LZ5_TRANSFORM_LEVEL);
+    return LZ5_compress(source, dest, inputSize, maxOutputSize, LZ5_MIN_CLEVEL);
 }
 
-LZ5_stream_t* LZ5_createStream_DefaultLevel(void)
+LZ5_stream_t* LZ5_createStream_MinLevel(void)
 {
-    return LZ5_createStream(LZ5_TRANSFORM_LEVEL);
+    return LZ5_createStream(LZ5_MIN_CLEVEL);
 }
 
-LZ5_stream_t* LZ5_resetStream_DefaultLevel(LZ5_stream_t* LZ5_stream)
+LZ5_stream_t* LZ5_resetStream_MinLevel(LZ5_stream_t* LZ5_stream)
 {
-    return LZ5_resetStream (LZ5_stream, LZ5_TRANSFORM_LEVEL);
+    return LZ5_resetStream (LZ5_stream, LZ5_MIN_CLEVEL);
 }

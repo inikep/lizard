@@ -276,7 +276,7 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
 #   define FUZ_CHECKTEST(cond, ...) if (cond) { printf("Test %u : ", testNb); printf(__VA_ARGS__); \
                                                 printf(" (seed %u, cycle %u) \n", seed, cycleNb); goto _output_error; }
 #   define FUZ_DISPLAYTEST          { testNb++; g_displayLevel<3 ? 0 : printf("%2u\b\b", testNb); if (g_displayLevel==4) fflush(stdout); }
-    void* stateLZ5   = malloc(LZ5_sizeofState_DefaultLevel());
+    void* stateLZ5   = malloc(LZ5_sizeofState_MinLevel());
     void* stateLZ5HC = malloc(LZ5_sizeofState(0));
     LZ5_stream_t* LZ5dict;
     LZ5_stream_t* LZ5_streamHCPtr;
@@ -290,7 +290,7 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
 
     /* init */
     LZ5_streamHCPtr = LZ5_createStream(0);
-    LZ5dict = LZ5_createStream_DefaultLevel();
+    LZ5dict = LZ5_createStream_MinLevel();
 
     /* Create compressible test buffer */
     CNBuffer = malloc(COMPRESSIBLE_NOISE_LENGTH);
@@ -360,13 +360,13 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
 
         /* Test compression using external state */
         FUZ_DISPLAYTEST;
-        ret = LZ5_compress_extState_DefaultLevel(stateLZ5, block, compressedBuffer, blockSize, LZ5_compressBound(blockSize));
-        FUZ_CHECKTEST(ret==0, "LZ5_compress_extState_DefaultLevel(1) failed");
+        ret = LZ5_compress_extState_MinLevel(stateLZ5, block, compressedBuffer, blockSize, LZ5_compressBound(blockSize));
+        FUZ_CHECKTEST(ret==0, "LZ5_compress_extState_MinLevel(1) failed");
 
         /* Test compression */
         FUZ_DISPLAYTEST;
-        ret = LZ5_compress_DefaultLevel(block, compressedBuffer, blockSize, LZ5_compressBound(blockSize));
-        FUZ_CHECKTEST(ret==0, "LZ5_compress_DefaultLevel() failed");
+        ret = LZ5_compress_MinLevel(block, compressedBuffer, blockSize, LZ5_compressBound(blockSize));
+        FUZ_CHECKTEST(ret==0, "LZ5_compress_MinLevel() failed");
         compressedSize = ret;
 
         /* Decompression tests */
@@ -439,13 +439,13 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
 
         /* Test compression with output size being exactly what's necessary (should work) */
         FUZ_DISPLAYTEST;
-        ret = LZ5_compress_DefaultLevel(block, compressedBuffer, blockSize, compressedSize);
-        FUZ_CHECKTEST(ret==0, "LZ5_compress_DefaultLevel() failed despite sufficient space");
+        ret = LZ5_compress_MinLevel(block, compressedBuffer, blockSize, compressedSize);
+        FUZ_CHECKTEST(ret==0, "LZ5_compress_MinLevel() failed despite sufficient space");
 
         /* Test compression with output size being exactly what's necessary and external state (should work) */
         FUZ_DISPLAYTEST;
-        ret = LZ5_compress_extState_DefaultLevel(stateLZ5, block, compressedBuffer, blockSize, compressedSize);
-        FUZ_CHECKTEST(ret==0, "LZ5_compress_extState_DefaultLevel() failed despite sufficient space");
+        ret = LZ5_compress_extState_MinLevel(stateLZ5, block, compressedBuffer, blockSize, compressedSize);
+        FUZ_CHECKTEST(ret==0, "LZ5_compress_extState_MinLevel() failed despite sufficient space");
 
         /* Test HC compression with output size being exactly what's necessary (should work) */
         FUZ_DISPLAYTEST;
@@ -463,9 +463,9 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
             if (missingBytes >= compressedSize) missingBytes = compressedSize-1;
             missingBytes += !missingBytes;   /* avoid special case missingBytes==0 */
             compressedBuffer[compressedSize-missingBytes] = 0;
-            ret = LZ5_compress_DefaultLevel(block, compressedBuffer, blockSize, compressedSize-missingBytes);
-            FUZ_CHECKTEST(ret, "LZ5_compress_DefaultLevel should have failed (output buffer too small by %i byte)", missingBytes);
-            FUZ_CHECKTEST(compressedBuffer[compressedSize-missingBytes], "LZ5_compress_DefaultLevel overran output buffer ! (%i missingBytes)", missingBytes)
+            ret = LZ5_compress_MinLevel(block, compressedBuffer, blockSize, compressedSize-missingBytes);
+            FUZ_CHECKTEST(ret, "LZ5_compress_MinLevel should have failed (output buffer too small by %i byte)", missingBytes);
+            FUZ_CHECKTEST(compressedBuffer[compressedSize-missingBytes], "LZ5_compress_MinLevel overran output buffer ! (%i missingBytes)", missingBytes)
         }
 
         /* Test HC compression with missing bytes into output buffer => must fail */
@@ -486,10 +486,10 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
 
         /* Compress using dictionary */
         FUZ_DISPLAYTEST;
-        {   LZ5_stream_t* LZ5_stream = LZ5_createStream_DefaultLevel();
-            FUZ_CHECKTEST(LZ5_stream==NULL, "LZ5_createStream_DefaultLevel() allocation failed");
-            LZ5_stream = LZ5_resetStream_DefaultLevel(LZ5_stream);
-            FUZ_CHECKTEST(LZ5_stream==NULL, "LZ5_resetStream_DefaultLevel() failed");
+        {   LZ5_stream_t* LZ5_stream = LZ5_createStream_MinLevel();
+            FUZ_CHECKTEST(LZ5_stream==NULL, "LZ5_createStream_MinLevel() allocation failed");
+            LZ5_stream = LZ5_resetStream_MinLevel(LZ5_stream);
+            FUZ_CHECKTEST(LZ5_stream==NULL, "LZ5_resetStream_MinLevel() failed");
             LZ5_compress_continue (LZ5_stream, dict, compressedBuffer, dictSize, LZ5_compressBound(dictSize));   /* Just to fill hash tables */
             blockContinueCompressedSize = LZ5_compress_continue (LZ5_stream, block, compressedBuffer, blockSize, LZ5_compressBound(blockSize));
             FUZ_CHECKTEST(blockContinueCompressedSize==0, "LZ5_compress_continue failed");
@@ -632,17 +632,17 @@ static void FUZ_unitTests(U32 seed)
         int result;
 
         /* Allocation test */
-        statePtr = LZ5_createStream_DefaultLevel();
-        FUZ_CHECKTEST(statePtr==NULL, "LZ5_createStream_DefaultLevel() allocation failed");
+        statePtr = LZ5_createStream_MinLevel();
+        FUZ_CHECKTEST(statePtr==NULL, "LZ5_createStream_MinLevel() allocation failed");
         LZ5_freeStream(statePtr);
 
-        streamingState = LZ5_createStream_DefaultLevel();
-        FUZ_CHECKTEST(streamingState==NULL, "LZ5_createStream_DefaultLevel() allocation failed");
+        streamingState = LZ5_createStream_MinLevel();
+        FUZ_CHECKTEST(streamingState==NULL, "LZ5_createStream_MinLevel() allocation failed");
 
         /* simple compression test */
         crcOrig = XXH64(testInput, testCompressedSize, 0);
-        streamingState = LZ5_resetStream_DefaultLevel(streamingState);
-        FUZ_CHECKTEST(streamingState==NULL, "LZ5_resetStream_DefaultLevel() failed");
+        streamingState = LZ5_resetStream_MinLevel(streamingState);
+        FUZ_CHECKTEST(streamingState==NULL, "LZ5_resetStream_MinLevel() failed");
         result = LZ5_compress_continue(streamingState, testInput, testCompressed, testCompressedSize, testCompressedSize-1);
         FUZ_CHECKTEST(result==0, "LZ5_compress_continue() compression failed");
 
@@ -665,8 +665,8 @@ static void FUZ_unitTests(U32 seed)
 
             XXH64_reset(&xxhOrig, 0);
             XXH64_reset(&xxhNew, 0);
-            streamingState = LZ5_resetStream_DefaultLevel(streamingState);
-            FUZ_CHECKTEST(streamingState==NULL, "LZ5_resetStream_DefaultLevel() failed");
+            streamingState = LZ5_resetStream_MinLevel(streamingState);
+            FUZ_CHECKTEST(streamingState==NULL, "LZ5_resetStream_MinLevel() failed");
             LZ5_setStreamDecode(&decodeState, NULL, 0);
 
             while (iNext + messageSize < testCompressedSize) {

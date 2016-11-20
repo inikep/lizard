@@ -39,12 +39,12 @@ size_t read_bin(FILE* fp, void* array, size_t arrayBytes) {
 
 void test_compress(FILE* outFp, FILE* inpFp)
 {
-    LZ5_stream_t* lz5Stream = LZ5_createStream_DefaultLevel();
+    LZ5_stream_t* lz5Stream = LZ5_createStream_MinLevel();
     char inpBuf[2][BLOCK_BYTES];
     int  inpBufIndex = 0;
 
     if (!lz5Stream) return;
-    lz5Stream = LZ5_resetStream_DefaultLevel(lz5Stream);
+    lz5Stream = LZ5_resetStream_MinLevel(lz5Stream);
     if (!lz5Stream) return;
 
     for(;;) {

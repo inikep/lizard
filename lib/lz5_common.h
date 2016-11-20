@@ -482,11 +482,11 @@ MEM_STATIC unsigned LZ5_count(const BYTE* pIn, const BYTE* pMatch, const BYTE* p
 }
 
 /* alias to functions with compressionLevel=1 */
-int LZ5_sizeofState_DefaultLevel(void);
-int LZ5_compress_DefaultLevel(const char* source, char* dest, int sourceSize, int maxDestSize);
-int LZ5_compress_extState_DefaultLevel (void* state, const char* source, char* dest, int inputSize, int maxDestSize);
-LZ5_stream_t* LZ5_resetStream_DefaultLevel (LZ5_stream_t* streamPtr);
-LZ5_stream_t* LZ5_createStream_DefaultLevel(void);
+int LZ5_sizeofState_MinLevel(void);
+int LZ5_compress_MinLevel(const char* source, char* dest, int sourceSize, int maxDestSize);
+int LZ5_compress_extState_MinLevel (void* state, const char* source, char* dest, int inputSize, int maxDestSize);
+LZ5_stream_t* LZ5_resetStream_MinLevel (LZ5_stream_t* streamPtr);
+LZ5_stream_t* LZ5_createStream_MinLevel(void);
 
 
 #if defined (__cplusplus)
