@@ -32,8 +32,8 @@
        - LZ5 source repository : https://github.com/inikep/lz5
 */
 
-#ifndef LZ5_COMMON_H_2983827168210
-#define LZ5_COMMON_H_2983827168210
+#ifndef LZ5_COMMON_H_2983
+#define LZ5_COMMON_H_2983
 
 #if defined (__cplusplus)
 extern "C" {

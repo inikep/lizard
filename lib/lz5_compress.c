@@ -356,7 +356,7 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel)
     {
         ctx = (LZ5_stream_t*)malloc(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize + LZ5_COMPRESS_ADD_BUF + LZ5_COMPRESS_ADD_HUF);
         if (!ctx) { printf("ERROR: Cannot allocate %d MB (compressionLevel=%d)\n", (int)(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize)>>20, compressionLevel); return 0; }
-        printf("Allocated %d MB (compressionLevel=%d)\n", (int)(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize)>>20, compressionLevel); 
+        LZ5_LOG_COMPRESS("Allocated %d MB (compressionLevel=%d)\n", (int)(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize)>>20, compressionLevel); 
         ctx->allocatedMemory = sizeof(LZ5_stream_t) + hashTableSize + chainTableSize + LZ5_COMPRESS_ADD_BUF + (U32)LZ5_COMPRESS_ADD_HUF;
       //  printf("malloc from=%p to=%p hashTable=%p hashEnd=%p chainTable=%p chainEnd=%p\n", ctx, ((BYTE*)ctx)+sizeof(LZ5_stream_t) + hashTableSize + chainTableSize, ctx->hashTable, ((BYTE*)ctx->hashTable) + hashTableSize, ctx->chainTable, ((BYTE*)ctx->chainTable)+chainTableSize);
     }
