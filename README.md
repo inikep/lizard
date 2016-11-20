@@ -1,11 +1,14 @@
-Introduction
--------------------------
+LZ5 - efficient compression with very fast decompression
+--------------------------------------------------------
 
-LZ5 is a modification of [LZ4] which gives a better ratio at cost of slower compression and decompression speed. 
-The improvement in compression ratio is caused mainly because of:
-- 24-bit dictionary instead of 16-bit in LZ4
-- using 6 parsers (including an optimal parser) optimized for a bigger dictionary
-- a special 1-byte codeword for the last occured offset
+LZ5 is a lossless compression algorithm which contains 4 compression methods:
+- fastLZ4 : compression levels -10...-19 are designed to give better decompression speed than [LZ4] (over 2000 MB/s)
+- LZ5v2 : compression levels -20...-29 are designed to give better ratio than [LZ4] keeping 75% decompression speed
+- fastLZ4 + Huffman : compression levels -30...-39 add Huffman coding to fastLZ4
+- LZ5v2 + Huffman : compression levels -40...-49 give the best ratio (comparable to zlib/zstd/brotli for 1 MB+ files) at decompression speed of 1000 MB/s
+
+LZ5 library is provided as open-source software using BSD 2-Clause license.
+
 
 |Branch      |Status   |
 |------------|---------|
@@ -36,55 +39,54 @@ The improvement in compression ratio is caused mainly because of:
 Benchmarks
 -------------------------
 
-In our experiments decompression speed of LZ5 is from 600-1600 MB/s. It's slower than LZ4 but much faster than zstd and brotli.
-With the compresion ratio is opposite: LZ5 is better than LZ4 but worse than zstd and brotli.
+The following results are obtained with [lzbench] ("-t16,16 -eall") using 1 core of Intel Core i5-4300U, Windows 10 64-bit (MinGW-w64 compilation under gcc 6.2.0)
+with [silesia.tar] which contains tarred files from [Silesia compression corpus](http://sun.aei.polsl.pl/~sdeor/index.php?page=silesia).
+The results sorted by ratio are available [here](lzbench13_sorted.md).
 
-| Compressor name             | Compression| Decompress.| Compr. size | Ratio |
-| ---------------             | -----------| -----------| ----------- | ----- |
-| memcpy                      |  8533 MB/s |  8533 MB/s |   104857600 |100.00 |
-| lz4 r131                    |   480 MB/s |  2275 MB/s |    64872315 | 61.87 |
-| lz4hc r131 -1               |    82 MB/s |  1896 MB/s |    59448496 | 56.69 |
-| lz4hc r131 -3               |    54 MB/s |  1932 MB/s |    56343753 | 53.73 |
-| lz4hc r131 -5               |    41 MB/s |  1969 MB/s |    55271312 | 52.71 |
-| lz4hc r131 -7               |    31 MB/s |  1969 MB/s |    54889301 | 52.35 |
-| lz4hc r131 -9               |    24 MB/s |  1969 MB/s |    54773517 | 52.24 |
-| lz4hc r131 -11              |    20 MB/s |  1969 MB/s |    54751363 | 52.21 |
-| lz4hc r131 -13              |    17 MB/s |  1969 MB/s |    54744790 | 52.21 |
-| lz4hc r131 -15              |    14 MB/s |  2007 MB/s |    54741827 | 52.21 |
-| lz5 v1.4                    |   191 MB/s |   892 MB/s |    56183327 | 53.58 |
-| lz5hc v1.4 level 1          |   468 MB/s |  1682 MB/s |    68770655 | 65.58 |
-| lz5hc v1.4 level 2          |   337 MB/s |  1574 MB/s |    65201626 | 62.18 |
-| lz5hc v1.4 level 3          |   232 MB/s |  1330 MB/s |    61423270 | 58.58 |
-| lz5hc v1.4 level 4          |   129 MB/s |   894 MB/s |    55011906 | 52.46 |
-| lz5hc v1.4 level 5          |    99 MB/s |   840 MB/s |    52790905 | 50.35 |
-| lz5hc v1.4 level 6          |    41 MB/s |   894 MB/s |    52561673 | 50.13 |
-| lz5hc v1.4 level 7          |    35 MB/s |   875 MB/s |    50947061 | 48.59 |
-| lz5hc v1.4 level 8          |    23 MB/s |   812 MB/s |    50049555 | 47.73 |
-| lz5hc v1.4 level 9          |    17 MB/s |   727 MB/s |    48718531 | 46.46 |
-| lz5hc v1.4 level 10         |    13 MB/s |   728 MB/s |    48109030 | 45.88 |
-| lz5hc v1.4 level 11         |  9.18 MB/s |   719 MB/s |    47438817 | 45.24 |
-| lz5hc v1.4 level 12         |  7.96 MB/s |   752 MB/s |    47063261 | 44.88 |
-| lz5hc v1.4 level 13         |  5.38 MB/s |   710 MB/s |    46383307 | 44.23 |
-| lz5hc v1.4 level 14         |  4.12 MB/s |   669 MB/s |    45843096 | 43.72 |
-| lz5hc v1.4 level 15         |  2.16 MB/s |   619 MB/s |    45767126 | 43.65 |
-| zstd v0.5.0 level 1         |   249 MB/s |   569 MB/s |    51121791 | 48.75 |
-| zstd v0.5.0 level 2         |   177 MB/s |   523 MB/s |    49692088 | 47.39 |
-| zstd v0.5.0 level 5         |    72 MB/s |   491 MB/s |    46373509 | 44.23 |
-| zstd v0.5.0 level 9         |    17 MB/s |   523 MB/s |    43876466 | 41.84 |
-| zstd v0.5.0 level 13        |    10 MB/s |   524 MB/s |    42305338 | 40.35 |
-| zstd v0.5.0 level 17        |  3.21 MB/s |   524 MB/s |    41990713 | 40.05 |
-| zstd v0.5.0 level 20        |  2.76 MB/s |   495 MB/s |    41862877 | 39.92 |
-| brotli 2015-10-29 -1        |    86 MB/s |   208 MB/s |    47882059 | 45.66 |
-| brotli 2015-10-29 -3        |    60 MB/s |   214 MB/s |    47451223 | 45.25 |
-| brotli 2015-10-29 -5        |    17 MB/s |   217 MB/s |    43363897 | 41.36 |
-| brotli 2015-10-29 -7        |  4.80 MB/s |   227 MB/s |    41222719 | 39.31 |
-| brotli 2015-10-29 -9        |  2.23 MB/s |   222 MB/s |    40839209 | 38.95 |
-
-The above results are obtained with [lzbench] using 1 core of Intel Core i5-4300U, Windows 10 64-bit (MinGW-w64 compilation under gcc 4.8.3) with 3 iterations. 
-The ["win81"] input file (100 MB) is a concatanation of carefully selected files from installed version of Windows 8.1 64-bit. 
+| Compressor name         | Compression| Decompress.| Compr. size | Ratio |
+| ---------------         | -----------| -----------| ----------- | ----- |
+| memcpy                  |  7332 MB/s |  8719 MB/s |   211947520 |100.00 |
+| lz4 1.7.3               |   440 MB/s |  2318 MB/s |   100880800 | 47.60 |
+| lz4hc 1.7.3 -1          |    98 MB/s |  2121 MB/s |    87591763 | 41.33 |
+| lz4hc 1.7.3 -4          |    55 MB/s |  2259 MB/s |    79807909 | 37.65 |
+| lz4hc 1.7.3 -9          |    22 MB/s |  2315 MB/s |    77892285 | 36.75 |
+| lz4hc 1.7.3 -12         |    17 MB/s |  2323 MB/s |    77849762 | 36.73 |
+| lz4hc 1.7.3 -16         |    10 MB/s |  2323 MB/s |    77841782 | 36.73 |
+| lz5 2.0 RC2 -10         |   346 MB/s |  2610 MB/s |   103402971 | 48.79 |
+| lz5 2.0 RC2 -12         |   103 MB/s |  2458 MB/s |    86232422 | 40.69 |
+| lz5 2.0 RC2 -15         |    50 MB/s |  2552 MB/s |    81187330 | 38.31 |
+| lz5 2.0 RC2 -19         |  3.04 MB/s |  2497 MB/s |    77416400 | 36.53 |
+| lz5 2.0 RC2 -20         |   157 MB/s |  1795 MB/s |    89239174 | 42.10 |
+| lz5 2.0 RC2 -22         |    30 MB/s |  1778 MB/s |    81097176 | 38.26 |
+| lz5 2.0 RC2 -25         |  6.63 MB/s |  1734 MB/s |    74503695 | 35.15 |
+| lz5 2.0 RC2 -29         |  1.37 MB/s |  1634 MB/s |    68694227 | 32.41 |
+| lz5 2.0 RC2 -30         |   246 MB/s |   909 MB/s |    85727429 | 40.45 |
+| lz5 2.0 RC2 -32         |    94 MB/s |  1244 MB/s |    76929454 | 36.30 |
+| lz5 2.0 RC2 -35         |    47 MB/s |  1435 MB/s |    73850400 | 34.84 |
+| lz5 2.0 RC2 -39         |  2.94 MB/s |  1502 MB/s |    69807522 | 32.94 |
+| lz5 2.0 RC2 -40         |   126 MB/s |   961 MB/s |    76100661 | 35.91 |
+| lz5 2.0 RC2 -42         |    28 MB/s |  1101 MB/s |    70955653 | 33.48 |
+| lz5 2.0 RC2 -45         |  6.25 MB/s |  1073 MB/s |    65413061 | 30.86 |
+| lz5 2.0 RC2 -49         |  1.27 MB/s |  1064 MB/s |    60679215 | 28.63 |
+| zlib 1.2.8 -1           |    66 MB/s |   244 MB/s |    77259029 | 36.45 |
+| zlib 1.2.8 -6           |    20 MB/s |   263 MB/s |    68228431 | 32.19 |
+| zlib 1.2.8 -9           |  8.37 MB/s |   266 MB/s |    67644548 | 31.92 |
+| zstd 1.1.1 -1           |   235 MB/s |   645 MB/s |    73659468 | 34.75 |
+| zstd 1.1.1 -2           |   181 MB/s |   600 MB/s |    70168955 | 33.11 |
+| zstd 1.1.1 -5           |    88 MB/s |   565 MB/s |    65002208 | 30.67 |
+| zstd 1.1.1 -8           |    31 MB/s |   619 MB/s |    61026497 | 28.79 |
+| zstd 1.1.1 -11          |    16 MB/s |   613 MB/s |    59523167 | 28.08 |
+| zstd 1.1.1 -15          |  4.97 MB/s |   639 MB/s |    58007773 | 27.37 |
+| zstd 1.1.1 -18          |  2.87 MB/s |   583 MB/s |    55294241 | 26.09 |
+| zstd 1.1.1 -22          |  1.44 MB/s |   505 MB/s |    52731930 | 24.88 |
+| brotli 0.5.2 -0         |   217 MB/s |   244 MB/s |    78226979 | 36.91 |
+| brotli 0.5.2 -2         |    96 MB/s |   283 MB/s |    68066621 | 32.11 |
+| brotli 0.5.2 -5         |    24 MB/s |   312 MB/s |    60801716 | 28.69 |
+| brotli 0.5.2 -8         |  5.56 MB/s |   324 MB/s |    57382470 | 27.07 |
+| brotli 0.5.2 -11        |  0.39 MB/s |   266 MB/s |    51138054 | 24.13 |
 
 [lzbench]: https://github.com/inikep/lzbench
-["win81"]: https://docs.google.com/uc?id=0BwX7dtyRLxThRzBwT0xkUy1TMFE&export=download
+[silesia.tar]: https://drive.google.com/file/d/0BwX7dtyRLxThenZpYU9zLTZhR1k/view?usp=sharing
 
 
 Documentation
