@@ -72,25 +72,19 @@ $(LZ5DIR)/lz5_compress.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_common.h $(LZ5D
 $(LZ5DIR)/lz5_compress32.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress*.h $(LZ5DIR)/lz5_parser_*.h $(TEST_CODEWORDS)
 	$(CC) -m32 $(FLAGS) $< -c -o $@
 
-$(LZ5DIR)/lz5_compress_nohuf.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress*.h $(LZ5DIR)/lz5_parser_*.h $(TEST_CODEWORDS)
-	$(CC) -DLZ5_NO_HUFFMAN $(FLAGS) $< -c -o $@
-
 $(LZ5DIR)/lz5_decompress.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress*.h $(TEST_CODEWORDS)
 	$(CC) $(FLAGS) $(ALIGN_LOOP) $< -c -o $@
 
 $(LZ5DIR)/lz5_decompress32.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress*.h $(TEST_CODEWORDS)
 	$(CC) -m32 $(FLAGS) $< -c -o $@
 
-$(LZ5DIR)/lz5_decompress_nohuf.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress*.h $(TEST_CODEWORDS)
-	$(CC) -DLZ5_NO_HUFFMAN $(FLAGS) $(ALIGN_LOOP) $< -c -o $@
-
 
 
 lz5: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o bench.o lz5io.o lz5cli.o datagen.o $(ENTROPY_FILES)
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-lz5nohuf: $(LZ5DIR)/lz5_decompress_nohuf.o $(LZ5DIR)/lz5_compress_nohuf.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o bench.o lz5io.o lz5cli.o datagen.o
-	$(CC) $(FLAGS) $^ -o $@$(EXT)
+lz5nohuf: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o bench.c lz5io.o lz5cli.c datagen.o
+	$(CC) -DLZ5_NO_HUFFMAN $(FLAGS) $^ -o $@$(EXT)
 
 lz5c32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash/xxhash.c bench.c lz5io.c lz5cli.c datagen.c $(ENTROPY_FILES)
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)

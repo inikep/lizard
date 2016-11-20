@@ -128,8 +128,10 @@ static int usage(const char* exeName)
     DISPLAY( " -10...-19 : compression method fastLZ4 = 16-bit bytewise codewords\n");
     DISPLAY( "             higher number == more compression but slower\n");
     DISPLAY( " -20...-29 : compression method LZ5v2 = 24-bit bytewise codewords\n");
+#ifndef LZ5_NO_HUFFMAN
     DISPLAY( " -30...-39 : compression method fastLZ4 + Huffman\n");
     DISPLAY( " -40...-49 : compression method LZ5v2 + Huffman\n");
+#endif
     DISPLAY( " -d     : decompression (default for %s extension)\n", LZ5_EXTENSION);
     DISPLAY( " -z     : force compression\n");
     DISPLAY( " -f     : overwrite output without prompting \n");
@@ -154,7 +156,7 @@ static int usage_advanced(const char* exeName)
     DISPLAY( " -r     : operate recursively on directories (sets also -m)\n");
 #endif
     DISPLAY( " -l     : compress using Legacy format (Linux kernel compression)\n");
-    DISPLAY( " -B#    : Block size [1-7] = 128KB, 256KB, 1MB, 4MB, 16MB, 64MB, 256MB (default : 4 = 4MB)\n");
+    DISPLAY( " -B#    : Block size [1-7] = 128KB, 256KB, 1MB, 4MB, 16MB, 64MB, 256MB (default : 4)\n");
     DISPLAY( " -BD    : Block dependency (improve compression ratio)\n");
     /* DISPLAY( " -BX    : enable block checksum (default:disabled)\n");   *//* Option currently inactive */
     DISPLAY( "--no-frame-crc : disable stream checksum (default:enabled)\n");

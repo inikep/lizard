@@ -109,9 +109,6 @@ frametest: $(LZ5DIR)/lz5frame.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5_decompres
 frametest32: $(LZ5DIR)/lz5frame.c $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/xxhash/xxhash.c frametest.c $(ENTROPY_FILES)
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
-fasttest: $(LZ5DIR)/lz5_compress.o fasttest.c
-	$(CC) $(FLAGS) $^ -o $@$(EXT)
-
 datagen : $(PRGDIR)/datagen.c datagencli.c
 	$(CC) $(FLAGS) -I$(PRGDIR) $^ -o $@$(EXT)
 
@@ -122,7 +119,7 @@ clean:
         fullbench$(EXT) fullbench32$(EXT) \
         fuzzer$(EXT) fuzzer32$(EXT) \
         frametest$(EXT) frametest32$(EXT) \
-        fasttest$(EXT) datagen$(EXT)
+        datagen$(EXT)
 	@rm -fR $(TESTDIR)
 	@echo Cleaning completed
 
@@ -135,7 +132,7 @@ versionsTest:
 #FreeBSD targets
 ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU FreeBSD))
 
-test: test-lz5 test-lz5c test-fasttest test-frametest test-fullbench test-fuzzer
+test: test-lz5 test-lz5c test-frametest test-fullbench test-fuzzer
 
 test32: test-lz5c32 test-frametest32 test-fullbench32 test-fuzzer32
 
@@ -306,9 +303,6 @@ test-frametest: frametest
 
 test-frametest32: frametest32
 	./frametest32 $(FUZZER_TIME)
-
-test-fasttest: fasttest
-	./fasttest
 
 test-mem: lz5 datagen fuzzer frametest fullbench
 	@echo "\n ---- valgrind tests : memory analyzer ----"
