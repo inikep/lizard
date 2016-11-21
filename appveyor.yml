@@ -121,21 +121,23 @@ deploy:
 - provider: GitHub
   artifact: bin\lz5_x64.zip
   auth_token:
-    secure: w6UJaGie0qbZvffr/fqyhO/Vj8rMiQWnv9a8qm3gxfngdHDTMT42wYupqJpIExId
+    secure: LgJo8emYc3sFnlNWkGl4/VYK3nk/8+RagcsqDlAi3xeqNGNutnKjcftjg84uJoT4
   force_update: true
   prerelease: true
   on:
     COMPILER: gcc
     PLATFORM: "mingw64"
     appveyor_repo_tag: true
+    branch: autobuild
 
 - provider: GitHub
   artifact: bin\lz5_x86.zip
   auth_token:
-    secure: w6UJaGie0qbZvffr/fqyhO/Vj8rMiQWnv9a8qm3gxfngdHDTMT42wYupqJpIExId
+    secure: LgJo8emYc3sFnlNWkGl4/VYK3nk/8+RagcsqDlAi3xeqNGNutnKjcftjg84uJoT4
   force_update: true
   prerelease: true
   on:
     COMPILER: gcc
     PLATFORM: "mingw32"
     appveyor_repo_tag: true
+    branch: autobuild
