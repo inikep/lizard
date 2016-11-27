@@ -71,6 +71,9 @@
 #    define SET_SPARSE_FILE_MODE(file)
 #  endif
 #else
+#  if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200112L) || (defined(__APPLE__) && defined(__MACH__))
+#    define fseek fseeko
+#  endif
 #  define SET_BINARY_MODE(file)
 #  define SET_SPARSE_FILE_MODE(file)
 #endif
@@ -193,7 +196,7 @@ static size_t LZ5IO_GetBlockSize_FromBlockId(unsigned blockSizeID)
 
     if (blockSizeID == 0) blockSizeID = LZ5IO_BLOCKSIZEID_DEFAULT;
     blockSizeID -= 1;
-    if (blockSizeID >= 7) blockSizeID = LZ5IO_BLOCKSIZEID_DEFAULT;
+    if (blockSizeID >= 7) blockSizeID = LZ5IO_BLOCKSIZEID_DEFAULT - 1;
 
     return blockSizes[blockSizeID];
 }
@@ -515,10 +518,12 @@ int LZ5IO_compressMultipleFilenames(const char** inFileNamesTable, int ifntSize,
     const size_t suffixSize = strlen(suffix);
     cRess_t const ress = LZ5IO_createCResources();
 
+	if (dstFileName == NULL) return ifntSize;   /* not enough memory */
+
     /* loop on each file */
     for (i=0; i<ifntSize; i++) {
         size_t const ifnSize = strlen(inFileNamesTable[i]);
-        if (ofnSize <= ifnSize+suffixSize+1) { free(dstFileName); ofnSize = ifnSize + 20; dstFileName = (char*)malloc(ofnSize); }
+        if (ofnSize <= ifnSize+suffixSize+1) { free(dstFileName); ofnSize = ifnSize + 20; dstFileName = (char*)malloc(ofnSize); if (dstFileName == NULL) return ifntSize; }
         strcpy(dstFileName, inFileNamesTable[i]);
         strcat(dstFileName, suffix);
 
@@ -886,7 +891,7 @@ int LZ5IO_decompressMultipleFilenames(const char** inFileNamesTable, int ifntSiz
     size_t const suffixSize = strlen(suffix);
     dRess_t ress = LZ5IO_createDResources();
 
-    if (outFileName==NULL) exit(1);   /* not enough memory */
+    if (outFileName==NULL) return ifntSize;   /* not enough memory */
     ress.dstFile = LZ5IO_openDstFile(stdoutmark);
 
     for (i=0; i<ifntSize; i++) {
@@ -896,7 +901,7 @@ int LZ5IO_decompressMultipleFilenames(const char** inFileNamesTable, int ifntSiz
             missingFiles += LZ5IO_decompressSrcFile(ress, inFileNamesTable[i], stdoutmark);
             continue;
         }
-        if (ofnSize <= ifnSize-suffixSize+1) { free(outFileName); ofnSize = ifnSize + 20; outFileName = (char*)malloc(ofnSize); if (outFileName==NULL) exit(1); }
+        if (ofnSize <= ifnSize-suffixSize+1) { free(outFileName); ofnSize = ifnSize + 20; outFileName = (char*)malloc(ofnSize); if (outFileName==NULL)  return ifntSize; }
         if (ifnSize <= suffixSize  ||  strcmp(suffixPtr, suffix) != 0) {
             DISPLAYLEVEL(1, "File extension doesn't match expected LZ5_EXTENSION (%4s); will not process file: %s\n", suffix, inFileNamesTable[i]);
             skippedFiles++;

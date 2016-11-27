@@ -837,11 +837,12 @@ static size_t LZ5F_decodeHeader(LZ5F_dctx_t* dctxPtr, const void* srcVoidPtr, si
     if (bufferNeeded > dctxPtr->maxBufferSize || dctxPtr->maxBlockSize > currentBlockSize) {   /* tmp buffers too small */
         FREEMEM(dctxPtr->tmpIn);
         FREEMEM(dctxPtr->tmpOutBuffer);
-        dctxPtr->maxBufferSize = bufferNeeded;
+        dctxPtr->maxBufferSize = 0;
         dctxPtr->tmpIn = (BYTE*)ALLOCATOR(1, dctxPtr->maxBlockSize);
         if (dctxPtr->tmpIn == NULL) return (size_t)-LZ5F_ERROR_GENERIC;
-        dctxPtr->tmpOutBuffer= (BYTE*)ALLOCATOR(1, dctxPtr->maxBufferSize);
+        dctxPtr->tmpOutBuffer= (BYTE*)ALLOCATOR(1, bufferNeeded);
         if (dctxPtr->tmpOutBuffer== NULL) return (size_t)-LZ5F_ERROR_GENERIC;
+        dctxPtr->maxBufferSize = bufferNeeded;
     }
     dctxPtr->tmpInSize = 0;
     dctxPtr->tmpInTarget = 0;
