@@ -508,7 +508,7 @@ int main(int argc, const char** argv)
     }
 
     /* No output filename ==> try to select one automatically (when possible) */
-    while (!output_filename) {
+    while ((!output_filename) && (multiple_inputs==0)) {
         if (!IS_CONSOLE(stdout)) { output_filename=stdoutmark; break; }   /* Default to stdout whenever possible (i.e. not a console) */
         if (mode == om_auto) {  /* auto-determine compression or decompression, based on file extension */
             size_t const inSize  = strlen(input_filename);
@@ -542,6 +542,8 @@ int main(int argc, const char** argv)
         }
         break;
     }
+
+    if (!output_filename) output_filename = "*\\dummy^!//";
 
     /* Check if output is defined as console; trigger an error in this case */
     if (!strcmp(output_filename,stdoutmark) && IS_CONSOLE(stdout) && !forceStdout) {
