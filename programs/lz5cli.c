@@ -1,6 +1,6 @@
 /*
   LZ5cli - LZ5 Command Line Interface
-  Copyright (C) Yann Collet 2011-2015
+  Copyright (C) Yann Collet 2011-2016
 
   GPL v2 License
 
@@ -232,6 +232,15 @@ static void waitEnter(void)
 }
 
 
+static const char* lastNameFromPath(const char* path)
+{
+    const char* name = strrchr(path, '/');
+    if (name==NULL) name = strrchr(path, '\\');   /* windows */
+    if (name==NULL) return path;
+    return name+1;
+}
+
+
 /*! readU32FromChar() :
     @return : unsigned integer value reach from input in `char` format
     Will also modify `*stringPtr`, advancing it to position where it stopped reading.
@@ -264,7 +273,7 @@ int main(int argc, const char** argv)
     const char nullOutput[] = NULL_OUTPUT;
     const char extension[] = LZ5_EXTENSION;
     size_t blockSize = LZ5IO_setBlockSizeID(LZ5_BLOCKSIZEID_DEFAULT);
-    const char* const exeName = argv[0];
+    const char* const exeName = lastNameFromPath(argv[0]);
 #ifdef UTIL_HAS_CREATEFILELIST
     const char** extendedFileList = NULL;
     char* fileNamesBuf = NULL;
@@ -276,6 +285,7 @@ int main(int argc, const char** argv)
         DISPLAY("Allocation error : not enough memory \n");
         return 1;
     }
+    inFileNames[0] = stdinmark;
     LZ5IO_setOverwrite(0);
 
     /* lz5cat predefined behavior */
@@ -433,7 +443,7 @@ int main(int argc, const char** argv)
                         iters = readU32FromChar(&argument);
                         argument--;
                         BMK_setNotificationLevel(displayLevel);
-                        BMK_SetNbSeconds(iters);
+                        BMK_SetNbSeconds(iters);   /* notification if displayLevel >= 3 */
                     }
                     break;
 
@@ -507,6 +517,10 @@ int main(int argc, const char** argv)
         exit(1);
     }
 
+    /* if input==stdin and no output defined, stdout becomes default output */
+    if (!strcmp(input_filename, stdinmark) && !output_filename)
+        output_filename = stdoutmark;
+
     /* No output filename ==> try to select one automatically (when possible) */
     while ((!output_filename) && (multiple_inputs==0)) {
         if (!IS_CONSOLE(stdout)) { output_filename=stdoutmark; break; }   /* Default to stdout whenever possible (i.e. not a console) */
@@ -543,9 +557,8 @@ int main(int argc, const char** argv)
         break;
     }
 
-    if (!output_filename) output_filename = "*\\dummy^!//";
-
     /* Check if output is defined as console; trigger an error in this case */
+    if (!output_filename) output_filename = "*\\dummy^!//";
     if (!strcmp(output_filename,stdoutmark) && IS_CONSOLE(stdout) && !forceStdout) {
         DISPLAYLEVEL(1, "refusing to write to console without -c\n");
         exit(1);
@@ -557,6 +570,7 @@ int main(int argc, const char** argv)
 
     /* IO Stream/File */
     LZ5IO_setNotificationLevel(displayLevel);
+    if (ifnIdx == 0) multiple_inputs = 0;
     if (mode == om_decompress) {
         if (multiple_inputs)
             operationResult = LZ5IO_decompressMultipleFilenames(inFileNames, ifnIdx, !strcmp(output_filename,stdoutmark) ? stdoutmark : LZ5_EXTENSION);
