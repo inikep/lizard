@@ -5,45 +5,36 @@ LZ5 is a lossless compression algorithm which contains 4 compression methods:
 - fastLZ4 : compression levels -10...-19 are designed to give better decompression speed than [LZ4] i.e. over 2000 MB/s
 - LZ5v2 : compression levels -20...-29 are designed to give better ratio than [LZ4] keeping 75% decompression speed
 - fastLZ4 + Huffman : compression levels -30...-39 add Huffman coding to fastLZ4
-- LZ5v2 + Huffman : compression levels -40...-49 give the best ratio (comparable to zlib and low levels of zstd/brotli) at decompression speed of 1000 MB/s 
+- LZ5v2 + Huffman : compression levels -40...-49 give the best ratio (comparable to [zlib] and low levels of [zstd]/[brotli]) at decompression speed of 1000 MB/s 
 
+LZ5 library is based on frequently used [LZ4] library by Yann Collet.
 LZ5 library is provided as open-source software using BSD 2-Clause license.
 The high compression/decompression speed is achieved without any SSE and AVX extensions.
 
 
 |Branch      |Status   |
 |------------|---------|
-|master      | [![Build Status][travisMasterBadge]][travisLink] [![Build status][AppveyorMasterBadge]][AppveyorLink]  |
 |lz5_v1.5    | [![Build Status][travis15Badge]][travisLink]    [![Build status][Appveyor15Badge]][AppveyorLink]     |
 |lz5_v2.0    | [![Build Status][travis20Badge]][travisLink]    [![Build status][Appveyor20Badge]][AppveyorLink]     |
 
-[travisMasterBadge]: https://travis-ci.org/inikep/lz5.svg?branch=master "Continuous Integration test suite"
 [travis15Badge]: https://travis-ci.org/inikep/lz5.svg?branch=lz5_v1.5 "Continuous Integration test suite"
 [travis20Badge]: https://travis-ci.org/inikep/lz5.svg?branch=lz5_v2.0 "Continuous Integration test suite"
 [travisLink]: https://travis-ci.org/inikep/lz5
-[AppveyorMasterBadge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/master?svg=true "Visual test suite"
 [Appveyor15Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v1.5?svg=true "Visual test suite"
 [Appveyor20Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v2.0?svg=true "Visual test suite"
 [AppveyorLink]: https://ci.appveyor.com/project/inikep/lz5
 [LZ4]: https://github.com/lz4/lz4
-
-> **Branch Policy:**
-
-> - The "master" branch is considered stable, at all times.
-> - The "lz5_v1.5" and "lz5_v2.0" branches are the one where all contributions must be merged
-    before being promoted to master.
->   + If you plan to propose a patch, please commit into the "lz5_v1.5" or "lz5_v2.0" branch,
-      or its own feature branch.
-      Direct commit to "master" are not permitted.
+[zlib]: https://github.com/madler/zlib
+[zstd]: https://github.com/facebook/zstd
+[brotli]: https://github.com/google/brotli
 
 
 Benchmarks
 -------------------------
 
-The following results are obtained with [lzbench](https://github.com/inikep/lzbench) ("-t16,16 -eall") 
+The following results are obtained with [lzbench](https://github.com/inikep/lzbench) and `-t16,16 -eall`
 using 1 core of Intel Core i5-4300U, Windows 10 64-bit (MinGW-w64 compilation under gcc 6.2.0)
 with [silesia.tar] which contains tarred files from [Silesia compression corpus](http://sun.aei.polsl.pl/~sdeor/index.php?page=silesia).
-The results sorted by ratio are available [here](lzbench13_sorted.md).
 
 | Compressor name         | Compression| Decompress.| Compr. size | Ratio |
 | ---------------         | -----------| -----------| ----------- | ----- |
@@ -54,22 +45,22 @@ The results sorted by ratio are available [here](lzbench13_sorted.md).
 | lz4hc 1.7.3 -9          |    22 MB/s |  2315 MB/s |    77892285 | 36.75 |
 | lz4hc 1.7.3 -12         |    17 MB/s |  2323 MB/s |    77849762 | 36.73 |
 | lz4hc 1.7.3 -16         |    10 MB/s |  2323 MB/s |    77841782 | 36.73 |
-| lz5 2.0 RC2 -10         |   346 MB/s |  2610 MB/s |   103402971 | 48.79 |
-| lz5 2.0 RC2 -12         |   103 MB/s |  2458 MB/s |    86232422 | 40.69 |
-| lz5 2.0 RC2 -15         |    50 MB/s |  2552 MB/s |    81187330 | 38.31 |
-| lz5 2.0 RC2 -19         |  3.04 MB/s |  2497 MB/s |    77416400 | 36.53 |
-| lz5 2.0 RC2 -20         |   157 MB/s |  1795 MB/s |    89239174 | 42.10 |
-| lz5 2.0 RC2 -22         |    30 MB/s |  1778 MB/s |    81097176 | 38.26 |
-| lz5 2.0 RC2 -25         |  6.63 MB/s |  1734 MB/s |    74503695 | 35.15 |
-| lz5 2.0 RC2 -29         |  1.37 MB/s |  1634 MB/s |    68694227 | 32.41 |
-| lz5 2.0 RC2 -30         |   246 MB/s |   909 MB/s |    85727429 | 40.45 |
-| lz5 2.0 RC2 -32         |    94 MB/s |  1244 MB/s |    76929454 | 36.30 |
-| lz5 2.0 RC2 -35         |    47 MB/s |  1435 MB/s |    73850400 | 34.84 |
-| lz5 2.0 RC2 -39         |  2.94 MB/s |  1502 MB/s |    69807522 | 32.94 |
-| lz5 2.0 RC2 -40         |   126 MB/s |   961 MB/s |    76100661 | 35.91 |
-| lz5 2.0 RC2 -42         |    28 MB/s |  1101 MB/s |    70955653 | 33.48 |
-| lz5 2.0 RC2 -45         |  6.25 MB/s |  1073 MB/s |    65413061 | 30.86 |
-| lz5 2.0 RC2 -49         |  1.27 MB/s |  1064 MB/s |    60679215 | 28.63 |
+| lz5 2.0 -10             |   346 MB/s |  2610 MB/s |   103402971 | 48.79 |
+| lz5 2.0 -12             |   103 MB/s |  2458 MB/s |    86232422 | 40.69 |
+| lz5 2.0 -15             |    50 MB/s |  2552 MB/s |    81187330 | 38.31 |
+| lz5 2.0 -19             |  3.04 MB/s |  2497 MB/s |    77416400 | 36.53 |
+| lz5 2.0 -20             |   157 MB/s |  1795 MB/s |    89239174 | 42.10 |
+| lz5 2.0 -22             |    30 MB/s |  1778 MB/s |    81097176 | 38.26 |
+| lz5 2.0 -25             |  6.63 MB/s |  1734 MB/s |    74503695 | 35.15 |
+| lz5 2.0 -29             |  1.37 MB/s |  1634 MB/s |    68694227 | 32.41 |
+| lz5 2.0 -30             |   246 MB/s |   909 MB/s |    85727429 | 40.45 |
+| lz5 2.0 -32             |    94 MB/s |  1244 MB/s |    76929454 | 36.30 |
+| lz5 2.0 -35             |    47 MB/s |  1435 MB/s |    73850400 | 34.84 |
+| lz5 2.0 -39             |  2.94 MB/s |  1502 MB/s |    69807522 | 32.94 |
+| lz5 2.0 -40             |   126 MB/s |   961 MB/s |    76100661 | 35.91 |
+| lz5 2.0 -42             |    28 MB/s |  1101 MB/s |    70955653 | 33.48 |
+| lz5 2.0 -45             |  6.25 MB/s |  1073 MB/s |    65413061 | 30.86 |
+| lz5 2.0 -49             |  1.27 MB/s |  1064 MB/s |    60679215 | 28.63 |
 | zlib 1.2.8 -1           |    66 MB/s |   244 MB/s |    77259029 | 36.45 |
 | zlib 1.2.8 -6           |    20 MB/s |   263 MB/s |    68228431 | 32.19 |
 | zlib 1.2.8 -9           |  8.37 MB/s |   266 MB/s |    67644548 | 31.92 |

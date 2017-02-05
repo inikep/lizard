@@ -35,7 +35,6 @@
 *  Includes
 ***************************************/
 #include "platform.h"    /* Compiler options */
-#include "util.h"        /* UTIL_GetFileSize, UTIL_sleep */
 #include <stdlib.h>      /* malloc, free */
 #include <string.h>      /* memset */
 #include <stdio.h>       /* fprintf, fopen, ftello64 */
@@ -45,7 +44,8 @@
 #include "xxhash/xxhash.h"
 #include "lz5_common.h"
 #include "lz5_decompress.h"
-
+#define UTIL_WITHOUT_BASIC_TYPES
+#include "util.h"        /* UTIL_GetFileSize, UTIL_sleep */
 
 #define LZ5_isError(errcode) (errcode==0)
 

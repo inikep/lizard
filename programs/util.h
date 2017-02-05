@@ -47,6 +47,7 @@ extern "C" {
 
 
 
+#ifndef UTIL_WITHOUT_BASIC_TYPES
 /*-**************************************************************
 *  Basic Types
 *****************************************************************/
@@ -67,6 +68,7 @@ extern "C" {
   typedef   signed int        S32;
   typedef unsigned long long  U64;
   typedef   signed long long  S64;
+#endif
 #endif
 
 
