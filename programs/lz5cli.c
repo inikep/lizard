@@ -30,17 +30,11 @@
 */
 
 
-/**************************************
-*  Compiler Options
-***************************************/
-/* cf. http://man7.org/linux/man-pages/man7/feature_test_macros.7.html */
-#define _XOPEN_VERSION 600 /* POSIX.2001, for fileno() within <stdio.h> on unix */
-
-
 /****************************
 *  Includes
 *****************************/
-#include "util.h"     /* Compiler options, UTIL_HAS_CREATEFILELIST */
+#include "platform.h" /* Compiler options, IS_CONSOLE */
+#include "util.h"     /* UTIL_HAS_CREATEFILELIST, UTIL_createFileList */
 #include <stdio.h>    /* fprintf, getchar */
 #include <stdlib.h>   /* exit, calloc, free */
 #include <string.h>   /* strcmp, strlen */
@@ -48,19 +42,6 @@
 #include "lz5io.h"    /* LZ5IO_compressFilename, LZ5IO_decompressFilename, LZ5IO_compressMultipleFilenames */
 #include "lz5_compress.h" /* LZ5HC_DEFAULT_CLEVEL, LZ5_VERSION_STRING */
 
-
-/*-************************************
-*  OS-specific Includes
-**************************************/
-#if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) || defined(_XOPEN_SOURCE) || (defined(__APPLE__) && defined(__MACH__)) || defined(__DJGPP__)  /* https://sourceforge.net/p/predef/wiki/OperatingSystems/ */
-#  include <unistd.h>   /* isatty */
-#  define IS_CONSOLE(stdStream) isatty(fileno(stdStream))
-#elif defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(_WIN32) || defined(__CYGWIN__)
-#  include <io.h>       /* _isatty */
-#  define IS_CONSOLE(stdStream) _isatty(_fileno(stdStream))
-#else
-#  define IS_CONSOLE(stdStream) 0
-#endif
 
 
 /*****************************
@@ -155,7 +136,6 @@ static int usage_advanced(const char* exeName)
 #ifdef UTIL_HAS_CREATEFILELIST
     DISPLAY( " -r     : operate recursively on directories (sets also -m)\n");
 #endif
-    DISPLAY( " -l     : compress using Legacy format (Linux kernel compression)\n");
     DISPLAY( " -B#    : Block size [1-7] = 128KB, 256KB, 1MB, 4MB, 16MB, 64MB, 256MB (default : 4)\n");
     DISPLAY( " -BD    : Block dependency (improve compression ratio)\n");
     /* DISPLAY( " -BX    : enable block checksum (default:disabled)\n");   *//* Option currently inactive */
