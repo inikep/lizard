@@ -29,19 +29,22 @@
   - The license of this source file is GPLv2.
 */
 
-/**************************************
-*  Compiler Options
+/*-************************************
+*  Compiler options
 **************************************/
-#define _LARGE_FILES           /* Large file support on 32-bits AIX */
-
+#ifdef _MSC_VER    /* Visual Studio */
+#  pragma warning(disable : 4127)    /* disable: C4127: conditional expression is constant */
+#endif
 #if defined(__MINGW32__) && !defined(_POSIX_SOURCE)
 #  define _POSIX_SOURCE 1          /* disable %llu warnings with MinGW on Windows */
-#endif
+#endif  
+
 
 /*****************************
 *  Includes
 *****************************/
-#include "util.h"      /* Compiler options, UTIL_getFileStat */
+#include "platform.h"  /* Large File Support, SET_BINARY_MODE, SET_SPARSE_FILE_MODE, PLATFORM_POSIX_VERSION, __64BIT__ */
+#include "util.h"      /* UTIL_getFileStat, UTIL_setFileStat */ 
 #include <stdio.h>     /* fprintf, fopen, fread, stdin, stdout, fflush, getchar */
 #include <stdlib.h>    /* malloc, free */
 #include <string.h>    /* strcmp, strlen */
@@ -52,30 +55,14 @@
 #include "lz5frame.h"
 
 
-/******************************
-*  OS-specific Includes
-******************************/
-#if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(_WIN32)
-#  include <fcntl.h>   /* _O_BINARY */
-#  include <io.h>      /* _setmode, _fileno, _get_osfhandle */
-#  if !defined(__DJGPP__)
-#    define SET_BINARY_MODE(file) { int unused=_setmode(_fileno(file), _O_BINARY); (void)unused; }
-#    include <windows.h> /* DeviceIoControl, HANDLE, FSCTL_SET_SPARSE */
-#    include <winioctl.h> /* FSCTL_SET_SPARSE */
-#    define SET_SPARSE_FILE_MODE(file) { DWORD dw; DeviceIoControl((HANDLE) _get_osfhandle(_fileno(file)), FSCTL_SET_SPARSE, 0, 0, 0, 0, &dw, 0); }
-#    if defined(_MSC_VER) && (_MSC_VER >= 1400)  /* Avoid MSVC fseek()'s 2GiB barrier */
-#      define fseek _fseeki64
-#    endif
-#  else
-#    define SET_BINARY_MODE(file) setmode(fileno(file), O_BINARY)
-#    define SET_SPARSE_FILE_MODE(file)
-#  endif
-#else
-#  if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200112L) || (defined(__APPLE__) && defined(__MACH__))
-#    define fseek fseeko
-#  endif
-#  define SET_BINARY_MODE(file)
-#  define SET_SPARSE_FILE_MODE(file)
+/* **************************************
+*  Compiler Options
+****************************************/
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)            /* Avoid MSVC fseek()'s 2GiB barrier */
+#  define fseek _fseeki64
+#endif
+#if !defined(__64BIT__) && (PLATFORM_POSIX_VERSION >= 200112L) /* No point defining Large file for 64 bit */
+#  define fseek fseeko
 #endif
 
 
