@@ -1,7 +1,10 @@
-v2.0 beta
+v2.0
 - this version is optimized for decompression speed (instead of ratio for previous versions)
-- levels from 1 to 9 use LZ4-type codewords and give about 10% better decompression speed than LZ4
-- levels from 10 to 18 use new codewords with decompression speed about 2 times faster than LZ5 v1.5
+- LZ5 v2.0 contains 4 compression methods:
+  fastLZ4 : compression levels -10...-19 are designed to give better decompression speed than LZ4 i.e. over 2000 MB/s
+  LZ5v2 : compression levels -20...-29 are designed to give better ratio than LZ4 keeping 75% decompression speed
+  fastLZ4 + Huffman : compression levels -30...-39 add Huffman coding to fastLZ4
+  LZ5v2 + Huffman : compression levels -40...-49 give the best ratio (comparable to zlib and low levels of zstd/brotli) at decompression speed of 1000 MB/s
 
 v1.5
 - introduced compatibility with Visual C++ 2010 and newer

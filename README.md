@@ -32,7 +32,7 @@ The high compression/decompression speed is achieved without any SSE and AVX ext
 Benchmarks
 -------------------------
 
-The following results are obtained with [lzbench](https://github.com/inikep/lzbench) and `-t16,16 -eall`
+The following results are obtained with [lzbench](https://github.com/inikep/lzbench) and `-t16,16`
 using 1 core of Intel Core i5-4300U, Windows 10 64-bit (MinGW-w64 compilation under gcc 6.2.0)
 with [silesia.tar] which contains tarred files from [Silesia compression corpus](http://sun.aei.polsl.pl/~sdeor/index.php?page=silesia).
 
@@ -49,17 +49,17 @@ with [silesia.tar] which contains tarred files from [Silesia compression corpus]
 | lz5 2.0 -12             |   103 MB/s |  2458 MB/s |    86232422 | 40.69 |
 | lz5 2.0 -15             |    50 MB/s |  2552 MB/s |    81187330 | 38.31 |
 | lz5 2.0 -19             |  3.04 MB/s |  2497 MB/s |    77416400 | 36.53 |
-| lz5 2.0 -20             |   157 MB/s |  1795 MB/s |    89239174 | 42.10 |
-| lz5 2.0 -22             |    30 MB/s |  1778 MB/s |    81097176 | 38.26 |
-| lz5 2.0 -25             |  6.63 MB/s |  1734 MB/s |    74503695 | 35.15 |
+| lz5 2.0 -21             |   157 MB/s |  1795 MB/s |    89239174 | 42.10 |
+| lz5 2.0 -23             |    30 MB/s |  1778 MB/s |    81097176 | 38.26 |
+| lz5 2.0 -26             |  6.63 MB/s |  1734 MB/s |    74503695 | 35.15 |
 | lz5 2.0 -29             |  1.37 MB/s |  1634 MB/s |    68694227 | 32.41 |
 | lz5 2.0 -30             |   246 MB/s |   909 MB/s |    85727429 | 40.45 |
 | lz5 2.0 -32             |    94 MB/s |  1244 MB/s |    76929454 | 36.30 |
 | lz5 2.0 -35             |    47 MB/s |  1435 MB/s |    73850400 | 34.84 |
 | lz5 2.0 -39             |  2.94 MB/s |  1502 MB/s |    69807522 | 32.94 |
-| lz5 2.0 -40             |   126 MB/s |   961 MB/s |    76100661 | 35.91 |
-| lz5 2.0 -42             |    28 MB/s |  1101 MB/s |    70955653 | 33.48 |
-| lz5 2.0 -45             |  6.25 MB/s |  1073 MB/s |    65413061 | 30.86 |
+| lz5 2.0 -41             |   126 MB/s |   961 MB/s |    76100661 | 35.91 |
+| lz5 2.0 -43             |    28 MB/s |  1101 MB/s |    70955653 | 33.48 |
+| lz5 2.0 -46             |  6.25 MB/s |  1073 MB/s |    65413061 | 30.86 |
 | lz5 2.0 -49             |  1.27 MB/s |  1064 MB/s |    60679215 | 28.63 |
 | zlib 1.2.8 -1           |    66 MB/s |   244 MB/s |    77259029 | 36.45 |
 | zlib 1.2.8 -6           |    20 MB/s |   263 MB/s |    68228431 | 32.19 |
