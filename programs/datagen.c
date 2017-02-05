@@ -1,6 +1,6 @@
 /*
     datagen.c - compressible data generator test tool
-    Copyright (C) Yann Collet 2012-2015
+    Copyright (C) Yann Collet 2012-2016
 
     GPL v2 License
 
@@ -19,46 +19,18 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     You can contact the author at :
-   - LZ5 source repository : https://github.com/inikep/lz5
+   - LZ4 source repository : https://github.com/lz4/lz4
+   - Public forum : https://groups.google.com/forum/#!forum/lz4c
 */
 
 /**************************************
 *  Includes
 **************************************/
+#include "platform.h"  /* Compiler options, SET_BINARY_MODE */
+#include "util.h"      /* U32 */
 #include <stdlib.h>    /* malloc */
 #include <stdio.h>     /* FILE, fwrite */
 #include <string.h>    /* memcpy */
-
-
-/**************************************
-*  Basic Types
-**************************************/
-#if defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)   /* C99 */
-# include <stdint.h>
-  typedef  uint8_t BYTE;
-  typedef uint16_t U16;
-  typedef uint32_t U32;
-  typedef  int32_t S32;
-  typedef uint64_t U64;
-#else
-  typedef unsigned char       BYTE;
-  typedef unsigned short      U16;
-  typedef unsigned int        U32;
-  typedef   signed int        S32;
-  typedef unsigned long long  U64;
-#endif
-
-
-/**************************************
-*  OS-specific Includes
-**************************************/
-#if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(_WIN32) || defined(__CYGWIN__)
-#  include <fcntl.h>   /* _O_BINARY */
-#  include <io.h>      /* _setmode, _isatty */
-#  define SET_BINARY_MODE(file) _setmode(_fileno(file), _O_BINARY)
-#else
-#  define SET_BINARY_MODE(file)
-#endif
 
 
 /**************************************
@@ -80,10 +52,10 @@ typedef BYTE litDistribTable[LTSIZE];
 
 
 
-
 /*********************************************************
 *  Local Functions
 *********************************************************/
+#define MIN(a,b)   ( (a) < (b) ? (a) :(b) )
 #define RDG_rotl32(x,r) ((x << r) | (x >> (32 - r)))
 static unsigned int RDG_rand(U32* src)
 {
@@ -98,24 +70,15 @@ static unsigned int RDG_rand(U32* src)
 
 static void RDG_fillLiteralDistrib(litDistribTable lt, double ld)
 {
-    U32 i = 0;
-    BYTE character = '0';
-    BYTE firstChar = '(';
-    BYTE lastChar = '}';
+    BYTE const firstChar = ld <= 0.0 ? 0 : '(';
+    BYTE const lastChar  = ld <= 0.0 ? 255 : '}';
+    BYTE character = ld <= 0.0 ? 0 : '0';
+    U32 u = 0;
 
-    if (ld==0.0)
-    {
-        character = 0;
-        firstChar = 0;
-        lastChar =255;
-    }
-    while (i<LTSIZE)
-    {
-        U32 weight = (U32)((double)(LTSIZE - i) * ld) + 1;
-        U32 end;
-        if (weight + i > LTSIZE) weight = LTSIZE-i;
-        end = i + weight;
-        while (i < end) lt[i++] = character;
+    while (u<LTSIZE) {
+        U32 const weight = (U32)((double)(LTSIZE - u) * ld) + 1;
+        U32 const end = MIN(u+weight, LTSIZE);
+        while (u < end) lt[u++] = character;
         character++;
         if (character > lastChar) character = firstChar;
     }
