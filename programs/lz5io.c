@@ -712,17 +712,17 @@ static unsigned long long LZ5IO_decompressLZ5F(dRess_t ress, FILE* srcFile, FILE
 static unsigned long long LZ5IO_passThrough(FILE* finput, FILE* foutput, unsigned char MNstore[MAGICNUMBER_SIZE])
 {
 	size_t buffer[PTSIZET];
-    size_t read = 1;
+    size_t readBytes = 1;
     unsigned long long total = MAGICNUMBER_SIZE;
     unsigned storedSkips = 0;
 
     size_t const sizeCheck = fwrite(MNstore, 1, MAGICNUMBER_SIZE, foutput);
     if (sizeCheck != MAGICNUMBER_SIZE) EXM_THROW(50, "Pass-through write error");
 
-    while (read) {
-        read = fread(buffer, 1, PTSIZE, finput);
-        total += read;
-        storedSkips = LZ5IO_fwriteSparse(foutput, buffer, read, storedSkips);
+    while (readBytes) {
+        readBytes = fread(buffer, 1, PTSIZE, finput);
+        total += readBytes;
+        storedSkips = LZ5IO_fwriteSparse(foutput, buffer, readBytes, storedSkips);
     }
     if (ferror(finput)) EXM_THROW(51, "Read Error")
 
