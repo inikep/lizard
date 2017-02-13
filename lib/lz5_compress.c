@@ -302,8 +302,6 @@ FORCE_INLINE int LZ5_encodeLastLiterals (
 
 int LZ5_verifyCompressionLevel(int compressionLevel)
 {
-    (void)LZ5_hashPtr;
-    (void)LZ5_wildCopy16;
     if (compressionLevel > LZ5_MAX_CLEVEL) compressionLevel = LZ5_MAX_CLEVEL;
     if (compressionLevel < LZ5_MIN_CLEVEL) compressionLevel = LZ5_DEFAULT_CLEVEL;
     return compressionLevel;

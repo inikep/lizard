@@ -42,7 +42,6 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
     intptr_t last_off = ctx->last_off;
     intptr_t length = 0;
     (void)compressionLevel;
-    (void)LZ5_wildCopy;
 
     /* Special cases */
     if (unlikely(outputSize==0)) return ((inputSize==1) && (*ctx->flagsPtr==0)) ? 0 : -1;  /* Empty output buffer */
