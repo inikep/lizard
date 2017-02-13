@@ -288,7 +288,6 @@ int LZ5_decompress_safe_partial(const char* source, char* dest, int compressedSi
 LZ5_streamDecode_t* LZ5_createStreamDecode(void)
 {
     LZ5_streamDecode_t* lz5s = (LZ5_streamDecode_t*) ALLOCATOR(1, sizeof(LZ5_streamDecode_t));
-    (void)LZ5_count; /* unused function 'LZ5_count' */
     return lz5s;
 }
 
