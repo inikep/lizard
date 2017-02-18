@@ -37,7 +37,7 @@
 #endif
 #if defined(__MINGW32__) && !defined(_POSIX_SOURCE)
 #  define _POSIX_SOURCE 1          /* disable %llu warnings with MinGW on Windows */
-#endif  
+#endif
 
 
 /*****************************
@@ -54,16 +54,6 @@
 #include "lz5io.h"
 #include "lz5frame.h"
 
-
-/* **************************************
-*  Compiler Options
-****************************************/
-#if defined(_MSC_VER) && (_MSC_VER >= 1400)            /* Avoid MSVC fseek()'s 2GiB barrier */
-#  define fseek _fseeki64
-#endif
-#if !defined(__64BIT__) && (PLATFORM_POSIX_VERSION >= 200112L) /* No point defining Large file for 64 bit */
-#  define fseek fseeko
-#endif
 
 
 /*****************************
@@ -555,7 +545,7 @@ static unsigned LZ5IO_fwriteSparse(FILE* file, const void* buffer, size_t buffer
 
     /* avoid int overflow */
     if (storedSkips > 1 GB) {
-        int const seekResult = fseek(file, 1 GB, SEEK_CUR);
+        int const seekResult = UTIL_fseek(file, 1 GB, SEEK_CUR);
         if (seekResult != 0) EXM_THROW(71, "1 GB skip error (sparse file support)");
         storedSkips -= 1 GB;
     }
@@ -571,7 +561,7 @@ static unsigned LZ5IO_fwriteSparse(FILE* file, const void* buffer, size_t buffer
         storedSkips += (unsigned)(nb0T * sizeT);
 
         if (nb0T != seg0SizeT) {   /* not all 0s */
-            int const seekResult = fseek(file, storedSkips, SEEK_CUR);
+            int const seekResult = UTIL_fseek(file, storedSkips, SEEK_CUR);
             if (seekResult) EXM_THROW(72, "Sparse skip error ; try --no-sparse");
             storedSkips = 0;
             seg0SizeT -= nb0T;
@@ -590,7 +580,7 @@ static unsigned LZ5IO_fwriteSparse(FILE* file, const void* buffer, size_t buffer
         for (; (restPtr < restEnd) && (*restPtr == 0); restPtr++) ;
         storedSkips += (unsigned) (restPtr - restStart);
         if (restPtr != restEnd) {
-            int const seekResult = fseek(file, storedSkips, SEEK_CUR);
+            int const seekResult = UTIL_fseek(file, storedSkips, SEEK_CUR);
             if (seekResult) EXM_THROW(74, "Sparse skip error ; try --no-sparse");
             storedSkips = 0;
             {   size_t const sizeCheck = fwrite(restPtr, 1, restEnd - restPtr, file);
@@ -604,7 +594,7 @@ static unsigned LZ5IO_fwriteSparse(FILE* file, const void* buffer, size_t buffer
 static void LZ5IO_fwriteSparseEnd(FILE* file, unsigned storedSkips)
 {
     if (storedSkips>0) {   /* implies g_sparseFileSupport>0 */
-        int const seekResult = fseek(file, storedSkips-1, SEEK_CUR);
+        int const seekResult = UTIL_fseek(file, storedSkips-1, SEEK_CUR);
         if (seekResult != 0) EXM_THROW(69, "Final skip error (sparse file)\n");
         {   const char lastZeroByte[1] = { 0 };
             size_t const sizeCheck = fwrite(lastZeroByte, 1, 1, file);
@@ -741,7 +731,7 @@ static int fseek_u32(FILE *fp, unsigned offset, int where)
     while (offset > 0) {
         unsigned s = offset;
         if (s > stepMax) s = stepMax;
-        errorNb = fseek(fp, (long) s, SEEK_CUR);
+        errorNb = UTIL_fseek(fp, (long) s, SEEK_CUR);
         if (errorNb != 0) break;
         offset -= s;
     }
