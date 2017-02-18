@@ -83,7 +83,7 @@ matrix:
       dist: trusty
       sudo: required
 
-    - env: Ubu=14.04 Cmd='CFLAGS=-Og make -C tests test-mem' COMPILER=cc
+    - env: Ubu=14.04 Cmd='make -C tests test-mem MOREFLAGS=-DLZ5_RESET_MEM' COMPILER=cc
       dist: trusty
       sudo: required
       addons:

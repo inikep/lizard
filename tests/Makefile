@@ -97,11 +97,11 @@ fullbench-dll: fullbench.c $(LZ5DIR)/xxhash/xxhash.c
 	$(MAKE) -C $(LZ5DIR) liblz5
 	$(CC) $(FLAGS) $^ -o $@$(EXT) -DLZ5_DLL_IMPORT=1 $(LZ5DIR)/dll/liblz5.dll
 
-fuzzer  : $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/xxhash/xxhash.o fuzzer.c $(ENTROPY_FILES)
-	$(CC) $(FLAGS) $^ -o $@$(EXT)
+fuzzer  : $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/xxhash/xxhash.o fuzzer.c $(ENTROPY_FILES)
+	$(CC) -DLZ5_RESET_MEM $(FLAGS) $^ -o $@$(EXT)
 
 fuzzer32: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/xxhash/xxhash.c fuzzer.c $(ENTROPY_FILES)
-	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
+	$(CC) -m32 -DLZ5_RESET_MEM $(FLAGS) $^ -o $@$(EXT)
 
 frametest: $(LZ5DIR)/lz5frame.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/xxhash/xxhash.o frametest.c $(ENTROPY_FILES)
 	$(CC) $(FLAGS) $^ -o $@$(EXT)

@@ -258,7 +258,7 @@ FORCE_INLINE int LZ5_decompress_generic(
     return (int)(op-(BYTE*)dest);
 
 _output_error:
-    LZ5_LOG_DECOMPRESS("LZ5_decompress_generic ERROR\n");
+    LZ5_LOG_DECOMPRESS("LZ5_decompress_generic ERROR ip=%p iend=%p\n", ip, iend);
     free(decompLiteralsBase);
     return -1;
 }
