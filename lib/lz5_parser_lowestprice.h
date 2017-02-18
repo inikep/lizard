@@ -106,7 +106,6 @@ FORCE_INLINE int LZ5_FindMatchLowestPrice (LZ5_stream_t* ctx,   /* Index table w
                 }
             } else {
                 matchDict = dictBase + matchIndex;
-    //            fprintf(stderr, "dictBase[%p]+matchIndex[%d]=match[%p] dictLimit=%d base=%p ip=%p iLimit=%p off=%d\n", dictBase, matchIndex, match, dictLimit, base, ip, iLimit, (U32)(ip-match));
                 if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
                 if (MEM_read32(matchDict) == MEM_read32(ip)) {
                     mlt = LZ5_count_2segments(ip+MINMATCH, matchDict+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
@@ -232,7 +231,6 @@ FORCE_INLINE size_t LZ5_GetWiderMatch (
                 }
             } else {
                 matchDict = dictBase + matchIndex;
-    //            fprintf(stderr, "dictBase[%p]+matchIndex[%d]=match[%p] dictLimit=%d base=%p ip=%p iLimit=%p off=%d\n", dictBase, matchIndex, match, dictLimit, base, ip, iLimit, (U32)(ip-match));
                 if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
                 if (MEM_read32(matchDict) == MEM_read32(ip)) {
                     int back=0;
@@ -340,7 +338,6 @@ _Search:
                 break;
             }
         }
-    //    LZ5_DEBUG("%u: TRY last_off=%d literals=%u off=%u mlen=%u literals2=%u off2=%u mlen2=%u best=%d\n", (U32)(ip - ctx->inputBuffer), ctx->last_off, (U32)(ip - anchor), off0, (U32)ml,  (U32)(start2 - anchor), off1, ml2, (U32)(best_pos - ip));
         ml = (int)(best_pos - ip);
         }
 
@@ -364,7 +361,6 @@ _Encode:
             }
         }
 
-     //   if ((ml < minMatchLongOff) && ((U32)(ip-ref) >= LZ5_MAX_16BIT_OFFSET)) { printf("LZ5_encodeSequence ml=%d off=%d\n", ml, (U32)(ip-ref)); exit(0); }
         if (LZ5_encodeSequence_LZ5v2(ctx, &ip, &anchor, ml, ((ip - ref == ctx->last_off) ? ip : ref))) return 0;
     }
 

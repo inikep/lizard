@@ -84,7 +84,6 @@ FORCE_INLINE int LZ5_InsertAndFindBestMatch (LZ5_stream_t* ctx,   /* Index table
             }
         } else {
             match = dictBase + matchIndex;
-//            fprintf(stderr, "dictBase[%p]+matchIndex[%d]=match[%p] dictLimit=%d base=%p ip=%p iLimit=%p off=%d\n", dictBase, matchIndex, match, dictLimit, base, ip, iLimit, (U32)(ip-match));
 #if LZ5_HC_MIN_OFFSET > 0
             if ((U32)(ip - (base + matchIndex)) >= LZ5_HC_MIN_OFFSET)
 #endif

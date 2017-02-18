@@ -40,8 +40,6 @@ FORCE_INLINE int LZ5_encodeSequence_LZ4 (
     }
 
     /* Encode Offset */
-//    if (match > *ip) printf("match > *ip\n"), exit(1);
-//    if ((U32)(*ip-match) >= (1<<16)) printf("off=%d\n", (U32)(*ip-match)), exit(1);
     MEM_writeLE16(ctx->literalsPtr, (U16)(*ip-match));
     ctx->literalsPtr+=2;
 
@@ -100,7 +98,6 @@ FORCE_INLINE size_t LZ5_get_price_LZ4(LZ5_stream_t* const ctx, const BYTE *ip, c
 
     if (ctx->cachedLiterals == literals && litLength >= ctx->cachedLitLength) {
         size_t const additional = litLength - ctx->cachedLitLength;
-    //    printf("%d ", (int)litLength - (int)ctx->cachedLitLength);
         const BYTE* literals2 = ctx->cachedLiterals + ctx->cachedLitLength;
         price = ctx->cachedPrice + additional * ctx->log2LitSum;
         for (u=0; u < additional; u++)

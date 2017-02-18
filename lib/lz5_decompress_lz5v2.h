@@ -57,7 +57,6 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
         /* get literal length */
         token = *ctx->flagsPtr++;
 
-   //     LZ5_LOG_DECOMPRESS_LZ5v2("token : %u\n", (U32)token);
         if (token >= 32)
         {
             if ((length=(token & MAX_SHORT_LITLEN)) == MAX_SHORT_LITLEN) {
@@ -108,13 +107,11 @@ FORCE_INLINE int LZ5_decompress_LZ5v2(
             {
                 last_off = -(intptr_t)MEM_readLE16(ctx->offset16Ptr); 
                 ctx->offset16Ptr += 2;
-            //    LZ5v2_DEBUG("MEM_readLE16 offset=%d\n", (int)offset);
             }
 #endif
 
             /* get matchlength */
             length = (token >> RUN_BITS_LZ5v2) & MAX_SHORT_MATCHLEN;
-          //  printf("length=%d token=%d\n", (int)length, (int)token);
             if (length == MAX_SHORT_MATCHLEN) {
                 if (unlikely(ctx->literalsPtr > iend - 1)) { LZ5_LOG_DECOMPRESS_LZ5v2("6"); goto _output_error; } 
                 length = *ctx->literalsPtr;

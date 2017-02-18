@@ -91,8 +91,6 @@ FORCE_INLINE size_t LZ5_readStream(int flag, const BYTE** ip, const BYTE* const 
         streamLen = MEM_readLE24(*ip);
         comprStreamLen = MEM_readLE24(*ip + 3);
 
-      //  printf("LZ5_readStream ip=%p iout=%p iend=%p streamLen=%d comprStreamLen=%d\n", *ip, *ip + 6 + comprStreamLen, iend, (int)streamLen, (int)comprStreamLen);
-
         if ((op > oend - streamLen) || (*ip + comprStreamLen > iend - 6)) return 0;
         res = HUF_decompress(op, streamLen, *ip + 6, comprStreamLen);
         if (HUF_isError(res) || (res != streamLen)) return 0;

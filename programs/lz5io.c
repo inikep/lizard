@@ -166,7 +166,7 @@ size_t LZ5IO_setBlockSizeID(unsigned bsid)
     return blockSizeTable[g_blockSizeId-minBlockSizeID];
 } 
 
-//static int LZ5IO_GetBlockSize_FromBlockId (int id) { return (1 << (8 + (2 * id))); }
+
 static size_t LZ5IO_GetBlockSize_FromBlockId(unsigned blockSizeID)
 {
     static const size_t blockSizes[7] = { 128 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };

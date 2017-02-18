@@ -50,9 +50,6 @@ FORCE_INLINE int LZ5_compress_fastSmall(
     size_t forwardH, matchIndex;
     const U32 maxDistance = (1 << ctx->params.windowLog) - 1;
 
-  //  fprintf(stderr, "base=%p LZ5_stream_t=%d inputSize=%d maxOutputSize=%d\n", base, sizeof(LZ5_stream_t), inputSize, maxOutputSize);
- //   fprintf(stderr, "ip=%d base=%p lowPrefixPtr=%p dictBase=%d lowLimit=%p op=%p\n", ip, base, lowPrefixPtr, lowLimit, dictBase, op);
-
     /* Init conditions */
     if ((U32)(iend-ip) > (U32)LZ5_MAX_INPUT_SIZE) goto _output_error;   /* Unsupported inputSize, too large (or negative) */
 
@@ -65,7 +62,6 @@ FORCE_INLINE int LZ5_compress_fastSmall(
     /* Main Loop */
     for ( ; ; ) {
         const BYTE* match;
-      //  BYTE* token;
         size_t matchLength;
 
         /* Find a match */

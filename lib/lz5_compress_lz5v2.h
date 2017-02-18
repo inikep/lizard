@@ -96,7 +96,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
     /* Encode Offset */
     if (offset >= LZ5_MAX_16BIT_OFFSET)  // 24-bit offset
     {
-        if (matchLength < MM_LONGOFF) printf("ERROR matchLength=%d/%d\n", (int)matchLength, MM_LONGOFF), exit(0);
+        if (matchLength < MM_LONGOFF) printf("ERROR matchLength=%d/%d\n", (int)matchLength, MM_LONGOFF), exit(1);
 
       //  if ((limitedOutputBuffer) && (ctx->literalsPtr > oend - 8 /*LZ5_LENGTH_SIZE_LZ5v2(length)*/)) { LZ5_LOG_COMPRESS_LZ5v2("encodeSequence overflow2\n"); return 1; }   /* Check output limit */
         if (matchLength - MM_LONGOFF >= LZ5_LAST_LONG_OFF) 
@@ -128,8 +128,9 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
         }
         else
         {
-            if (offset < 8) printf("ERROR offset=%d\n", (int)offset);
-            if (matchLength < MINMATCH) { printf("matchLength[%d] < MINMATCH  offset=%d\n", (int)matchLength, (int)ctx->last_off); exit(1); }
+            // it should never happen
+            if (offset < 8) { printf("ERROR offset=%d\n", (int)offset); exit(1); }
+            if (matchLength < MINMATCH) { printf("ERROR matchLength[%d] < MINMATCH  offset=%d\n", (int)matchLength, (int)ctx->last_off); exit(1); }
             
             ctx->last_off = offset;
             MEM_writeLE16(ctx->offset16Ptr, (U16)ctx->last_off); ctx->offset16Ptr += 2;
@@ -192,7 +193,6 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
     if ((ctx->huffType) && (ctx->params.parserType != LZ5_parser_lowestPrice)) {
         if (ctx->cachedLiterals == literals && litLength >= ctx->cachedLitLength) {
             size_t const additional = litLength - ctx->cachedLitLength;
-        //    printf("%d ", (int)litLength - (int)ctx->cachedLitLength);
             const BYTE* literals2 = ctx->cachedLiterals + ctx->cachedLitLength;
             price = ctx->cachedPrice + LZ5_PRICE_MULT * additional * ctx->log2LitSum;
             for (u=0; u < additional; u++)

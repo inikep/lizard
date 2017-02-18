@@ -72,7 +72,6 @@ FORCE_INLINE int LZ5_FindMatchFast(LZ5_stream_t* ctx, intptr_t matchIndex, intpt
                 }
             } else {
                 matchDict = dictBase + matchIndex;
-    //            fprintf(stderr, "dictBase[%p]+matchIndex[%d]=match[%p] dictLimit=%d base=%p ip=%p iLimit=%p off=%d\n", dictBase, matchIndex, match, dictLimit, base, ip, iLimit, (U32)(ip-match));
                 if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
                 if (MEM_read32(matchDict) == MEM_read32(ip)) {
                     mlt = LZ5_count_2segments(ip+MINMATCH, matchDict+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
@@ -200,8 +199,6 @@ _Search:
         start2 += back;
         ref2 += back;
         }
-
-    //    LZ5_DEBUG("%u: TRY last_off=%d literals=%u off=%u mlen=%u literals2=%u off2=%u mlen2=%u best=%d\n", (U32)(ip - ctx->inputBuffer), ctx->last_off, (U32)(ip - anchor), off0, (U32)ml,  (U32)(start2 - anchor), off1, ml2, (U32)(best_pos - ip));
 
         if (ml2 <= ml) { ml2 = 0; goto _Encode; }
 

@@ -389,7 +389,6 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel)
 LZ5_stream_t* LZ5_createStream(int compressionLevel) 
 { 
     LZ5_stream_t* ctx = LZ5_initStream(NULL, compressionLevel);
-//    if (ctx) printf("LZ5_createStream ctx=%p ctx->compressionLevel=%d\n", ctx, ctx->compressionLevel);
     return ctx; 
 }
 
@@ -399,15 +398,10 @@ LZ5_stream_t* LZ5_resetStream(LZ5_stream_t* ctx, int compressionLevel)
 {
     size_t wanted = LZ5_sizeofState(compressionLevel);
 
-//    printf("LZ5_resetStream ctx=%p cLevel=%d have=%d wanted=%d min=%d\n", ctx, compressionLevel, (int)have, (int)wanted, (int)sizeof(LZ5_stream_t));
-    if (ctx->allocatedMemory < wanted)
-    {
-  //      printf("REALLOC ctx=%p cLevel=%d have=%d wanted=%d\n", ctx, compressionLevel, (int)have, (int)wanted);
+    if (ctx->allocatedMemory < wanted) {
         LZ5_freeStream(ctx);
         ctx = LZ5_createStream(compressionLevel);
-    }
-    else
-    {
+    } else {
         LZ5_initStream(ctx, compressionLevel);
     }
 
@@ -419,7 +413,6 @@ LZ5_stream_t* LZ5_resetStream(LZ5_stream_t* ctx, int compressionLevel)
 int LZ5_freeStream(LZ5_stream_t* ctx) 
 { 
     if (ctx) {
-     //   printf("LZ5_freeStream ctx=%p ctx->compressionLevel=%d\n", ctx, ctx->compressionLevel);
         free(ctx);
     }
     return 0; 
@@ -458,7 +451,6 @@ int LZ5_saveDict (LZ5_stream_t* LZ5_streamPtr, char* safeBuffer, int dictSize)
 {
     LZ5_stream_t* const ctx = (LZ5_stream_t*)LZ5_streamPtr;
     int const prefixSize = (int)(ctx->end - (ctx->base + ctx->dictLimit));
-//printf("LZ5_saveDict dictSize=%d prefixSize=%d ctx->dictLimit=%d\n", dictSize, prefixSize, (int)ctx->dictLimit);
     if (dictSize > LZ5_DICT_SIZE) dictSize = LZ5_DICT_SIZE;
     if (dictSize < 4) dictSize = 0;
     if (dictSize > prefixSize) dictSize = prefixSize;
@@ -470,7 +462,6 @@ int LZ5_saveDict (LZ5_stream_t* LZ5_streamPtr, char* safeBuffer, int dictSize)
         ctx->lowLimit = endIndex - dictSize;
         if (ctx->nextToUpdate < ctx->dictLimit) ctx->nextToUpdate = ctx->dictLimit;
     }
-//printf("2LZ5_saveDict dictSize=%d\n", dictSize);
     return dictSize;
 }
 
