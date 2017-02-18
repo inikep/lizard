@@ -79,7 +79,11 @@ matrix:
             - qemu-user-static
             - gcc-powerpc-linux-gnu
 
-    - env: Ubu=14.04 Cmd='make c_standards && make -C tests test-lz5 test-mem' COMPILER=cc
+    - env: Ubu=14.04 Cmd='make c_standards && make -C tests test-lz5' COMPILER=cc
+      dist: trusty
+      sudo: required
+
+    - env: Ubu=14.04 Cmd='CFLAGS=-Og make -C tests test-mem' COMPILER=cc
       dist: trusty
       sudo: required
       addons:
