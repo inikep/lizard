@@ -60,13 +60,14 @@ FORCE_INLINE int LZ5_InsertAndFindBestMatch (LZ5_stream_t* ctx,   /* Index table
     const int hashLog = ctx->params.hashLog;
     const U32 contentMask = (1 << ctx->params.contentLog) - 1;
     const U32 maxDistance = (1 << ctx->params.windowLog) - 1;
-    const U32 lowLimit = (ctx->lowLimit + maxDistance >= (U32)(ip-base)) ? ctx->lowLimit : (U32)(ip - base) - maxDistance;
+    const U32 current = (U32)(ip - base);
+    const U32 lowLimit = (ctx->lowLimit + maxDistance >= current) ? ctx->lowLimit : current - maxDistance;
 
     /* HC4 match finder */
     LZ5_Insert(ctx, ip);
     matchIndex = HashTable[LZ5_HC_HASH_FUNCTION(ip, hashLog)];
 
-    while ((matchIndex>=lowLimit) && (nbAttempts)) {
+    while ((matchIndex < current) && (matchIndex >= lowLimit) && (nbAttempts)) {
         nbAttempts--;
         if (matchIndex >= dictLimit) {
             match = base + matchIndex;
@@ -127,13 +128,14 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatch (
     const int hashLog = ctx->params.hashLog;
     const U32 contentMask = (1 << ctx->params.contentLog) - 1;
     const U32 maxDistance = (1 << ctx->params.windowLog) - 1;
-    const U32 lowLimit = (ctx->lowLimit + maxDistance >= (U32)(ip-base)) ? ctx->lowLimit : (U32)(ip - base) - maxDistance;
-    
+    const U32 current = (U32)(ip - base);
+    const U32 lowLimit = (ctx->lowLimit + maxDistance >= current) ? ctx->lowLimit : current - maxDistance;
+
     /* First Match */
     LZ5_Insert(ctx, ip);
     matchIndex = HashTable[LZ5_HC_HASH_FUNCTION(ip, hashLog)];
 
-    while ((matchIndex>=lowLimit) && (nbAttempts)) {
+    while ((matchIndex < current) && (matchIndex >= lowLimit) && (nbAttempts)) {
         nbAttempts--;
         if (matchIndex >= dictLimit) {
             const BYTE* match = base + matchIndex;

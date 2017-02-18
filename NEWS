@@ -1,3 +1,6 @@
+v2.0.1
+- improved compression speed with many small files
+
 v2.0
 - this version is optimized for decompression speed (instead of ratio for previous versions)
 - LZ5 v2.0 contains 4 compression methods:

@@ -326,7 +326,7 @@ int LZ5_sizeofState(int compressionLevel)
 static void LZ5_init(LZ5_stream_t* ctx, const BYTE* start)
 {
     MEM_INIT((void*)ctx->hashTable, 0, ctx->hashTableSize);
-    MEM_INIT(ctx->chainTable, 0x01, ctx->chainTableSize);
+ //   MEM_INIT(ctx->chainTable, 0x01, ctx->chainTableSize);
  //   printf("memset hashTable=%p hashEnd=%p chainTable=%p chainEnd=%p\n", ctx->hashTable, ((BYTE*)ctx->hashTable) + ctx->hashTableSize, ctx->chainTable, ((BYTE*)ctx->chainTable)+ctx->chainTableSize);
     ctx->nextToUpdate = LZ5_DICT_SIZE;
     ctx->base = start - LZ5_DICT_SIZE;

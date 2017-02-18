@@ -70,7 +70,7 @@ extern "C" {
 **************************************/
 #define LZ5_VERSION_MAJOR    2    /* for breaking interface changes  */
 #define LZ5_VERSION_MINOR    0    /* for new (non-breaking) interface capabilities */
-#define LZ5_VERSION_RELEASE  0    /* for tweaks, bug-fixes, or development */
+#define LZ5_VERSION_RELEASE  1    /* for tweaks, bug-fixes, or development */
 
 #define LZ5_VERSION_NUMBER (LZ5_VERSION_MAJOR *100*100 + LZ5_VERSION_MINOR *100 + LZ5_VERSION_RELEASE)
 int LZ5_versionNumber (void);
