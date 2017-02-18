@@ -167,7 +167,7 @@ FORCE_INLINE int LZ5_compress_priceFast(
 #else
         ml = LZ5_FindMatchFast (ctx, *HashPos, 0, ip, matchlimit, (&ref));
 #endif 
-        if ((U32)(ip - base) >= *HashPos + LZ5_PRICEFAST_MIN_OFFSET)
+        if ((*HashPos >= (U32)(ip - base)) || ((U32)(ip - base) >= *HashPos + LZ5_PRICEFAST_MIN_OFFSET))
             *HashPos = (U32)(ip - base);
 
         if (!ml) { ip++; continue; }
@@ -187,7 +187,7 @@ _Search:
         start2 = ip + ml - 2;
         HashPos = &HashTable[LZ5_hashPtr(start2, ctx->params.hashLog, ctx->params.searchLength)];
         ml2 = LZ5_FindMatchFaster(ctx, *HashPos, start2, matchlimit, (&ref2));      
-        if ((U32)(start2 - base) >= *HashPos + LZ5_PRICEFAST_MIN_OFFSET)
+        if ((*HashPos >= (U32)(start2 - base)) || ((U32)(start2 - base) >= *HashPos + LZ5_PRICEFAST_MIN_OFFSET))
             *HashPos = (U32)(start2 - base);
 
         if (!ml2) goto _Encode;

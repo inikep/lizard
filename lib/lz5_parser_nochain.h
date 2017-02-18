@@ -15,14 +15,13 @@ FORCE_INLINE void LZ5_InsertNoChain (LZ5_stream_t* ctx, const BYTE* ip)
 
     while (idx < target) {
         size_t const h = LZ5_NOCHAIN_HASH_FUNCTION(base+idx, hashLog);
-        if (idx >= hashTable[h] + LZ5_NOCHAIN_MIN_OFFSET)
+        if ((hashTable[h] >= idx) || (idx >= hashTable[h] + LZ5_NOCHAIN_MIN_OFFSET))
             hashTable[h] = idx;
         idx++;
     }
 
     ctx->nextToUpdate = target;
 }
-
 
 
 FORCE_INLINE int LZ5_InsertAndFindBestMatchNoChain (LZ5_stream_t* ctx,   /* Index table will be updated */
@@ -40,13 +39,14 @@ FORCE_INLINE int LZ5_InsertAndFindBestMatchNoChain (LZ5_stream_t* ctx,   /* Inde
     size_t ml=0;
     const int hashLog = ctx->params.hashLog;
     const U32 maxDistance = (1 << ctx->params.windowLog) - 1;
-    const U32 lowLimit = (ctx->lowLimit + maxDistance >= (U32)(ip-base)) ? ctx->lowLimit : (U32)(ip - base) - maxDistance;
+    const U32 current = (U32)(ip - base);
+    const U32 lowLimit = (ctx->lowLimit + maxDistance >= current) ? ctx->lowLimit : current - maxDistance;
 
     /* HC4 match finder */
     LZ5_InsertNoChain(ctx, ip);
     matchIndex = HashTable[LZ5_NOCHAIN_HASH_FUNCTION(ip, hashLog)];
 
-    if (matchIndex >= lowLimit) {
+    if ((matchIndex < current) && (matchIndex >= lowLimit)) {
         if (matchIndex >= dictLimit) {
             match = base + matchIndex;
 #if LZ5_NOCHAIN_MIN_OFFSET > 0
@@ -93,13 +93,14 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatchNoChain (
     int LLdelta = (int)(ip-iLowLimit);
     const int hashLog = ctx->params.hashLog;
     const U32 maxDistance = (1 << ctx->params.windowLog) - 1;
-    const U32 lowLimit = (ctx->lowLimit + maxDistance >= (U32)(ip-base)) ? ctx->lowLimit : (U32)(ip - base) - maxDistance;
-    
+    const U32 current = (U32)(ip - base);
+    const U32 lowLimit = (ctx->lowLimit + maxDistance >= current) ? ctx->lowLimit : current - maxDistance;
+
     /* First Match */
     LZ5_InsertNoChain(ctx, ip);
     matchIndex = HashTable[LZ5_NOCHAIN_HASH_FUNCTION(ip, hashLog)];
 
-    if (matchIndex>=lowLimit) {
+    if ((matchIndex < current) && (matchIndex >= lowLimit)) {
         if (matchIndex >= dictLimit) {
             const BYTE* match = base + matchIndex;
 #if LZ5_NOCHAIN_MIN_OFFSET > 0

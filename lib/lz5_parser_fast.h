@@ -45,7 +45,6 @@ FORCE_INLINE int LZ5_compress_fast(
 {
     const U32 acceleration = 1;
     const BYTE* base = ctx->base;
-    const U32 lowLimit = ctx->lowLimit;
     const U32 dictLimit = ctx->dictLimit;
     const BYTE* const lowPrefixPtr = base + dictLimit;
     const BYTE* const dictBase = ctx->dictBase;
@@ -56,6 +55,7 @@ FORCE_INLINE int LZ5_compress_fast(
 
     size_t forwardH, matchIndex;
     const U32 maxDistance = (1 << ctx->params.windowLog) - 1;
+    const U32 lowLimit = (ctx->lowLimit + maxDistance >= (U32)(ip - base)) ? ctx->lowLimit : (U32)(ip - base) - maxDistance;
 
     /* Init conditions */
     if ((U32)(iend-ip) > (U32)LZ5_MAX_INPUT_SIZE) goto _output_error;   /* Unsupported inputSize, too large (or negative) */
@@ -87,7 +87,7 @@ FORCE_INLINE int LZ5_compress_fast(
                 forwardH = LZ5_hashPosition(forwardIp);
                 LZ5_putPositionOnHash(ip, h, ctx->hashTable, base);
 
-                if ((matchIndex < lowLimit) || (base + matchIndex + maxDistance < ip)) continue;
+                if ((matchIndex < lowLimit) || (matchIndex >= (U32)(ip - base)) || (base + matchIndex + maxDistance < ip)) continue;
 
                 if (matchIndex >= dictLimit) {
                     match = base + matchIndex;
@@ -148,7 +148,7 @@ _next_match:
         /* Test next position */
         matchIndex = LZ5_getPosition(ip, ctx->hashTable);
         LZ5_putPosition(ip, ctx->hashTable, base);
-        if (matchIndex >= lowLimit && (base + matchIndex + maxDistance >= ip))
+        if ((matchIndex >= lowLimit) && (matchIndex < (U32)(ip - base)) && (base + matchIndex + maxDistance >= ip))
         {
             if (matchIndex >= dictLimit) {
                 match = base + matchIndex;
