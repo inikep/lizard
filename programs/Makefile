@@ -98,9 +98,9 @@ clean:
 
 
 #------------------------------------------------------------------------
-#make install is validated only for Linux, OSX, kFreeBSD, Hurd and
+#make install is validated only for Linux, OSX, kFreeBSD, Hurd, Haiku and
 #FreeBSD targets
-ifneq (,$(filter Linux Darwin GNU/kFreeBSD GNU FreeBSD MSYS%, $(shell uname)))
+ifneq (,$(filter Linux Darwin GNU/kFreeBSD GNU FreeBSD Haiku MSYS%, $(shell uname)))
 
 install: lz5$(EXT)
 	@echo Installing binaries
