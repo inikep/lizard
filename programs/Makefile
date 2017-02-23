@@ -3,6 +3,8 @@
 # Copyright (C) Yann Collet 2011-2016
 # Copyright (C) Przemyslaw Skibinski 2016
 #
+# This Makefile is validated for Linux, macOS, *BSD, Hurd, Solaris, MSYS2 targets
+#
 # GPL v2 License
 #
 # This program is free software; you can redistribute it and/or modify
@@ -26,11 +28,7 @@
 # lz5c32: Same as lz5, but forced to compile in 32-bits mode
 # ##########################################################################
 
-DESTDIR ?=
-PREFIX  ?= /usr/local
 VOID = /dev/null
-BINDIR  := $(PREFIX)/bin
-MANDIR  := $(PREFIX)/share/man/man1
 LZ5DIR  := ../lib
 ENTROPY_FILES := $(LZ5DIR)/entropy/*.c
 #TEST_CODEWORDS := $(LZ5DIR)/test/*.h
@@ -97,30 +95,58 @@ clean:
 	@echo Cleaning completed
 
 
-#------------------------------------------------------------------------
-#make install is validated only for Linux, OSX, kFreeBSD, Hurd, Haiku and
-#FreeBSD targets
-ifneq (,$(filter Linux Darwin GNU/kFreeBSD GNU FreeBSD Haiku MSYS%, $(shell uname)))
+#-----------------------------------------------------------------------------
+# make install is validated only for Linux, OSX, BSD, Hurd, Haiku and Solaris targets
+#-----------------------------------------------------------------------------
+ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU OpenBSD FreeBSD NetBSD DragonFly SunOS Haiku))
+
+unlz5: lz5
+	ln -s lz5 unlz5
+
+lz5cat: lz5
+	ln -s lz5 lz5cat
+
+
+ifneq (,$(filter $(shell uname),SunOS))
+INSTALL ?= ginstall
+else
+INSTALL ?= install
+endif
+
+PREFIX  ?= /usr/local
+DESTDIR ?=
+BINDIR  ?= $(PREFIX)/bin
+
+ifneq (,$(filter $(shell uname),OpenBSD FreeBSD NetBSD DragonFly SunOS))
+MANDIR  ?= $(PREFIX)/man/man1
+else
+MANDIR  ?= $(PREFIX)/share/man/man1
+endif
+
+INSTALL_PROGRAM ?= $(INSTALL) -m 755
+INSTALL_SCRIPT  ?= $(INSTALL) -m 755
+INSTALL_MAN     ?= $(INSTALL) -m 644
+
 
 install: lz5$(EXT)
 	@echo Installing binaries
-	@install -d -m 755 $(DESTDIR)$(BINDIR)/ $(DESTDIR)$(MANDIR)/
-	@install -m 755 lz5$(EXT) $(DESTDIR)$(BINDIR)/lz5$(EXT)
+	@$(INSTALL) -d -m 755 $(DESTDIR)$(BINDIR)/ $(DESTDIR)$(MANDIR)/
+	@$(INSTALL_PROGRAM) lz5$(EXT) $(DESTDIR)$(BINDIR)/lz5$(EXT)
 	@ln -sf lz5$(EXT) $(DESTDIR)$(BINDIR)/lz5cat$(EXT)
 	@ln -sf lz5$(EXT) $(DESTDIR)$(BINDIR)/unlz5$(EXT)
 	@echo Installing man pages
-	@install -m 644 lz5.1 $(DESTDIR)$(MANDIR)/lz5.1
+	@$(INSTALL_MAN) -m 644 lz5.1 $(DESTDIR)$(MANDIR)/lz5.1
 	@ln -sf lz5.1 $(DESTDIR)$(MANDIR)/lz5cat.1
 	@ln -sf lz5.1 $(DESTDIR)$(MANDIR)/unlz5.1
 	@echo lz5 installation completed
 
 uninstall:
-	rm -f $(DESTDIR)$(BINDIR)/lz5cat$(EXT)
-	rm -f $(DESTDIR)$(BINDIR)/unlz5$(EXT)
-	[ -x $(DESTDIR)$(BINDIR)/lz5$(EXT) ] && rm -f $(DESTDIR)$(BINDIR)/lz5$(EXT)
-	[ -f $(DESTDIR)$(MANDIR)/lz5.1 ] && rm -f $(DESTDIR)$(MANDIR)/lz5.1
-	rm -f $(DESTDIR)$(MANDIR)/lz5cat.1
-	rm -f $(DESTDIR)$(MANDIR)/unlz5.1
+	@$(RM) $(DESTDIR)$(BINDIR)/lz5cat$(EXT)
+	@$(RM) $(DESTDIR)$(BINDIR)/unlz5$(EXT)
+	@$(RM) $(DESTDIR)$(BINDIR)/lz5$(EXT)
+	@$(RM) $(DESTDIR)$(MANDIR)/lz5.1
+	@$(RM) $(DESTDIR)$(MANDIR)/lz5cat.1
+	@$(RM) $(DESTDIR)$(MANDIR)/unlz5.1
 	@echo lz5 programs successfully uninstalled
 
 endif

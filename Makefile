@@ -3,6 +3,8 @@
 # Copyright (C) Yann Collet 2011-2015
 # All rights reserved.
 #
+# This Makefile is validated for Linux, macOS, *BSD, Hurd, Solaris, MSYS2 targets
+#
 # BSD license
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
@@ -70,10 +72,10 @@ clean:
 	@echo Cleaning completed
 
 
-#------------------------------------------------------------------------
-#make install is validated only for Linux, OSX, kFreeBSD, Hurd, Haiku and
-#FreeBSD targets
-ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU FreeBSD Haiku))
+#-----------------------------------------------------------------------------
+# make install is validated only for Linux, OSX, BSD, Hurd, Haiku and Solaris targets
+#-----------------------------------------------------------------------------
+ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU OpenBSD FreeBSD NetBSD DragonFly SunOS Haiku))
 HOST_OS = POSIX
 
 install:
@@ -85,10 +87,10 @@ uninstall:
 	@$(MAKE) -C $(PRGDIR) $@
 
 travis-install:
-	$(MAKE) install PREFIX=~/install_test_dir
+	$(MAKE) -j1 install PREFIX=~/install_test_dir
 
 test:
-	$(MAKE) -C $(TESTDIR) test
+	$(MAKE) -C $(TESTDIR) $@
 
 clangtest: clean
 	clang -v

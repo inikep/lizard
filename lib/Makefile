@@ -4,6 +4,8 @@
 # Copyright (C) 2016, Przemyslaw Skibinski <inikep@gmail.com>
 # All rights reserved.
 #
+# This Makefile is validated for Linux, macOS, *BSD, Hurd, Solaris, MSYS2 targets
+#
 # BSD license
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
@@ -42,8 +44,6 @@ LIBVER := $(shell echo $(LIBVER_SCRIPT))
 
 BUILD_STATIC:= yes
 
-DESTDIR?=
-PREFIX ?= /usr/local
 CPPFLAGS= -DXXH_NAMESPACE=LZ5_
 CFLAGS ?= -O3
 CFLAGS += -Wall -Wextra -Wcast-qual -Wcast-align -Wshadow \
@@ -52,8 +52,6 @@ CFLAGS += -Wall -Wextra -Wcast-qual -Wcast-align -Wshadow \
 CFLAGS  += $(MOREFLAGS) 
 FLAGS   = $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)
 
-LIBDIR?= $(PREFIX)/lib
-INCLUDEDIR=$(PREFIX)/include
 
 
 # OS X linker doesn't support -soname, and use different extension
@@ -100,10 +98,30 @@ clean:
 	@echo Cleaning library completed
 
 
-#------------------------------------------------------------------------
-#make install is validated only for Linux, OSX, kFreeBSD, Hurd, Haiku and
-#FreeBSD targets
-ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU FreeBSD Haiku))
+#-----------------------------------------------------------------------------
+# make install is validated only for Linux, OSX, BSD, Hurd, Haiku and Solaris targets
+#-----------------------------------------------------------------------------
+ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU OpenBSD FreeBSD NetBSD DragonFly SunOS Haiku))
+
+ifneq (,$(filter $(shell uname),SunOS))
+INSTALL ?= ginstall
+else
+INSTALL ?= install
+endif
+
+PREFIX     ?= /usr/local
+DESTDIR    ?=
+LIBDIR     ?= $(PREFIX)/lib
+INCLUDEDIR ?= $(PREFIX)/include
+
+ifneq (,$(filter $(shell uname),OpenBSD FreeBSD NetBSD DragonFly))
+PKGCONFIGDIR ?= $(PREFIX)/libdata/pkgconfig
+else
+PKGCONFIGDIR ?= $(LIBDIR)/pkgconfig
+endif
+
+INSTALL_LIB  ?= $(INSTALL) -m 755
+INSTALL_DATA ?= $(INSTALL) -m 644
 
 liblz5.pc: liblz5.pc.in Makefile
 	@echo creating pkgconfig
@@ -114,26 +132,30 @@ liblz5.pc: liblz5.pc.in Makefile
              $< >$@
 
 install: lib liblz5.pc
-	@install -d -m 755 $(DESTDIR)$(LIBDIR)/pkgconfig/ $(DESTDIR)$(INCLUDEDIR)/
-	@install -m 755 liblz5.$(SHARED_EXT_VER) $(DESTDIR)$(LIBDIR)
+	@$(INSTALL) -d -m 755 $(DESTDIR)$(PKGCONFIGDIR)/ $(DESTDIR)$(INCLUDEDIR)/
+	@$(INSTALL_DATA) liblz5.pc $(DESTDIR)$(PKGCONFIGDIR)/
+	@echo Installing libraries
+ifeq ($(BUILD_STATIC),yes)
+	@$(INSTALL_LIB) liblz5.a $(DESTDIR)$(LIBDIR)/liblz5.a
+endif
+	@$(INSTALL_LIB) liblz5.$(SHARED_EXT_VER) $(DESTDIR)$(LIBDIR)
 	@ln -sf liblz5.$(SHARED_EXT_VER) $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT_MAJOR)
 	@ln -sf liblz5.$(SHARED_EXT_VER) $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT)
-	@install -m 644 liblz5.pc $(DESTDIR)$(LIBDIR)/pkgconfig/
-	@install -m 644 liblz5.a $(DESTDIR)$(LIBDIR)/liblz5.a
-	@install -m 644 lz5_compress.h $(DESTDIR)$(INCLUDEDIR)/lz5_compress.h
-	@install -m 644 lz5_common.h $(DESTDIR)$(INCLUDEDIR)/lz5_common.h
-	@install -m 644 lz5frame.h $(DESTDIR)$(INCLUDEDIR)/lz5frame.h
+	@echo Installing includes
+	@$(INSTALL_DATA) lz5_compress.h $(DESTDIR)$(INCLUDEDIR)/lz5_compress.h
+	@$(INSTALL_DATA) lz5_common.h $(DESTDIR)$(INCLUDEDIR)/lz5_common.h
+	@$(INSTALL_DATA) lz5frame.h $(DESTDIR)$(INCLUDEDIR)/lz5frame.h
 	@echo lz5 static and shared libraries installed
 
 uninstall:
-	@rm -f $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT)
-	@rm -f $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT_MAJOR)
-	@rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/liblz5.pc
-	@[ -x $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT_VER) ] && rm -f $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT_VER)
-	@[ -f $(DESTDIR)$(LIBDIR)/liblz5.a ] && rm -f $(DESTDIR)$(LIBDIR)/liblz5.a
-	@[ -f $(DESTDIR)$(INCLUDEDIR)/lz5_compress.h ] && rm -f $(DESTDIR)$(INCLUDEDIR)/lz5_compress.h
-	@[ -f $(DESTDIR)$(INCLUDEDIR)/lz5_common.h ] && rm -f $(DESTDIR)$(INCLUDEDIR)/lz5_common.h
-	@[ -f $(DESTDIR)$(INCLUDEDIR)/lz5frame.h ] && rm -f $(DESTDIR)$(INCLUDEDIR)/lz5frame.h
+	@$(RM) $(DESTDIR)$(PKGCONFIGDIR)/liblz5.pc
+	@$(RM) $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT)
+	@$(RM) $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT_MAJOR)
+	@$(RM) $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT_VER)
+	@$(RM) $(DESTDIR)$(LIBDIR)/liblz5.a
+	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lz5_compress.h
+	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lz5_common.h
+	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lz5frame.h
 	@echo lz5 libraries successfully uninstalled
 
 endif
