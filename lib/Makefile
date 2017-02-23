@@ -101,9 +101,9 @@ clean:
 
 
 #------------------------------------------------------------------------
-#make install is validated only for Linux, OSX, kFreeBSD, Hurd and
+#make install is validated only for Linux, OSX, kFreeBSD, Hurd, Haiku and
 #FreeBSD targets
-ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU FreeBSD))
+ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU FreeBSD Haiku))
 
 liblz5.pc: liblz5.pc.in Makefile
 	@echo creating pkgconfig

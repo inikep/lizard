@@ -33,6 +33,7 @@ extern "C" {
 #include <stdlib.h>       /* malloc */
 #include <stddef.h>       /* size_t, ptrdiff_t */
 #include <stdio.h>        /* fprintf */
+#include <string.h>       /* strlen, strncpy */
 #include <sys/types.h>    /* stat, utime */
 #include <sys/stat.h>     /* stat */
 #if defined(_MSC_VER)
