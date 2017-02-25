@@ -53,7 +53,7 @@ extern "C" {
 /**************************************
  * Error management
  * ************************************/
-#define LZ5F_LIST_ERRORS(ITEM) \
+#define LIZARDF_LIST_ERRORS(ITEM) \
         ITEM(OK_NoError) ITEM(ERROR_GENERIC) \
         ITEM(ERROR_maxBlockSize_invalid) ITEM(ERROR_blockMode_invalid) ITEM(ERROR_contentChecksumFlag_invalid) \
         ITEM(ERROR_compressionLevel_invalid) \
@@ -66,13 +66,13 @@ extern "C" {
         ITEM(ERROR_headerChecksum_invalid) ITEM(ERROR_contentChecksum_invalid) \
         ITEM(ERROR_maxCode)
 
-//#define LZ5F_DISABLE_OLD_ENUMS
-#ifndef LZ5F_DISABLE_OLD_ENUMS
-#define LZ5F_GENERATE_ENUM(ENUM) LZ5F_##ENUM, ENUM = LZ5F_##ENUM,
+//#define LIZARDF_DISABLE_OLD_ENUMS
+#ifndef LIZARDF_DISABLE_OLD_ENUMS
+#define LIZARDF_GENERATE_ENUM(ENUM) LZ5F_##ENUM, ENUM = LZ5F_##ENUM,
 #else
-#define LZ5F_GENERATE_ENUM(ENUM) LZ5F_##ENUM,
+#define LIZARDF_GENERATE_ENUM(ENUM) LZ5F_##ENUM,
 #endif
-typedef enum { LZ5F_LIST_ERRORS(LZ5F_GENERATE_ENUM) } LZ5F_errorCodes;  /* enum is exposed, to handle specific errors; compare function result to -enum value */
+typedef enum { LIZARDF_LIST_ERRORS(LIZARDF_GENERATE_ENUM) } LZ5F_errorCodes;  /* enum is exposed, to handle specific errors; compare function result to -enum value */
 
 
 #if defined (__cplusplus)

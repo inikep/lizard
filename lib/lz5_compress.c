@@ -56,14 +56,14 @@
 *  Local Macros
 ***************************************/
 #define DELTANEXT(p)        chainTable[(p) & contentMask]
-#define LZ5_MINIMAL_HUFF_GAIN(comprSize) (comprSize + (comprSize/8) + 512)
-#define LZ5_MINIMAL_BLOCK_GAIN(comprSize) (comprSize + (comprSize/32) + 512)
+#define LIZARD_MINIMAL_HUFF_GAIN(comprSize) (comprSize + (comprSize/8) + 512)
+#define LIZARD_MINIMAL_BLOCK_GAIN(comprSize) (comprSize + (comprSize/32) + 512)
 
 
 /*-************************************
 *  Local Utils
 **************************************/
-int LZ5_versionNumber (void) { return LZ5_VERSION_NUMBER; }
+int LZ5_versionNumber (void) { return LIZARD_VERSION_NUMBER; }
 int LZ5_compressBound(int isize)  { return LIZARD_COMPRESSBOUND(isize); }
 int LZ5_sizeofState_MinLevel() { return LZ5_sizeofState(LIZARD_MIN_CLEVEL); }
 
@@ -154,7 +154,7 @@ FORCE_INLINE int LZ5_writeStream(int useHuff, LZ5_stream_t* ctx, BYTE* streamPtr
         }
 
         if (!HUF_isError(ctx->comprStreamLen)) {
-            if (ctx->comprStreamLen > 0 && (LZ5_MINIMAL_HUFF_GAIN(ctx->comprStreamLen) < streamLen)) { /* compressible */
+            if (ctx->comprStreamLen > 0 && (LIZARD_MINIMAL_HUFF_GAIN(ctx->comprStreamLen) < streamLen)) { /* compressible */
                 MEM_writeLE24(*op, streamLen);
                 MEM_writeLE24(*op+3, ctx->comprStreamLen);
                 if (useHuffBuf) {
@@ -225,7 +225,7 @@ int LZ5_writeBlock(LZ5_stream_t* ctx, const BYTE* ip, uint32_t inputSize, BYTE**
     sum = (int)(*op-start);
 #endif
 
-    if (LZ5_MINIMAL_BLOCK_GAIN((uint32_t)(*op-start)) > inputSize) goto _write_uncompressed;
+    if (LIZARD_MINIMAL_BLOCK_GAIN((uint32_t)(*op-start)) > inputSize) goto _write_uncompressed;
 
     LIZARD_LOG_COMPRESS("%d: total=%d block=%d flagsLen[%.2f%%]=%d comprFlagsLen[%.2f%%]=%d literalsLen[%.2f%%]=%d comprLiteralsLen[%.2f%%]=%d lenLen=%d offset16Len[%.2f%%]=%d offset24Len[%.2f%%]=%d\n", (int)(ip - ctx->srcBase),
             (int)(*op - ctx->destBase), sum, (flagsLen*100.0)/sum, flagsLen, (comprFlagsLen*100.0)/sum, comprFlagsLen, (literalsLen*100.0)/sum, literalsLen, (comprLiteralsLen*100.0)/sum, comprLiteralsLen,

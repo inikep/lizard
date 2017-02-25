@@ -1,4 +1,4 @@
-#define LZ5_LENGTH_SIZE_LZ4(len) ((len >= (1<<16)+RUN_MASK_LZ4) ? 5 : ((len >= 254+RUN_MASK_LZ4) ? 3 : ((len >= RUN_MASK_LZ4) ? 1 : 0)))
+#define LIZARD_LENGTH_SIZE_LZ4(len) ((len >= (1<<16)+RUN_MASK_LZ4) ? 5 : ((len >= 254+RUN_MASK_LZ4) ? 3 : ((len >= RUN_MASK_LZ4) ? 1 : 0)))
 
 FORCE_INLINE int LZ5_encodeSequence_LZ4 (
     LZ5_stream_t* ctx,
@@ -14,7 +14,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ4 (
     COMPLOG_CODEWORDS_LZ4("literal : %u  --  match : %u  --  offset : %u\n", (U32)(*ip - *anchor), (U32)matchLength, (U32)(*ip-match));
   
     /* Encode Literal length */
- //   if (ctx->literalsPtr > ctx->literalsEnd - length - LZ5_LENGTH_SIZE_LZ4(length) - 2 - WILDCOPYLENGTH) { LIZARD_LOG_COMPRESS_LZ4("encodeSequence overflow1\n"); return 1; }   /* Check output limit */
+ //   if (ctx->literalsPtr > ctx->literalsEnd - length - LIZARD_LENGTH_SIZE_LZ4(length) - 2 - WILDCOPYLENGTH) { LIZARD_LOG_COMPRESS_LZ4("encodeSequence overflow1\n"); return 1; }   /* Check output limit */
     if (length >= RUN_MASK_LZ4) 
     {   size_t len = length - RUN_MASK_LZ4;
         *token = RUN_MASK_LZ4; 
@@ -45,7 +45,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ4 (
 
     /* Encode MatchLength */
     length = matchLength - MINMATCH;
-  //  if (ctx->literalsPtr > ctx->literalsEnd - 5 /*LZ5_LENGTH_SIZE_LZ4(length)*/) { LIZARD_LOG_COMPRESS_LZ4("encodeSequence overflow2\n"); return 1; }   /* Check output limit */
+  //  if (ctx->literalsPtr > ctx->literalsEnd - 5 /*LIZARD_LENGTH_SIZE_LZ4(length)*/) { LIZARD_LOG_COMPRESS_LZ4("encodeSequence overflow2\n"); return 1; }   /* Check output limit */
     if (length >= ML_MASK_LZ4) {
         *token += (BYTE)(ML_MASK_LZ4<<RUN_BITS_LZ4);
         length -= ML_MASK_LZ4;
@@ -86,7 +86,7 @@ FORCE_INLINE int LZ5_encodeLastLiterals_LZ4 (
 }
 
 
-#define LZ5_GET_TOKEN_PRICE_LZ4(token)  (ctx->log2FlagSum - LZ5_highbit32(ctx->flagFreq[token]+1))
+#define LIZARD_GET_TOKEN_PRICE_LZ4(token)  (ctx->log2FlagSum - LZ5_highbit32(ctx->flagFreq[token]+1))
 
 FORCE_INLINE size_t LZ5_get_price_LZ4(LZ5_stream_t* const ctx, const BYTE *ip, const size_t litLength, U32 offset, size_t matchLength) 
 {
@@ -153,7 +153,7 @@ FORCE_INLINE size_t LZ5_get_price_LZ4(LZ5_stream_t* const ctx, const BYTE *ip, c
 
     if (ctx->huffType) { 
         if (offset > 0 || matchLength > 0) price += 2;
-        price += LZ5_GET_TOKEN_PRICE_LZ4(token);
+        price += LIZARD_GET_TOKEN_PRICE_LZ4(token);
     } else {
         price += 8; // token
     }

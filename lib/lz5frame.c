@@ -113,10 +113,10 @@ static void LZ5F_writeLE64 (BYTE* dstPtr, U64 value64)
 #define _4BITS 0x0F
 #define _8BITS 0xFF
 
-#define LZ5F_MAGIC_SKIPPABLE_START  0x184D2A50U
-#define LZ5F_MAGICNUMBER            0x184D2206U
-#define LZ5F_BLOCKUNCOMPRESSED_FLAG 0x80000000U
-#define LZ5F_BLOCKSIZEID_DEFAULT LZ5F_max128KB
+#define LIZARDF_MAGIC_SKIPPABLE_START  0x184D2A50U
+#define LIZARDF_MAGICNUMBER            0x184D2206U
+#define LIZARDF_BLOCKUNCOMPRESSED_FLAG 0x80000000U
+#define LIZARDF_BLOCKSIZEID_DEFAULT LZ5F_max128KB
 
 static const size_t minFHSize = 7;
 static const size_t maxFHSize = 15;
@@ -168,8 +168,8 @@ typedef struct LZ5F_dctx_s
 /*-************************************
 *  Error management
 **************************************/
-#define LZ5F_GENERATE_STRING(STRING) #STRING,
-static const char* LZ5F_errorStrings[] = { LZ5F_LIST_ERRORS(LZ5F_GENERATE_STRING) };
+#define LIZARDF_GENERATE_STRING(STRING) #STRING,
+static const char* LZ5F_errorStrings[] = { LIZARDF_LIST_ERRORS(LIZARDF_GENERATE_STRING) };
 
 
 unsigned LZ5F_isError(LZ5F_errorCode_t code)
@@ -192,7 +192,7 @@ static size_t LZ5F_getBlockSize(unsigned blockSizeID)
 {
     static const size_t blockSizes[7] = { 128 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
 
-    if (blockSizeID == 0) blockSizeID = LZ5F_BLOCKSIZEID_DEFAULT;
+    if (blockSizeID == 0) blockSizeID = LIZARDF_BLOCKSIZEID_DEFAULT;
     blockSizeID -= 1;
     if (blockSizeID >= 7) return (size_t)-LZ5F_ERROR_maxBlockSize_invalid;
 
@@ -269,7 +269,7 @@ size_t LZ5F_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* srcBuf
     memset(&cctxI, 0, sizeof(cctxI));   /* works because no allocation */
     memset(&options, 0, sizeof(options));
 
-    cctxI.version = LZ5F_VERSION;
+    cctxI.version = LIZARDF_VERSION;
     cctxI.maxBufferSize = 5 MB;   /* mess with real buffer size to prevent allocation; works because autoflush==1 & stableSrc==1 */
 
     if (preferencesPtr!=NULL)
@@ -318,7 +318,7 @@ error:
 /* LZ5F_createCompressionContext() :
 * The first thing to do is to create a compressionContext object, which will be used in all compression operations.
 * This is achieved using LZ5F_createCompressionContext(), which takes as argument a version and an LZ5F_preferences_t structure.
-* The version provided MUST be LZ5F_VERSION. It is intended to track potential version differences between different binaries.
+* The version provided MUST be LIZARDF_VERSION. It is intended to track potential version differences between different binaries.
 * The function will provide a pointer to an allocated LZ5F_compressionContext_t object.
 * If the result LZ5F_errorCode_t is not OK_NoError, there was an error during context creation.
 * Object can release its memory using LZ5F_freeCompressionContext();
@@ -381,7 +381,7 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
     }
 
     /* Buffer Management */
-    if (cctxPtr->prefs.frameInfo.blockSizeID == 0) cctxPtr->prefs.frameInfo.blockSizeID = LZ5F_BLOCKSIZEID_DEFAULT;
+    if (cctxPtr->prefs.frameInfo.blockSizeID == 0) cctxPtr->prefs.frameInfo.blockSizeID = LIZARDF_BLOCKSIZEID_DEFAULT;
     cctxPtr->maxBlockSize = LZ5F_getBlockSize(cctxPtr->prefs.frameInfo.blockSizeID);
     requiredBuffSize = cctxPtr->maxBlockSize + ((cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * 2 * LIZARD_DICT_SIZE);
 
@@ -401,7 +401,7 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
     if (!cctxPtr->lz5CtxPtr) return (size_t)-LZ5F_ERROR_allocation_failed;
 
     /* Magic Number */
-    LZ5F_writeLE32(dstPtr, LZ5F_MAGICNUMBER);
+    LZ5F_writeLE32(dstPtr, LIZARDF_MAGICNUMBER);
     dstPtr += 4;
     headerStart = dstPtr;
 
@@ -461,7 +461,7 @@ static size_t LZ5F_compressBlock(void* dst, const void* src, size_t srcSize, com
     LZ5F_writeLE32(cSizePtr, cSize);
     if (cSize == 0) {  /* compression failed */
         cSize = (U32)srcSize;
-        LZ5F_writeLE32(cSizePtr, cSize + LZ5F_BLOCKUNCOMPRESSED_FLAG);
+        LZ5F_writeLE32(cSizePtr, cSize + LIZARDF_BLOCKUNCOMPRESSED_FLAG);
         memcpy(cSizePtr+4, src, srcSize);
     }
     return cSize + 4;
@@ -731,10 +731,10 @@ static size_t LZ5F_headerSize(const void* src, size_t srcSize)
     if (srcSize < 5) return (size_t)-LZ5F_ERROR_frameHeader_incomplete;
 
     /* special case : skippable frames */
-    if ((LZ5F_readLE32(src) & 0xFFFFFFF0U) == LZ5F_MAGIC_SKIPPABLE_START) return 8;
+    if ((LZ5F_readLE32(src) & 0xFFFFFFF0U) == LIZARDF_MAGIC_SKIPPABLE_START) return 8;
 
     /* control magic number */
-    if (LZ5F_readLE32(src) != LZ5F_MAGICNUMBER) return (size_t)-LZ5F_ERROR_frameType_unknown;
+    if (LZ5F_readLE32(src) != LIZARDF_MAGICNUMBER) return (size_t)-LZ5F_ERROR_frameType_unknown;
 
     /* Frame Header Size */
     {   BYTE const FLG = ((const BYTE*)src)[4];
@@ -765,7 +765,7 @@ static size_t LZ5F_decodeHeader(LZ5F_dctx_t* dctxPtr, const void* srcVoidPtr, si
     memset(&(dctxPtr->frameInfo), 0, sizeof(dctxPtr->frameInfo));
 
     /* special case : skippable frames */
-    if ((LZ5F_readLE32(srcPtr) & 0xFFFFFFF0U) == LZ5F_MAGIC_SKIPPABLE_START) {
+    if ((LZ5F_readLE32(srcPtr) & 0xFFFFFFF0U) == LIZARDF_MAGIC_SKIPPABLE_START) {
         dctxPtr->frameInfo.frameType = LZ5F_skippableFrame;
         if (srcVoidPtr == (void*)(dctxPtr->header)) {
             dctxPtr->tmpInSize = srcSize;
@@ -779,7 +779,7 @@ static size_t LZ5F_decodeHeader(LZ5F_dctx_t* dctxPtr, const void* srcVoidPtr, si
     }
 
     /* control magic number */
-    if (LZ5F_readLE32(srcPtr) != LZ5F_MAGICNUMBER) return (size_t)-LZ5F_ERROR_frameType_unknown;
+    if (LZ5F_readLE32(srcPtr) != LIZARDF_MAGICNUMBER) return (size_t)-LZ5F_ERROR_frameType_unknown;
     dctxPtr->frameInfo.frameType = LZ5F_frame;
 
     /* Flags */
@@ -1074,7 +1074,7 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
                 }
                 if (nextCBlockSize > dctxPtr->maxBlockSize) return (size_t)-LZ5F_ERROR_GENERIC;   /* invalid cBlockSize */
                 dctxPtr->tmpInTarget = nextCBlockSize;
-                if (LZ5F_readLE32(selectedIn) & LZ5F_BLOCKUNCOMPRESSED_FLAG) {
+                if (LZ5F_readLE32(selectedIn) & LIZARDF_BLOCKUNCOMPRESSED_FLAG) {
                     dctxPtr->dStage = dstage_copyDirect;
                     break;
                 }

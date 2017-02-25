@@ -1,8 +1,8 @@
 #define OPTIMAL_ML (int)((ML_MASK_LZ4-1)+MINMATCH)
 
-//#define LZ5_NOCHAIN_HASH_FUNCTION(ip, hashLog) LZ5_hashPtr(ip, hashLog, ctx->params.searchLength)
-#define LZ5_NOCHAIN_HASH_FUNCTION(ip, hashLog) LZ5_hash5Ptr(ip, hashLog)
-#define LZ5_NOCHAIN_MIN_OFFSET 8
+//#define LIZARD_NOCHAIN_HASH_FUNCTION(ip, hashLog) LZ5_hashPtr(ip, hashLog, ctx->params.searchLength)
+#define LIZARD_NOCHAIN_HASH_FUNCTION(ip, hashLog) LZ5_hash5Ptr(ip, hashLog)
+#define LIZARD_NOCHAIN_MIN_OFFSET 8
 
 /* Update chains up to ip (excluded) */
 FORCE_INLINE void LZ5_InsertNoChain (LZ5_stream_t* ctx, const BYTE* ip)
@@ -14,8 +14,8 @@ FORCE_INLINE void LZ5_InsertNoChain (LZ5_stream_t* ctx, const BYTE* ip)
     const int hashLog = ctx->params.hashLog;
 
     while (idx < target) {
-        size_t const h = LZ5_NOCHAIN_HASH_FUNCTION(base+idx, hashLog);
-        if ((hashTable[h] >= idx) || (idx >= hashTable[h] + LZ5_NOCHAIN_MIN_OFFSET))
+        size_t const h = LIZARD_NOCHAIN_HASH_FUNCTION(base+idx, hashLog);
+        if ((hashTable[h] >= idx) || (idx >= hashTable[h] + LIZARD_NOCHAIN_MIN_OFFSET))
             hashTable[h] = idx;
         idx++;
     }
@@ -44,13 +44,13 @@ FORCE_INLINE int LZ5_InsertAndFindBestMatchNoChain (LZ5_stream_t* ctx,   /* Inde
 
     /* HC4 match finder */
     LZ5_InsertNoChain(ctx, ip);
-    matchIndex = HashTable[LZ5_NOCHAIN_HASH_FUNCTION(ip, hashLog)];
+    matchIndex = HashTable[LIZARD_NOCHAIN_HASH_FUNCTION(ip, hashLog)];
 
     if ((matchIndex < current) && (matchIndex >= lowLimit)) {
         if (matchIndex >= dictLimit) {
             match = base + matchIndex;
-#if LZ5_NOCHAIN_MIN_OFFSET > 0
-            if ((U32)(ip - match) >= LZ5_NOCHAIN_MIN_OFFSET)
+#if LIZARD_NOCHAIN_MIN_OFFSET > 0
+            if ((U32)(ip - match) >= LIZARD_NOCHAIN_MIN_OFFSET)
 #endif
             if (*(match+ml) == *(ip+ml) && (MEM_read32(match) == MEM_read32(ip)))
             {
@@ -59,8 +59,8 @@ FORCE_INLINE int LZ5_InsertAndFindBestMatchNoChain (LZ5_stream_t* ctx,   /* Inde
             }
         } else {
             match = dictBase + matchIndex;
-#if LZ5_NOCHAIN_MIN_OFFSET > 0
-            if ((U32)(ip - (base + matchIndex)) >= LZ5_NOCHAIN_MIN_OFFSET)
+#if LIZARD_NOCHAIN_MIN_OFFSET > 0
+            if ((U32)(ip - (base + matchIndex)) >= LIZARD_NOCHAIN_MIN_OFFSET)
 #endif
             if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
             if (MEM_read32(match) == MEM_read32(ip)) {
@@ -98,13 +98,13 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatchNoChain (
 
     /* First Match */
     LZ5_InsertNoChain(ctx, ip);
-    matchIndex = HashTable[LZ5_NOCHAIN_HASH_FUNCTION(ip, hashLog)];
+    matchIndex = HashTable[LIZARD_NOCHAIN_HASH_FUNCTION(ip, hashLog)];
 
     if ((matchIndex < current) && (matchIndex >= lowLimit)) {
         if (matchIndex >= dictLimit) {
             const BYTE* match = base + matchIndex;
-#if LZ5_NOCHAIN_MIN_OFFSET > 0
-            if ((U32)(ip - match) >= LZ5_NOCHAIN_MIN_OFFSET)
+#if LIZARD_NOCHAIN_MIN_OFFSET > 0
+            if ((U32)(ip - match) >= LIZARD_NOCHAIN_MIN_OFFSET)
 #endif
             if (*(iLowLimit + longest) == *(match - LLdelta + longest)) {
                 if (MEM_read32(match) == MEM_read32(ip)) {
@@ -122,8 +122,8 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatchNoChain (
             }
         } else {
             const BYTE* match = dictBase + matchIndex;
-#if LZ5_NOCHAIN_MIN_OFFSET > 0
-            if ((U32)(ip - (base + matchIndex)) >= LZ5_NOCHAIN_MIN_OFFSET)
+#if LIZARD_NOCHAIN_MIN_OFFSET > 0
+            if ((U32)(ip - (base + matchIndex)) >= LIZARD_NOCHAIN_MIN_OFFSET)
 #endif
             if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
             if (MEM_read32(match) == MEM_read32(ip)) {

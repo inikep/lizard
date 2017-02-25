@@ -32,8 +32,8 @@
    You can contact the author at :
     - LZ5 source repository : https://github.com/inikep/lz5
 */
-#ifndef LZ5_DECOMPRESS_H_2983
-#define LZ5_DECOMPRESS_H_2983
+#ifndef LIZARD_DECOMPRESS_H_2983
+#define LIZARD_DECOMPRESS_H_2983
 
 #if defined (__cplusplus)
 extern "C" {
@@ -156,4 +156,4 @@ LZ5DLIB_API int LZ5_decompress_safe_usingDict (const char* source, char* dest, i
 }
 #endif
 
-#endif /* LZ5_DECOMPRESS_H_2983827168210 */
+#endif /* LIZARD_DECOMPRESS_H_2983827168210 */

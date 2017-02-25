@@ -2,8 +2,8 @@
 #define LIZARD_LOG_PRICE(fmt, ...) //printf(fmt, __VA_ARGS__)
 #define LIZARD_LOG_ENCODE(fmt, ...) //printf(fmt, __VA_ARGS__) 
 
-#define LZ5_OPTIMAL_MIN_OFFSET  8
-#define LZ5_OPT_NUM             (1<<12) 
+#define LIZARD_OPTIMAL_MIN_OFFSET  8
+#define LIZARD_OPT_NUM             (1<<12) 
 #define REPMINMATCH             1
 
 
@@ -127,7 +127,7 @@ FORCE_INLINE int LZ5_GetAllMatches (
     while ((matchIndex < current) && (matchIndex >= lowLimit) && (nbAttempts)) {
         nbAttempts--;
         match = base + matchIndex;
-        if ((U32)(ip - match) >= LZ5_OPTIMAL_MIN_OFFSET) {
+        if ((U32)(ip - match) >= LIZARD_OPTIMAL_MIN_OFFSET) {
             if (matchIndex >= dictLimit) {
                 if ((/*fullSearch ||*/ ip[best_mlen] == match[best_mlen]) && (MEM_readMINMATCH(match) == MEM_readMINMATCH(ip))) {
                     int back = 0;
@@ -143,7 +143,7 @@ FORCE_INLINE int LZ5_GetAllMatches (
                         matches[mnum].back = -back;
                         mnum++;
 
-                        if (best_mlen > LZ5_OPT_NUM) break;
+                        if (best_mlen > LIZARD_OPT_NUM) break;
                     }
                 }
             } else {
@@ -164,7 +164,7 @@ FORCE_INLINE int LZ5_GetAllMatches (
                         matches[mnum].back = -back;
                         mnum++;
                         
-                        if (best_mlen > LZ5_OPT_NUM) break;
+                        if (best_mlen > LIZARD_OPT_NUM) break;
                     }
                 }
             }
@@ -258,7 +258,7 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
                 match = base + matchIndex;   /* to prepare for next usage of match[mlt] */ 
         }
 
-        if ((U32)(current - matchIndex) >= LZ5_OPTIMAL_MIN_OFFSET) {
+        if ((U32)(current - matchIndex) >= LIZARD_OPTIMAL_MIN_OFFSET) {
             if ((mlt >= minMatchLongOff) || ((U32)(current - matchIndex) < LIZARD_MAX_16BIT_OFFSET))
             if (mlt > best_mlen) {
                 best_mlen = mlt;
@@ -267,7 +267,7 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
                 matches[mnum].back = 0;
                 mnum++;
 
-                if (mlt > LZ5_OPT_NUM) break;
+                if (mlt > LIZARD_OPT_NUM) break;
                 if (ip + mlt >= iHighLimit) break;
             }
         } else {
@@ -276,7 +276,7 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
             size_t newml = 0, newoff = 0;
             do {
                 newoff += (int)(current - matchIndex);
-            } while (newoff < LZ5_OPTIMAL_MIN_OFFSET);
+            } while (newoff < LIZARD_OPTIMAL_MIN_OFFSET);
             newMatchIndex = current - newoff;
             if (newMatchIndex >= dictLimit) newml = LZ5_count(ip, base + newMatchIndex, iHighLimit);
 
@@ -290,7 +290,7 @@ FORCE_INLINE int LZ5_BinTree_GetAllMatches (
                 matches[mnum].back = 0;
                 mnum++;
 
-                if (newml > LZ5_OPT_NUM) break;
+                if (newml > LIZARD_OPT_NUM) break;
                 if (ip + newml >= iHighLimit) break;
             }
 #endif
@@ -336,8 +336,8 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
         const BYTE* ip,
         const BYTE* const iend)
 {
-    LZ5_optimal_t opt[LZ5_OPT_NUM + 4];
-    LZ5_match_t matches[LZ5_OPT_NUM + 1];
+    LZ5_optimal_t opt[LIZARD_OPT_NUM + 4];
+    LZ5_match_t matches[LIZARD_OPT_NUM + 1];
     const BYTE *inr;
     size_t res, cur, cur2, skip_num = 0;
     size_t i, llen, litlen, mlen, best_mlen, price, offset, best_off, match_num, last_pos;
@@ -356,7 +356,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
     const size_t sufficient_len = ctx->params.sufficientLength;
     const int faster_get_matches = (ctx->params.fullSearch == 0); 
     const size_t minMatchLongOff = ctx->params.minMatchLongOff;
-    const int lz5OptimalMinOffset = (ctx->params.decompressType == LZ5_coderwords_LZ4) ? (1<<30) : LZ5_OPTIMAL_MIN_OFFSET;
+    const int lz5OptimalMinOffset = (ctx->params.decompressType == LZ5_coderwords_LZ4) ? (1<<30) : LIZARD_OPTIMAL_MIN_OFFSET;
     const size_t repMinMatch = (ctx->params.decompressType == LZ5_coderwords_LZ4) ? MINMATCH : REPMINMATCH;
 
     /* Main Loop */
@@ -378,7 +378,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
                 }
             }
             if (mlen >= REPMINMATCH) {
-                if (mlen > sufficient_len || mlen >= LZ5_OPT_NUM) {
+                if (mlen > sufficient_len || mlen >= LIZARD_OPT_NUM) {
                     best_mlen = mlen; best_off = 0; cur = 0; last_pos = 1;
                     goto encode;
                 }
@@ -424,7 +424,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
 
         for (i = 0; i < match_num; i++) {
             mlen = (i>0) ? (size_t)matches[i-1].len+1 : best_mlen;
-            best_mlen = (matches[i].len < LZ5_OPT_NUM) ? matches[i].len : LZ5_OPT_NUM;
+            best_mlen = (matches[i].len < LIZARD_OPT_NUM) ? matches[i].len : LIZARD_OPT_NUM;
             LIZARD_LOG_PARSER("%d: start Found mlen=%d off=%d best_mlen=%d last_pos=%d\n", (int)(ip-source), matches[i].len, matches[i].off, best_mlen, last_pos);
             while (mlen <= best_mlen){
                 litlen = 0;
@@ -513,7 +513,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
                     LIZARD_LOG_PARSER("%d: try REP rep=%d mlen=%d\n", (int)(inr-source), opt[cur].rep, mlen);   
                     LIZARD_LOG_PARSER("%d: Found REP mlen=%d off=%d rep=%d opt[%d].off=%d\n", (int)(inr-source), mlen, 0, opt[cur].rep, cur, opt[cur].off);
 
-                    if (mlen > sufficient_len || cur + mlen >= LZ5_OPT_NUM) {
+                    if (mlen > sufficient_len || cur + mlen >= LIZARD_OPT_NUM) {
                         best_mlen = mlen;
                         best_off = 0;
                         LIZARD_LOG_PARSER("%d: REP sufficient_len=%d best_mlen=%d best_off=%d last_pos=%d\n", (int)(inr-source), sufficient_len, best_mlen, best_off, last_pos);
@@ -584,7 +584,7 @@ FORCE_INLINE int LZ5_compress_optimalPrice(
             for (i = 0; i < match_num; i++) {
                 mlen = (i>0) ? (size_t)matches[i-1].len+1 : best_mlen;
                 cur2 = cur - matches[i].back;
-                best_mlen = (cur2 + matches[i].len < LZ5_OPT_NUM) ? (size_t)matches[i].len : LZ5_OPT_NUM - cur2;
+                best_mlen = (cur2 + matches[i].len < LIZARD_OPT_NUM) ? (size_t)matches[i].len : LIZARD_OPT_NUM - cur2;
                 LIZARD_LOG_PARSER("%d: Found1 cur=%d cur2=%d mlen=%d off=%d best_mlen=%d last_pos=%d\n", (int)(inr-source), cur, cur2, matches[i].len, matches[i].off, best_mlen, last_pos);
 
                 if (mlen < (size_t)matches[i].back + 1)

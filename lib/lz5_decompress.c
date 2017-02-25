@@ -36,8 +36,8 @@
 /**************************************
 *  Includes
 **************************************/
-//#define LZ5_STATS 1 // 0=simple stats, 1=more, 2=full
-#ifdef LZ5_STATS
+//#define LIZARD_STATS 1 // 0=simple stats, 1=more, 2=full
+#ifdef LIZARD_STATS
     #include "test/lz5_stats.h"
 #endif
 #include "lz5_compress.h"
@@ -77,7 +77,7 @@ FORCE_INLINE size_t LZ5_readStream(int flag, const BYTE** ip, const BYTE* const 
         *streamEnd = *streamPtr + MEM_readLE24(*ip);
         if (*streamEnd < *streamPtr) return 0;
         *ip = *streamEnd;
-#ifdef LZ5_STATS
+#ifdef LIZARD_STATS
         uncompr_stream[streamFlag] += *streamEnd-*streamPtr;
 #else
         (void)streamFlag;
@@ -98,7 +98,7 @@ FORCE_INLINE size_t LZ5_readStream(int flag, const BYTE** ip, const BYTE* const 
         *ip += comprStreamLen + 6;
         *streamPtr = op;
         *streamEnd = *streamPtr + streamLen;
-#ifdef LZ5_STATS
+#ifdef LIZARD_STATS
         compr_stream[streamFlag] += comprStreamLen + 6;
         decompr_stream[streamFlag] += *streamEnd-*streamPtr;
 #endif
@@ -153,7 +153,7 @@ FORCE_INLINE int LZ5_decompress_generic(
     decompOff24Base = decompFlagsBase + LIZARD_HUF_BLOCK_SIZE;
     decompOff16Base = decompOff24Base + LIZARD_HUF_BLOCK_SIZE;
 
-#ifdef LZ5_STATS
+#ifdef LIZARD_STATS
     init_stats();
 #endif
     (void)istart;
@@ -173,7 +173,7 @@ FORCE_INLINE int LZ5_decompress_generic(
             op += length;
             ip += length;
             if ((partialDecoding) && (op >= oexit)) break;
-#ifdef LZ5_STATS
+#ifdef LIZARD_STATS
             uncompr_stream[LIZARD_STREAM_UNCOMPRESSED] += length;
 #endif
             continue;
@@ -187,7 +187,7 @@ FORCE_INLINE int LZ5_decompress_generic(
         ctx.lenPtr = (const BYTE*)ip + 3;
         ctx.lenEnd = ctx.lenPtr + MEM_readLE24(ip);
         if (ctx.lenEnd < ctx.lenPtr || (ctx.lenEnd > iend - 3)) goto _output_error;
-#ifdef LZ5_STATS
+#ifdef LIZARD_STATS
         uncompr_stream[LIZARD_STREAM_LEN] += ctx.lenEnd-ctx.lenPtr + 3;
 #endif
         ip = ctx.lenEnd;
@@ -249,7 +249,7 @@ FORCE_INLINE int LZ5_decompress_generic(
         if ((partialDecoding) && (op >= oexit)) break;
     }
 
-#ifdef LZ5_STATS
+#ifdef LIZARD_STATS
     print_stats();
 #endif
 

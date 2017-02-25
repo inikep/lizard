@@ -61,11 +61,11 @@ const char* LZ5F_getErrorName(LZ5F_errorCode_t code);   /* return error code str
 /*-************************************
 *  Frame compression types
 **************************************/
-//#define LZ5F_DISABLE_OBSOLETE_ENUMS
-#ifndef LZ5F_DISABLE_OBSOLETE_ENUMS
-#  define LZ5F_OBSOLETE_ENUM(x) ,x
+//#define LIZARDF_DISABLE_OBSOLETE_ENUMS
+#ifndef LIZARDF_DISABLE_OBSOLETE_ENUMS
+#  define LIZARDF_OBSOLETE_ENUM(x) ,x
 #else
-#  define LZ5F_OBSOLETE_ENUM(x)
+#  define LIZARDF_OBSOLETE_ENUM(x)
 #endif
 
 typedef enum {
@@ -82,24 +82,24 @@ typedef enum {
 typedef enum {
     LZ5F_blockLinked=0,
     LZ5F_blockIndependent
-    LZ5F_OBSOLETE_ENUM(blockLinked = LZ5F_blockLinked)
-    LZ5F_OBSOLETE_ENUM(blockIndependent = LZ5F_blockIndependent)
+    LIZARDF_OBSOLETE_ENUM(blockLinked = LZ5F_blockLinked)
+    LIZARDF_OBSOLETE_ENUM(blockIndependent = LZ5F_blockIndependent)
 } LZ5F_blockMode_t;
 
 typedef enum {
     LZ5F_noContentChecksum=0,
     LZ5F_contentChecksumEnabled
-    LZ5F_OBSOLETE_ENUM(noContentChecksum = LZ5F_noContentChecksum)
-    LZ5F_OBSOLETE_ENUM(contentChecksumEnabled = LZ5F_contentChecksumEnabled)
+    LIZARDF_OBSOLETE_ENUM(noContentChecksum = LZ5F_noContentChecksum)
+    LIZARDF_OBSOLETE_ENUM(contentChecksumEnabled = LZ5F_contentChecksumEnabled)
 } LZ5F_contentChecksum_t;
 
 typedef enum {
     LZ5F_frame=0,
     LZ5F_skippableFrame
-    LZ5F_OBSOLETE_ENUM(skippableFrame = LZ5F_skippableFrame)
+    LIZARDF_OBSOLETE_ENUM(skippableFrame = LZ5F_skippableFrame)
 } LZ5F_frameType_t;
 
-#ifndef LZ5F_DISABLE_OBSOLETE_ENUMS
+#ifndef LIZARDF_DISABLE_OBSOLETE_ENUMS
 typedef LZ5F_blockSizeID_t blockSizeID_t;
 typedef LZ5F_blockMode_t blockMode_t;
 typedef LZ5F_frameType_t frameType_t;
@@ -153,13 +153,13 @@ typedef struct {
 
 /* Resource Management */
 
-#define LZ5F_VERSION 100
+#define LIZARDF_VERSION 100
 LZ5F_errorCode_t LZ5F_createCompressionContext(LZ5F_compressionContext_t* cctxPtr, unsigned version);
 LZ5F_errorCode_t LZ5F_freeCompressionContext(LZ5F_compressionContext_t cctx);
 /* LZ5F_createCompressionContext() :
  * The first thing to do is to create a compressionContext object, which will be used in all compression operations.
  * This is achieved using LZ5F_createCompressionContext(), which takes as argument a version and an LZ5F_preferences_t structure.
- * The version provided MUST be LZ5F_VERSION. It is intended to track potential version differences between different binaries.
+ * The version provided MUST be LIZARDF_VERSION. It is intended to track potential version differences between different binaries.
  * The function will provide a pointer to a fully allocated LZ5F_compressionContext_t object.
  * If the result LZ5F_errorCode_t is not zero, there was an error during context creation.
  * Object can release its memory using LZ5F_freeCompressionContext();
@@ -236,7 +236,7 @@ typedef struct {
 
 /*!LZ5F_createDecompressionContext() :
  * Create an LZ5F_decompressionContext_t object, which will be used to track all decompression operations.
- * The version provided MUST be LZ5F_VERSION. It is intended to track potential breaking differences between different versions.
+ * The version provided MUST be LIZARDF_VERSION. It is intended to track potential breaking differences between different versions.
  * The function will provide a pointer to a fully allocated and initialized LZ5F_decompressionContext_t object.
  * The result is an errorCode, which can be tested using LZ5F_isError().
  * dctx memory can be released using LZ5F_freeDecompressionContext();

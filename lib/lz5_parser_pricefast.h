@@ -1,4 +1,4 @@
-#define LZ5_PRICEFAST_MIN_OFFSET 8
+#define LIZARD_PRICEFAST_MIN_OFFSET 8
 
 FORCE_INLINE int LZ5_FindMatchFast(LZ5_stream_t* ctx, intptr_t matchIndex, intptr_t matchIndex3, /* Index table will be updated */
                                                const BYTE* ip, const BYTE* const iLimit,
@@ -16,7 +16,7 @@ FORCE_INLINE int LZ5_FindMatchFast(LZ5_stream_t* ctx, intptr_t matchIndex, intpt
     const BYTE* match, *matchDict;
     size_t ml=0, mlt;
 
-    if (ctx->last_off >= LZ5_PRICEFAST_MIN_OFFSET) {
+    if (ctx->last_off >= LIZARD_PRICEFAST_MIN_OFFSET) {
         intptr_t matchIndexLO = (ip - ctx->last_off) - base;
         if (matchIndexLO >= lowLimit) {
             if (matchIndexLO >= dictLimit) {
@@ -62,7 +62,7 @@ FORCE_INLINE int LZ5_FindMatchFast(LZ5_stream_t* ctx, intptr_t matchIndex, intpt
 
     if ((matchIndex < current) && (matchIndex >= lowLimit)) {
         match = base + matchIndex;
-        if ((U32)(ip - match) >= LZ5_PRICEFAST_MIN_OFFSET) {
+        if ((U32)(ip - match) >= LIZARD_PRICEFAST_MIN_OFFSET) {
             if (matchIndex >= dictLimit) {
                 if (*(match+ml) == *(ip+ml) && (MEM_read32(match) == MEM_read32(ip))) {
                     mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
@@ -105,7 +105,7 @@ FORCE_INLINE int LZ5_FindMatchFaster (LZ5_stream_t* ctx, U32 matchIndex,  /* Ind
 
     if (matchIndex < current && matchIndex >= lowLimit) {
         match = base + matchIndex;
-        if ((U32)(ip - match) >= LZ5_PRICEFAST_MIN_OFFSET) {
+        if ((U32)(ip - match) >= LIZARD_PRICEFAST_MIN_OFFSET) {
             if (matchIndex >= dictLimit) {
                 if (MEM_read32(match) == MEM_read32(ip)) {
                     mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
@@ -167,7 +167,7 @@ FORCE_INLINE int LZ5_compress_priceFast(
 #else
         ml = LZ5_FindMatchFast (ctx, *HashPos, 0, ip, matchlimit, (&ref));
 #endif 
-        if ((*HashPos >= (U32)(ip - base)) || ((U32)(ip - base) >= *HashPos + LZ5_PRICEFAST_MIN_OFFSET))
+        if ((*HashPos >= (U32)(ip - base)) || ((U32)(ip - base) >= *HashPos + LIZARD_PRICEFAST_MIN_OFFSET))
             *HashPos = (U32)(ip - base);
 
         if (!ml) { ip++; continue; }
@@ -187,7 +187,7 @@ _Search:
         start2 = ip + ml - 2;
         HashPos = &HashTable[LZ5_hashPtr(start2, ctx->params.hashLog, ctx->params.searchLength)];
         ml2 = LZ5_FindMatchFaster(ctx, *HashPos, start2, matchlimit, (&ref2));      
-        if ((*HashPos >= (U32)(start2 - base)) || ((U32)(start2 - base) >= *HashPos + LZ5_PRICEFAST_MIN_OFFSET))
+        if ((*HashPos >= (U32)(start2 - base)) || ((U32)(start2 - base) >= *HashPos + LIZARD_PRICEFAST_MIN_OFFSET))
             *HashPos = (U32)(start2 - base);
 
         if (!ml2) goto _Encode;

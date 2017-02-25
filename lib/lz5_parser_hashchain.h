@@ -1,12 +1,12 @@
-#define LZ5_HC_MIN_OFFSET 8
-#define LZ5_HC_LONGOFF_MM 0 /* not used with offsets > 1<<16 */
+#define LIZARD_HC_MIN_OFFSET 8
+#define LIZARD_HC_LONGOFF_MM 0 /* not used with offsets > 1<<16 */
 #define OPTIMAL_ML (int)((ML_MASK_LZ4-1)+MINMATCH)
 #define GET_MINMATCH(offset) (MINMATCH)
 
 #if 1
-    #define LZ5_HC_HASH_FUNCTION(ip, hashLog) LZ5_hashPtr(ip, hashLog, ctx->params.searchLength)
+    #define LIZARD_HC_HASH_FUNCTION(ip, hashLog) LZ5_hashPtr(ip, hashLog, ctx->params.searchLength)
 #else
-    #define LZ5_HC_HASH_FUNCTION(ip, hashLog) LZ5_hash5Ptr(ip, hashLog)
+    #define LIZARD_HC_HASH_FUNCTION(ip, hashLog) LZ5_hash5Ptr(ip, hashLog)
 #endif
 
 /* Update chains up to ip (excluded) */
@@ -29,7 +29,7 @@ FORCE_INLINE void LZ5_Insert (LZ5_stream_t* ctx, const BYTE* ip)
         size_t delta = idx - hashTable[h];
         if (delta>maxDistance) delta = maxDistance;
         DELTANEXT(idx) = (U32)delta;
-        if ((hashTable[h] >= idx) || (idx >= hashTable[h] + LZ5_HC_MIN_OFFSET))
+        if ((hashTable[h] >= idx) || (idx >= hashTable[h] + LIZARD_HC_MIN_OFFSET))
             hashTable[h] = idx;
 #if MINMATCH == 3
         HashTable3[LZ5_hash3Ptr(base+idx, ctx->params.hashLog3)] = idx;
@@ -65,34 +65,34 @@ FORCE_INLINE int LZ5_InsertAndFindBestMatch (LZ5_stream_t* ctx,   /* Index table
 
     /* HC4 match finder */
     LZ5_Insert(ctx, ip);
-    matchIndex = HashTable[LZ5_HC_HASH_FUNCTION(ip, hashLog)];
+    matchIndex = HashTable[LIZARD_HC_HASH_FUNCTION(ip, hashLog)];
 
     while ((matchIndex < current) && (matchIndex >= lowLimit) && (nbAttempts)) {
         nbAttempts--;
         if (matchIndex >= dictLimit) {
             match = base + matchIndex;
-#if LZ5_HC_MIN_OFFSET > 0
-            if ((U32)(ip - match) >= LZ5_HC_MIN_OFFSET)
+#if LIZARD_HC_MIN_OFFSET > 0
+            if ((U32)(ip - match) >= LIZARD_HC_MIN_OFFSET)
 #endif
             if (*(match+ml) == *(ip+ml)
                 && (MEM_read32(match) == MEM_read32(ip)))
             {
                 size_t const mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
-#if LZ5_HC_LONGOFF_MM > 0
-                if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
+#if LIZARD_HC_LONGOFF_MM > 0
+                if ((mlt >= LIZARD_HC_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
 #endif
                 if (mlt > ml) { ml = mlt; *matchpos = match; }
             }
         } else {
             match = dictBase + matchIndex;
-#if LZ5_HC_MIN_OFFSET > 0
-            if ((U32)(ip - (base + matchIndex)) >= LZ5_HC_MIN_OFFSET)
+#if LIZARD_HC_MIN_OFFSET > 0
+            if ((U32)(ip - (base + matchIndex)) >= LIZARD_HC_MIN_OFFSET)
 #endif
             if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
             if (MEM_read32(match) == MEM_read32(ip)) {
                 size_t mlt = LZ5_count_2segments(ip+MINMATCH, match+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
-#if LZ5_HC_LONGOFF_MM > 0
-                if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - (base + matchIndex)) < LIZARD_MAX_16BIT_OFFSET))
+#if LIZARD_HC_LONGOFF_MM > 0
+                if ((mlt >= LIZARD_HC_LONGOFF_MM) || ((U32)(ip - (base + matchIndex)) < LIZARD_MAX_16BIT_OFFSET))
 #endif
                 if (mlt > ml) { ml = mlt; *matchpos = base + matchIndex; }   /* virtual matchpos */
             }
@@ -133,14 +133,14 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatch (
 
     /* First Match */
     LZ5_Insert(ctx, ip);
-    matchIndex = HashTable[LZ5_HC_HASH_FUNCTION(ip, hashLog)];
+    matchIndex = HashTable[LIZARD_HC_HASH_FUNCTION(ip, hashLog)];
 
     while ((matchIndex < current) && (matchIndex >= lowLimit) && (nbAttempts)) {
         nbAttempts--;
         if (matchIndex >= dictLimit) {
             const BYTE* match = base + matchIndex;
-#if LZ5_HC_MIN_OFFSET > 0
-            if ((U32)(ip - match) >= LZ5_HC_MIN_OFFSET)
+#if LIZARD_HC_MIN_OFFSET > 0
+            if ((U32)(ip - match) >= LIZARD_HC_MIN_OFFSET)
 #endif
             if (*(iLowLimit + longest) == *(match - LLdelta + longest)) {
                 if (MEM_read32(match) == MEM_read32(ip)) {
@@ -149,8 +149,8 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatch (
                     while ((ip+back > iLowLimit) && (match+back > lowPrefixPtr) && (ip[back-1] == match[back-1])) back--;
                     mlt -= back;
 
-#if LZ5_HC_LONGOFF_MM > 0
-                    if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
+#if LIZARD_HC_LONGOFF_MM > 0
+                    if ((mlt >= LIZARD_HC_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
 #endif
                     if (mlt > longest) {
                         longest = (int)mlt;
@@ -161,8 +161,8 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatch (
             }
         } else {
             const BYTE* match = dictBase + matchIndex;
-#if LZ5_HC_MIN_OFFSET > 0
-            if ((U32)(ip - (base + matchIndex)) >= LZ5_HC_MIN_OFFSET)
+#if LIZARD_HC_MIN_OFFSET > 0
+            if ((U32)(ip - (base + matchIndex)) >= LIZARD_HC_MIN_OFFSET)
 #endif
             if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
             if (MEM_read32(match) == MEM_read32(ip)) {
@@ -170,8 +170,8 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatch (
                 size_t mlt = LZ5_count_2segments(ip+MINMATCH, match+MINMATCH, iHighLimit, dictEnd, lowPrefixPtr) + MINMATCH;
                 while ((ip+back > iLowLimit) && (matchIndex+back > lowLimit) && (ip[back-1] == match[back-1])) back--;
                 mlt -= back;
-#if LZ5_HC_LONGOFF_MM > 0
-                if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - (base + matchIndex)) < LIZARD_MAX_16BIT_OFFSET))
+#if LIZARD_HC_LONGOFF_MM > 0
+                if ((mlt >= LIZARD_HC_LONGOFF_MM) || ((U32)(ip - (base + matchIndex)) < LIZARD_MAX_16BIT_OFFSET))
 #endif
                 if ((int)mlt > longest) { longest = (int)mlt; *matchpos = base + matchIndex + back; *startpos = ip+back; }
             }

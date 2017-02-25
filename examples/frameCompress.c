@@ -25,7 +25,7 @@ static int compress_file(FILE *in, FILE *out, size_t *size_in, size_t *size_out)
 	char *src, *buf = NULL;
 	size_t size, n, k, count_in = 0, count_out, offset = 0, frame_size;
 
-	r = LZ5F_createCompressionContext(&ctx, LZ5F_VERSION);
+	r = LZ5F_createCompressionContext(&ctx, LIZARDF_VERSION);
 	if (LZ5F_isError(r)) {
 		printf("Failed to create context: error %zu", r);
 		return 1;

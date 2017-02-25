@@ -1,4 +1,4 @@
-#define LZ5_FASTBIG_LONGOFF_MM MM_LONGOFF
+#define LIZARD_FASTBIG_LONGOFF_MM MM_LONGOFF
 
 /**************************************
 *  Hash Functions
@@ -86,7 +86,7 @@ FORCE_INLINE int LZ5_compress_fastBig(
 
                 if (matchIndex >= dictLimit) {
                     match = base + matchIndex;
-                    if ((U32)(ip - match) >= LZ5_FAST_MIN_OFFSET)
+                    if ((U32)(ip - match) >= LIZARD_FAST_MIN_OFFSET)
                     if (MEM_read32(match) == MEM_read32(ip))
                     {
                         int back = 0;
@@ -94,7 +94,7 @@ FORCE_INLINE int LZ5_compress_fastBig(
 
                         while ((ip+back > anchor) && (match+back > lowPrefixPtr) && (ip[back-1] == match[back-1])) back--;
                         matchLength -= back;
-                        if ((matchLength >= LZ5_FASTBIG_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
+                        if ((matchLength >= LIZARD_FASTBIG_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
                         {
                             ip += back;
                             match += back;
@@ -103,7 +103,7 @@ FORCE_INLINE int LZ5_compress_fastBig(
                     }
                 } else {
                     match = dictBase + matchIndex;
-                    if ((U32)(ip - (base + matchIndex)) >= LZ5_FAST_MIN_OFFSET)
+                    if ((U32)(ip - (base + matchIndex)) >= LIZARD_FAST_MIN_OFFSET)
                     if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
                     if (MEM_read32(match) == MEM_read32(ip)) {
                         const U32 newLowLimit = (lowLimit + maxDistance >= (U32)(ip-base)) ? lowLimit : (U32)(ip - base) - maxDistance;
@@ -113,7 +113,7 @@ FORCE_INLINE int LZ5_compress_fastBig(
                         while ((ip+back > anchor) && (matchIndex+back > newLowLimit) && (ip[back-1] == match[back-1])) back--;
                         matchLength -= back;
                         match = base + matchIndex + back;
-                        if ((matchLength >= LZ5_FASTBIG_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
+                        if ((matchLength >= LIZARD_FASTBIG_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
                         {
                             ip += back;
                             break;
@@ -139,21 +139,21 @@ _next_match:
         {
             if (matchIndex >= dictLimit) {
                 match = base + matchIndex;
-                if ((U32)(ip - match) >= LZ5_FAST_MIN_OFFSET)
+                if ((U32)(ip - match) >= LIZARD_FAST_MIN_OFFSET)
                 if (MEM_read32(match) == MEM_read32(ip))
                 {
                     matchLength = LZ5_count(ip+MINMATCH, match+MINMATCH, matchlimit);
-                    if ((matchLength >= LZ5_FASTBIG_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
+                    if ((matchLength >= LIZARD_FASTBIG_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
                         goto _next_match;
                 }
             } else {
                 match = dictBase + matchIndex;
-                if ((U32)(ip - (base + matchIndex)) >= LZ5_FAST_MIN_OFFSET)
+                if ((U32)(ip - (base + matchIndex)) >= LIZARD_FAST_MIN_OFFSET)
                 if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
                 if (MEM_read32(match) == MEM_read32(ip)) {
                     matchLength = LZ5_count_2segments(ip+MINMATCH, match+MINMATCH, matchlimit, dictEnd, lowPrefixPtr);
                     match = base + matchIndex;
-                    if ((matchLength >= LZ5_FASTBIG_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
+                    if ((matchLength >= LIZARD_FASTBIG_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
                         goto _next_match;
                 }
             }

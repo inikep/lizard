@@ -1,4 +1,4 @@
-#define LZ5_LOWESTPRICE_MIN_OFFSET 8
+#define LIZARD_LOWESTPRICE_MIN_OFFSET 8
 
 
 FORCE_INLINE size_t LZ5_more_profitable(LZ5_stream_t* const ctx, const BYTE *best_ip, size_t best_off, size_t best_common, const BYTE *ip, size_t off, size_t common, size_t literals, int last_off)
@@ -49,7 +49,7 @@ FORCE_INLINE int LZ5_FindMatchLowestPrice (LZ5_stream_t* ctx,   /* Index table w
 
     matchIndex = HashTable[LZ5_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength)];
 
-    if (ctx->last_off >= LZ5_LOWESTPRICE_MIN_OFFSET) {
+    if (ctx->last_off >= LIZARD_LOWESTPRICE_MIN_OFFSET) {
         intptr_t matchIndexLO = (ip - ctx->last_off) - base;
         if (matchIndexLO >= lowLimit) {
             if (matchIndexLO >= dictLimit) {
@@ -96,7 +96,7 @@ FORCE_INLINE int LZ5_FindMatchLowestPrice (LZ5_stream_t* ctx,   /* Index table w
     while ((matchIndex < current) && (matchIndex >= lowLimit) && (nbAttempts)) {
         nbAttempts--;
         match = base + matchIndex;
-        if ((U32)(ip - match) >= LZ5_LOWESTPRICE_MIN_OFFSET) {
+        if ((U32)(ip - match) >= LIZARD_LOWESTPRICE_MIN_OFFSET) {
             if (matchIndex >= dictLimit) {
                 if (*(match+ml) == *(ip+ml) && (MEM_read32(match) == MEM_read32(ip))) {
                     mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
@@ -151,7 +151,7 @@ FORCE_INLINE size_t LZ5_GetWiderMatch (
     /* First Match */
     matchIndex = HashTable[LZ5_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength)];
 
-    if (ctx->last_off >= LZ5_LOWESTPRICE_MIN_OFFSET) {
+    if (ctx->last_off >= LIZARD_LOWESTPRICE_MIN_OFFSET) {
         intptr_t matchIndexLO = (ip - ctx->last_off) - base;
         if (matchIndexLO >= lowLimit) {
             if (matchIndexLO >= dictLimit) {
@@ -217,7 +217,7 @@ FORCE_INLINE size_t LZ5_GetWiderMatch (
     while ((matchIndex < current) && (matchIndex >= lowLimit) && (nbAttempts)) {
         nbAttempts--;
         match = base + matchIndex;
-        if ((U32)(ip - match) >= LZ5_LOWESTPRICE_MIN_OFFSET) {
+        if ((U32)(ip - match) >= LIZARD_LOWESTPRICE_MIN_OFFSET) {
             if (matchIndex >= dictLimit) {
                 if (MEM_read32(match) == MEM_read32(ip)) {
                     int back = 0;

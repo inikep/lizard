@@ -50,9 +50,9 @@
 #define COMPRESSOR_NAME "LZ5 command line interface"
 #define AUTHOR "Y.Collet & P.Skibinski"
 #define WELCOME_MESSAGE "%s %i-bit %s by %s (%s)\n", COMPRESSOR_NAME, (int)(sizeof(void*)*8), LIZARD_VERSION_STRING, AUTHOR, __DATE__
-#define LZ5_EXTENSION ".lz5"
-#define LZ5CAT "lz5cat"
-#define UNLZ5 "unlz5"
+#define LIZARD_EXTENSION ".lz5"
+#define LIZARDCAT "lz5cat"
+#define UNLIZARD "unlz5"
 
 #define KB *(1U<<10)
 #define MB *(1U<<20)
@@ -113,7 +113,7 @@ static int usage(const char* exeName)
     DISPLAY( " -30...-39 : compression method fastLZ4 + Huffman\n");
     DISPLAY( " -40...-49 : compression method LIZv1 + Huffman\n");
 #endif
-    DISPLAY( " -d     : decompression (default for %s extension)\n", LZ5_EXTENSION);
+    DISPLAY( " -d     : decompression (default for %s extension)\n", LIZARD_EXTENSION);
     DISPLAY( " -z     : force compression\n");
     DISPLAY( " -f     : overwrite output without prompting \n");
     DISPLAY( "--rm    : remove source file(s) after successful de/compression \n");
@@ -168,9 +168,9 @@ static int usage_longhelp(const char* exeName)
     DISPLAY( "[output] can be left empty. In this case, it receives the following value :\n");
     DISPLAY( "          - if stdout is not the console, then [output] = stdout \n");
     DISPLAY( "          - if stdout is console : \n");
-    DISPLAY( "               + for compression, output to filename%s \n", LZ5_EXTENSION);
-    DISPLAY( "               + for decompression, output to filename without '%s'\n", LZ5_EXTENSION);
-    DISPLAY( "                    > if input filename has no '%s' extension : error \n", LZ5_EXTENSION);
+    DISPLAY( "               + for compression, output to filename%s \n", LIZARD_EXTENSION);
+    DISPLAY( "               + for decompression, output to filename without '%s'\n", LIZARD_EXTENSION);
+    DISPLAY( "                    > if input filename has no '%s' extension : error \n", LIZARD_EXTENSION);
     DISPLAY( "\n");
     DISPLAY( "stdin, stdout and the console : \n");
     DISPLAY( "--------------------------------\n");
@@ -251,7 +251,7 @@ int main(int argc, const char** argv)
     const char** inFileNames = (const char**) calloc(argc, sizeof(char*));
     unsigned ifnIdx=0;
     const char nullOutput[] = NULL_OUTPUT;
-    const char extension[] = LZ5_EXTENSION;
+    const char extension[] = LIZARD_EXTENSION;
     size_t blockSize = LZ5IO_setBlockSizeID(LIZARD_BLOCKSIZEID_DEFAULT);
     const char* const exeName = lastNameFromPath(argv[0]);
 #ifdef UTIL_HAS_CREATEFILELIST
@@ -269,7 +269,7 @@ int main(int argc, const char** argv)
     LZ5IO_setOverwrite(0);
 
     /* lz5cat predefined behavior */
-    if (!strcmp(exeName, LZ5CAT)) {
+    if (!strcmp(exeName, LIZARDCAT)) {
         mode = om_decompress;
         LZ5IO_setOverwrite(1);
         forceStdout=1;
@@ -277,7 +277,7 @@ int main(int argc, const char** argv)
         displayLevel=1;
         multiple_inputs=1;
     }
-    if (!strcmp(exeName, UNLZ5)) { mode = om_decompress; }
+    if (!strcmp(exeName, UNLIZARD)) { mode = om_decompress; }
 
     /* command switches */
     for(i=1; i<argc; i++) {
@@ -506,9 +506,9 @@ int main(int argc, const char** argv)
         if (!IS_CONSOLE(stdout)) { output_filename=stdoutmark; break; }   /* Default to stdout whenever possible (i.e. not a console) */
         if (mode == om_auto) {  /* auto-determine compression or decompression, based on file extension */
             size_t const inSize  = strlen(input_filename);
-            size_t const extSize = strlen(LZ5_EXTENSION);
+            size_t const extSize = strlen(LIZARD_EXTENSION);
             size_t const extStart= (inSize > extSize) ? inSize-extSize : 0;
-            if (!strcmp(input_filename+extStart, LZ5_EXTENSION)) mode = om_decompress;
+            if (!strcmp(input_filename+extStart, LIZARD_EXTENSION)) mode = om_decompress;
             else mode = om_compress;
         }
         if (mode == om_compress) {   /* compression to file */
@@ -516,7 +516,7 @@ int main(int argc, const char** argv)
             dynNameSpace = (char*)calloc(1,l+5);
             if (dynNameSpace==NULL) { perror(exeName); exit(1); }
             strcpy(dynNameSpace, input_filename);
-            strcat(dynNameSpace, LZ5_EXTENSION);
+            strcat(dynNameSpace, LIZARD_EXTENSION);
             output_filename = dynNameSpace;
             DISPLAYLEVEL(2, "Compressed filename will be : %s \n", output_filename);
             break;
@@ -553,13 +553,13 @@ int main(int argc, const char** argv)
     if (ifnIdx == 0) multiple_inputs = 0;
     if (mode == om_decompress) {
         if (multiple_inputs)
-            operationResult = LZ5IO_decompressMultipleFilenames(inFileNames, ifnIdx, !strcmp(output_filename,stdoutmark) ? stdoutmark : LZ5_EXTENSION);
+            operationResult = LZ5IO_decompressMultipleFilenames(inFileNames, ifnIdx, !strcmp(output_filename,stdoutmark) ? stdoutmark : LIZARD_EXTENSION);
         else
             operationResult = LZ5IO_decompressFilename(input_filename, output_filename);
     } else {   /* compression is default action */
         {
             if (multiple_inputs)
-                operationResult = LZ5IO_compressMultipleFilenames(inFileNames, ifnIdx, LZ5_EXTENSION, cLevel);
+                operationResult = LZ5IO_compressMultipleFilenames(inFileNames, ifnIdx, LIZARD_EXTENSION, cLevel);
             else
                 operationResult = LZ5IO_compressFilename(input_filename, output_filename, cLevel);
         }

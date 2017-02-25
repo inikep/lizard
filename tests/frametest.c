@@ -77,7 +77,7 @@ static void FUZ_writeLE32 (void* dstVoidPtr, U32 value32)
 /*-************************************
 *  Constants
 **************************************/
-#define LZ5F_MAGIC_SKIPPABLE_START 0x184D2A50U
+#define LIZARDF_MAGIC_SKIPPABLE_START 0x184D2A50U
 
 #define KB *(1U<<10)
 #define MB *(1U<<20)
@@ -207,7 +207,7 @@ int basicTests(U32 seed, double compressibility)
     DISPLAYLEVEL(3, "Compressed null content into a %i bytes frame \n", (int)cSize);
 
     DISPLAYLEVEL(3, "LZ5F_createDecompressionContext \n");
-    { LZ5F_errorCode_t const errorCode = LZ5F_createDecompressionContext(&dCtx, LZ5F_VERSION);
+    { LZ5F_errorCode_t const errorCode = LZ5F_createDecompressionContext(&dCtx, LIZARDF_VERSION);
       if (LZ5F_isError(errorCode)) goto _output_error; }
 
     DISPLAYLEVEL(3, "LZ5F_getFrameInfo on null-content frame (#157) \n");
@@ -237,7 +237,7 @@ int basicTests(U32 seed, double compressibility)
         BYTE* const iend = (BYTE*)compressedBuffer + cSize;
         U64 crcDest;
 
-        LZ5F_errorCode_t errorCode = LZ5F_createDecompressionContext(&dCtx, LZ5F_VERSION);
+        LZ5F_errorCode_t errorCode = LZ5F_createDecompressionContext(&dCtx, LIZARDF_VERSION);
         if (LZ5F_isError(errorCode)) goto _output_error;
 
         DISPLAYLEVEL(3, "Single Block : \n");
@@ -339,7 +339,7 @@ int basicTests(U32 seed, double compressibility)
         BYTE* const iend = (BYTE*)compressedBuffer + cSize;
         U64 crcDest;
 
-        LZ5F_errorCode_t errorCode = LZ5F_createDecompressionContext(&dCtx, LZ5F_VERSION);
+        LZ5F_errorCode_t errorCode = LZ5F_createDecompressionContext(&dCtx, LIZARDF_VERSION);
         if (LZ5F_isError(errorCode)) goto _output_error;
 
         DISPLAYLEVEL(3, "random segment sizes : \n");
@@ -397,7 +397,7 @@ int basicTests(U32 seed, double compressibility)
     {   size_t errorCode;
         BYTE* const ostart = (BYTE*)compressedBuffer;
         BYTE* op = ostart;
-        errorCode = LZ5F_createCompressionContext(&cctx, LZ5F_VERSION);
+        errorCode = LZ5F_createCompressionContext(&cctx, LIZARDF_VERSION);
         if (LZ5F_isError(errorCode)) goto _output_error;
 
         DISPLAYLEVEL(3, "compress without frameSize : \n");
@@ -452,11 +452,11 @@ int basicTests(U32 seed, double compressibility)
         BYTE* ip = (BYTE*)compressedBuffer;
         BYTE* iend = (BYTE*)compressedBuffer + cSize + 8;
 
-        LZ5F_errorCode_t errorCode = LZ5F_createDecompressionContext(&dCtx, LZ5F_VERSION);
+        LZ5F_errorCode_t errorCode = LZ5F_createDecompressionContext(&dCtx, LIZARDF_VERSION);
         if (LZ5F_isError(errorCode)) goto _output_error;
 
         /* generate skippable frame */
-        FUZ_writeLE32(ip, LZ5F_MAGIC_SKIPPABLE_START);
+        FUZ_writeLE32(ip, LIZARDF_MAGIC_SKIPPABLE_START);
         FUZ_writeLE32(ip+4, (U32)cSize);
 
         DISPLAYLEVEL(3, "random segment sizes : \n");
@@ -476,7 +476,7 @@ int basicTests(U32 seed, double compressibility)
         DISPLAYLEVEL(3, "zero-size skippable frame\n");
         ip = (BYTE*)compressedBuffer;
         op = (BYTE*)decodedBuffer;
-        FUZ_writeLE32(ip, LZ5F_MAGIC_SKIPPABLE_START+1);
+        FUZ_writeLE32(ip, LIZARDF_MAGIC_SKIPPABLE_START+1);
         FUZ_writeLE32(ip+4, 0);
         iend = ip+8;
 
@@ -495,7 +495,7 @@ int basicTests(U32 seed, double compressibility)
         DISPLAYLEVEL(3, "Skippable frame header complete in first call \n");
         ip = (BYTE*)compressedBuffer;
         op = (BYTE*)decodedBuffer;
-        FUZ_writeLE32(ip, LZ5F_MAGIC_SKIPPABLE_START+2);
+        FUZ_writeLE32(ip, LIZARDF_MAGIC_SKIPPABLE_START+2);
         FUZ_writeLE32(ip+4, 10);
         iend = ip+18;
         while (ip < iend) {
@@ -560,9 +560,9 @@ int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressi
                             DISPLAY(" (seed %u, test nb %u)  \n", seed, testNb); goto _output_error; }
 
     /* Create buffers */
-    result = LZ5F_createDecompressionContext(&dCtx, LZ5F_VERSION);
+    result = LZ5F_createDecompressionContext(&dCtx, LIZARDF_VERSION);
     CHECK(LZ5F_isError(result), "Allocation failed (error %i)", (int)result);
-    result = LZ5F_createCompressionContext(&cCtx, LZ5F_VERSION);
+    result = LZ5F_createCompressionContext(&cCtx, LIZARDF_VERSION);
     CHECK(LZ5F_isError(result), "Allocation failed (error %i)", (int)result);
     srcBuffer = malloc(srcDataLength);
     CHECK(srcBuffer==NULL, "srcBuffer Allocation failed");
@@ -611,7 +611,7 @@ int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressi
         if ((FUZ_rand(&randState) & 0xFFF) == 0) {
             /* create a skippable frame (rare case) */
             BYTE* op = (BYTE*)compressedBuffer;
-            FUZ_writeLE32(op, LZ5F_MAGIC_SKIPPABLE_START + (FUZ_rand(&randState) & 15));
+            FUZ_writeLE32(op, LIZARDF_MAGIC_SKIPPABLE_START + (FUZ_rand(&randState) & 15));
             FUZ_writeLE32(op+4, (U32)srcSize);
             cSize = srcSize+8;
         } else if ((FUZ_rand(&randState) & 0xF) == 2) {

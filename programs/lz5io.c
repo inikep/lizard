@@ -70,13 +70,13 @@
 #define _8BITS 0xFF
 
 #define MAGICNUMBER_SIZE    4
-#define LZ5IO_MAGICNUMBER   0x184D2206U
-#define LZ5IO_SKIPPABLE0    0x184D2A50U
-#define LZ5IO_SKIPPABLEMASK 0xFFFFFFF0U
+#define LIZARDIO_MAGICNUMBER   0x184D2206U
+#define LIZARDIO_SKIPPABLE0    0x184D2A50U
+#define LIZARDIO_SKIPPABLEMASK 0xFFFFFFF0U
 
 #define CACHELINE 64
 #define MIN_STREAM_BUFSIZE (192 KB)
-#define LZ5IO_BLOCKSIZEID_DEFAULT 7
+#define LIZARDIO_BLOCKSIZEID_DEFAULT 7
 
 #define sizeT sizeof(size_t)
 #define maskT (sizeT - 1)
@@ -102,7 +102,7 @@ static clock_t g_time = 0;
 **************************************/
 static int g_overwrite = 1;
 static int g_testMode = 0;
-static int g_blockSizeId = LZ5IO_BLOCKSIZEID_DEFAULT;
+static int g_blockSizeId = LIZARDIO_BLOCKSIZEID_DEFAULT;
 static int g_blockChecksum = 0;
 static int g_streamChecksum = 1;
 static int g_blockIndependence = 1;
@@ -171,9 +171,9 @@ static size_t LZ5IO_GetBlockSize_FromBlockId(unsigned blockSizeID)
 {
     static const size_t blockSizes[7] = { 128 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
 
-    if (blockSizeID == 0) blockSizeID = LZ5IO_BLOCKSIZEID_DEFAULT;
+    if (blockSizeID == 0) blockSizeID = LIZARDIO_BLOCKSIZEID_DEFAULT;
     blockSizeID -= 1;
-    if (blockSizeID >= 7) blockSizeID = LZ5IO_BLOCKSIZEID_DEFAULT - 1;
+    if (blockSizeID >= 7) blockSizeID = LIZARDIO_BLOCKSIZEID_DEFAULT - 1;
 
     return blockSizes[blockSizeID];
 }
@@ -230,7 +230,7 @@ void LZ5IO_setRemoveSrcFile(unsigned flag) { g_removeSrcFile = (flag>0); }
 ** ********************** LZ5 File / Pipe compression ********************* **
 ** ************************************************************************ */
 
-static int LZ5IO_isSkippableMagicNumber(unsigned int magic) { return (magic & LZ5IO_SKIPPABLEMASK) == LZ5IO_SKIPPABLE0; }
+static int LZ5IO_isSkippableMagicNumber(unsigned int magic) { return (magic & LIZARDIO_SKIPPABLEMASK) == LIZARDIO_SKIPPABLE0; }
 
 
 /** LZ5IO_openSrcFile() :
@@ -324,7 +324,7 @@ static cRess_t LZ5IO_createCResources(void)
     const size_t blockSize = (size_t)LZ5IO_GetBlockSize_FromBlockId (g_blockSizeId);
     cRess_t ress;
 
-    LZ5F_errorCode_t const errorCode = LZ5F_createCompressionContext(&(ress.ctx), LZ5F_VERSION);
+    LZ5F_errorCode_t const errorCode = LZ5F_createCompressionContext(&(ress.ctx), LIZARDF_VERSION);
     if (LZ5F_isError(errorCode)) EXM_THROW(30, "Allocation error : can't create LZ5F context : %s", LZ5F_getErrorName(errorCode));
 
     /* Allocate Memory */
@@ -620,7 +620,7 @@ static dRess_t LZ5IO_createDResources(void)
     dRess_t ress;
 
     /* init */
-    LZ5F_errorCode_t const errorCode = LZ5F_createDecompressionContext(&ress.dCtx, LZ5F_VERSION);
+    LZ5F_errorCode_t const errorCode = LZ5F_createDecompressionContext(&ress.dCtx, LIZARDF_VERSION);
     if (LZ5F_isError(errorCode)) EXM_THROW(60, "Can't create LZ5F context : %s", LZ5F_getErrorName(errorCode));
 
     /* Allocate Memory */
@@ -652,7 +652,7 @@ static unsigned long long LZ5IO_decompressLZ5F(dRess_t ress, FILE* srcFile, FILE
     /* Init feed with magic number (already consumed from FILE* sFile) */
     {   size_t inSize = MAGICNUMBER_SIZE;
         size_t outSize= 0;
-        LZ5IO_writeLE32(ress.srcBuffer, LZ5IO_MAGICNUMBER);
+        LZ5IO_writeLE32(ress.srcBuffer, LIZARDIO_MAGICNUMBER);
         nextToLoad = LZ5F_decompress(ress.dCtx, ress.dstBuffer, &outSize, ress.srcBuffer, &inSize, NULL);
         if (LZ5F_isError(nextToLoad)) EXM_THROW(62, "Header error : %s", LZ5F_getErrorName(nextToLoad));
     }
@@ -758,13 +758,13 @@ static unsigned long long selectDecoder(dRess_t ress, FILE* finput, FILE* foutpu
       if (nbReadBytes != MAGICNUMBER_SIZE) EXM_THROW(40, "Unrecognized header : Magic Number unreadable");
       magicNumber = LZ5IO_readLE32(MNstore);   /* Little Endian format */
     }
-    if (LZ5IO_isSkippableMagicNumber(magicNumber)) magicNumber = LZ5IO_SKIPPABLE0;  /* fold skippable magic numbers */
+    if (LZ5IO_isSkippableMagicNumber(magicNumber)) magicNumber = LIZARDIO_SKIPPABLE0;  /* fold skippable magic numbers */
 
     switch(magicNumber)
     {
-    case LZ5IO_MAGICNUMBER:
+    case LIZARDIO_MAGICNUMBER:
         return LZ5IO_decompressLZ5F(ress, finput, foutput);
-    case LZ5IO_SKIPPABLE0:
+    case LIZARDIO_SKIPPABLE0:
         DISPLAYLEVEL(4, "Skipping detected skippable area \n");
         { size_t const nbReadBytes = fread(MNstore, 1, 4, finput);
           if (nbReadBytes != 4) EXM_THROW(42, "Stream error : skippable size unreadable"); }
@@ -880,7 +880,7 @@ int LZ5IO_decompressMultipleFilenames(const char** inFileNamesTable, int ifntSiz
         }
         if (ofnSize <= ifnSize-suffixSize+1) { free(outFileName); ofnSize = ifnSize + 20; outFileName = (char*)malloc(ofnSize); if (outFileName==NULL)  return ifntSize; }
         if (ifnSize <= suffixSize  ||  strcmp(suffixPtr, suffix) != 0) {
-            DISPLAYLEVEL(1, "File extension doesn't match expected LZ5_EXTENSION (%4s); will not process file: %s\n", suffix, inFileNamesTable[i]);
+            DISPLAYLEVEL(1, "File extension doesn't match expected LIZARD_EXTENSION (%4s); will not process file: %s\n", suffix, inFileNamesTable[i]);
             skippedFiles++;
             continue;
         }

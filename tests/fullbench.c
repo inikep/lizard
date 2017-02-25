@@ -327,7 +327,7 @@ int fullSpeedBench(const char** fileNamesTable, int nbFiles)
     int fileIdx=0;
 
     /* Init */
-    { size_t const errorCode = LZ5F_createDecompressionContext(&g_dCtx, LZ5F_VERSION);
+    { size_t const errorCode = LZ5F_createDecompressionContext(&g_dCtx, LIZARDF_VERSION);
       if (LZ5F_isError(errorCode)) { DISPLAY("dctx allocation issue \n"); return 10; } }
 
   LZ5_streamPtr = LZ5_createStream(0);

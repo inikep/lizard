@@ -28,8 +28,8 @@
   - The license of this source file is GPLv2.
 */
 
-#ifndef LZ5IO_H_23
-#define LZ5IO_H_23
+#ifndef LIZARDIO_H_23
+#define LIZARDIO_H_23
 
 /*---   Dependency   ---*/
 #include <stddef.h>   /* size_t */
@@ -97,4 +97,4 @@ int LZ5IO_setContentSize(int enable);
 void LZ5IO_setRemoveSrcFile(unsigned flag);
 
 
-#endif  /* LZ5IO_H_237902873 */
+#endif  /* LIZARDIO_H_237902873 */

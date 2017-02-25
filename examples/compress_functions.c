@@ -71,7 +71,7 @@
 /* Create a crude set of test IDs so we can switch on them later  (Can't switch() on a char[] or char*). */
 #define ID__LIZARD_COMPRESS_DEFAULT        1
 #define ID__LIZARD_COMPRESS_GENERIC        4
-#define ID__LZ5_DECOMPRESS_SAFE         5
+#define ID__LIZARD_DECOMPRESS_SAFE         5
 
 
 
@@ -152,7 +152,7 @@ uint64_t bench(
 //      }
 //      break;
 
-    case ID__LZ5_DECOMPRESS_SAFE:
+    case ID__LIZARD_DECOMPRESS_SAFE:
       printf("Starting benchmark for function: LZ5_decompress_safe()\n");
       for(int junk=0; junk<warm_up; junk++)
         rv = LZ5_decompress_safe(src, dst, comp_size, src_size);
@@ -268,13 +268,13 @@ int main(int argc, char **argv) {
   printf("\nStarting suite A:  Normal compressible text.\n");
   uint64_t time_taken__default       = bench(known_good_dst, ID__LIZARD_COMPRESS_DEFAULT,       iterations, src,            dst,   src_size, max_dst_size, src_comp_size);
   //uint64_t time_taken__generic       = bench(known_good_dst, ID__LIZARD_COMPRESS_GENERIC,       iterations, src,            dst,   src_size, max_dst_size, src_comp_size);
-  uint64_t time_taken__decomp_safe   = bench(src,            ID__LZ5_DECOMPRESS_SAFE,        iterations, known_good_dst, dst_d, src_size, max_dst_size, src_comp_size);
+  uint64_t time_taken__decomp_safe   = bench(src,            ID__LIZARD_DECOMPRESS_SAFE,        iterations, known_good_dst, dst_d, src_size, max_dst_size, src_comp_size);
   // Suite B - Highly Compressible
   memset(dst, 0, max_dst_size);
   printf("\nStarting suite B:  Highly compressible text.\n");
   uint64_t time_taken_hc__default       = bench(known_good_hc_dst, ID__LIZARD_COMPRESS_DEFAULT,       iterations, hc_src,            dst,   src_size, max_dst_size, hc_src_comp_size);
   //uint64_t time_taken_hc__generic       = bench(known_good_hc_dst, ID__LIZARD_COMPRESS_GENERIC,       iterations, hc_src,            dst,   src_size, max_dst_size, hc_src_comp_size);
-  uint64_t time_taken_hc__decomp_safe   = bench(hc_src,            ID__LZ5_DECOMPRESS_SAFE,        iterations, known_good_hc_dst, dst_d, src_size, max_dst_size, hc_src_comp_size);
+  uint64_t time_taken_hc__decomp_safe   = bench(hc_src,            ID__LIZARD_DECOMPRESS_SAFE,        iterations, known_good_hc_dst, dst_d, src_size, max_dst_size, hc_src_comp_size);
 
   // Report and leave.
   setlocale(LC_ALL, "");

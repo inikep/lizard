@@ -32,8 +32,8 @@
    You can contact the author at :
     - LZ5 source repository : https://github.com/inikep/lz5
 */
-#ifndef LZ5_H_2983
-#define LZ5_H_2983
+#ifndef LIZARD_H_2983
+#define LIZARD_H_2983
 
 #if defined (__cplusplus)
 extern "C" {
@@ -72,7 +72,7 @@ extern "C" {
 #define LIZARD_VERSION_MINOR    0    /* for new (non-breaking) interface capabilities */
 #define LIZARD_VERSION_RELEASE  0    /* for tweaks, bug-fixes, or development */
 
-#define LZ5_VERSION_NUMBER (LIZARD_VERSION_MAJOR *100*100 + LIZARD_VERSION_MINOR *100 + LIZARD_VERSION_RELEASE)
+#define LIZARD_VERSION_NUMBER (LIZARD_VERSION_MAJOR *100*100 + LIZARD_VERSION_MINOR *100 + LIZARD_VERSION_RELEASE)
 int LZ5_versionNumber (void);
 
 #define LIZARD_LIB_VERSION LIZARD_VERSION_MAJOR.LIZARD_VERSION_MINOR.LIZARD_VERSION_RELEASE
@@ -205,4 +205,4 @@ LIZARDLIB_API int LZ5_saveDict (LZ5_stream_t* streamPtr, char* safeBuffer, int d
 }
 #endif
 
-#endif /* LZ5_H_2983827168210 */
+#endif /* LIZARD_H_2983827168210 */
