@@ -7,7 +7,7 @@ LZ5 is a lossless compression algorithm which contains 4 compression methods:
 - fastLZ4 + Huffman : compression levels -30...-39 add Huffman coding to fastLZ4
 - LZ5v2 + Huffman : compression levels -40...-49 give the best ratio (comparable to [zlib] and low levels of [zstd]/[brotli]) at decompression speed of 1000 MB/s 
 
-LZ5 library is based on frequently used [LZ4] library by Yann Collet.
+LZ5 library is based on frequently used [LZ4] library by Yann Collet but the LZ5 compression format is not compatible with LZ4.
 LZ5 library is provided as open-source software using BSD 2-Clause license.
 The high compression/decompression speed is achieved without any SSE and AVX extensions.
 
