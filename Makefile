@@ -35,10 +35,8 @@ DESTDIR ?=
 PREFIX  ?= /usr/local
 VOID    := /dev/null
 
-LIBDIR ?= $(PREFIX)/lib
-INCLUDEDIR=$(PREFIX)/include
 PRGDIR  = programs
-LZ5DIR  = lib
+LIBDIR  = lib
 TESTDIR = tests
 
 
@@ -57,7 +55,7 @@ default: lz5
 all: lib lz5
 
 lib:
-	@$(MAKE) -C $(LZ5DIR) all
+	@$(MAKE) -C $(LIBDIR) all
 
 lz5:
 	@$(MAKE) -C $(PRGDIR)
@@ -66,7 +64,7 @@ lz5:
 clean:
 	@$(MAKE) -C $(PRGDIR) $@ > $(VOID)
 	@$(MAKE) -C $(TESTDIR) $@ > $(VOID)
-	@$(MAKE) -C $(LZ5DIR) $@ > $(VOID)
+	@$(MAKE) -C $(LIBDIR) $@ > $(VOID)
 	@$(MAKE) -C examples $@ > $(VOID)
 	@$(RM) lz5$(EXT)
 	@echo Cleaning completed
@@ -79,11 +77,11 @@ ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU OpenBSD FreeBSD Ne
 HOST_OS = POSIX
 
 install:
-	@$(MAKE) -C $(LZ5DIR) $@
+	@$(MAKE) -C $(LIBDIR) $@
 	@$(MAKE) -C $(PRGDIR) $@
 
 uninstall:
-	@$(MAKE) -C $(LZ5DIR) $@
+	@$(MAKE) -C $(LIBDIR) $@
 	@$(MAKE) -C $(PRGDIR) $@
 
 travis-install:
@@ -94,13 +92,13 @@ test:
 
 clangtest: clean
 	clang -v
-	@CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) -C $(LZ5DIR)  all CC=clang
+	@CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) -C $(LIBDIR)  all CC=clang
 	@CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) -C $(PRGDIR)  all CC=clang
 	@CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) -C $(TESTDIR) all CC=clang
 
 clangtest-native: clean
 	clang -v
-	@CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) -C $(LZ5DIR)  all    CC=clang
+	@CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) -C $(LIBDIR)  all    CC=clang
 	@CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) -C $(PRGDIR)  native CC=clang
 	@CFLAGS="-O3 -Werror -Wconversion -Wno-sign-conversion" $(MAKE) -C $(TESTDIR) native CC=clang
 
@@ -113,7 +111,7 @@ staticAnalyze: clean
 platformTest: clean
 	@echo "\n ---- test lz5 with $(CC) compiler ----"
 	@$(CC) -v
-	CFLAGS="-O3 -Werror"         $(MAKE) -C $(LZ5DIR) all
+	CFLAGS="-O3 -Werror"         $(MAKE) -C $(LIBDIR) all
 	CFLAGS="-O3 -Werror -static" $(MAKE) -C $(PRGDIR) native
 	CFLAGS="-O3 -Werror -static" $(MAKE) -C $(TESTDIR) native
 	$(MAKE) -C $(TESTDIR) test-platform
@@ -122,7 +120,7 @@ versionsTest: clean
 	$(MAKE) -C $(TESTDIR) $@
 
 examples:
-	$(MAKE) -C $(LZ5DIR)
+	$(MAKE) -C $(LIBDIR)
 	$(MAKE) -C $(PRGDIR) lz5
 	$(MAKE) -C examples test
 
@@ -145,13 +143,13 @@ cmake:
 
 gpptest: clean
 	g++ -v
-	CC=g++ $(MAKE) -C $(LZ5DIR)  all CFLAGS="-O3 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
+	CC=g++ $(MAKE) -C $(LIBDIR)  all CFLAGS="-O3 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
 	CC=g++ $(MAKE) -C $(PRGDIR)  all CFLAGS="-O3 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
 	CC=g++ $(MAKE) -C $(TESTDIR) all CFLAGS="-O3 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
 
 gpptest-native: clean
 	g++ -v
-	CC=g++ $(MAKE) -C $(LZ5DIR)  all    CFLAGS="-O3 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
+	CC=g++ $(MAKE) -C $(LIBDIR)  all    CFLAGS="-O3 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
 	CC=g++ $(MAKE) -C $(PRGDIR)  native CFLAGS="-O3 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
 	CC=g++ $(MAKE) -C $(TESTDIR) native CFLAGS="-O3 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Werror"
 

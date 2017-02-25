@@ -24,19 +24,19 @@ IF(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR
 ENDIF()
 
 
-set(LZ5_DIR ../lib/)
+set(LIB_DIR ../lib/)
 set(PRG_DIR ../programs/)
 set(ENTROPY_DIR ../lib/entropy/)
-set(LZ5_SRCS_LIB ${LZ5_DIR}lz5_decompress.c ${LZ5_DIR}lz5_compress.c ${LZ5_DIR}lz5_compress.h ${LZ5_DIR}lz5_common.h ${LZ5_DIR}lz5frame.c ${LZ5_DIR}lz5frame.h ${LZ5_DIR}xxhash/xxhash.c)
-set(LZ5_SRCS ${LZ5_DIR}lz5frame.c ${LZ5_DIR}xxhash/xxhash.c ${PRG_DIR}bench.c ${PRG_DIR}datagen.c ${PRG_DIR}lz5cli.c ${PRG_DIR}lz5io.c)
+set(LIZARD_SRCS_LIB ${LIB_DIR}lz5_decompress.c ${LIB_DIR}lz5_compress.c ${LIB_DIR}lz5_compress.h ${LIB_DIR}lz5_common.h ${LIB_DIR}lz5frame.c ${LIB_DIR}lz5frame.h ${LIB_DIR}xxhash/xxhash.c)
+set(LIZARD_SRCS ${LIB_DIR}lz5frame.c ${LIB_DIR}xxhash/xxhash.c ${PRG_DIR}bench.c ${PRG_DIR}datagen.c ${PRG_DIR}lz5cli.c ${PRG_DIR}lz5io.c)
 #set(ENTROPY_LIB_SRCS ${ENTROPY_DIR}entropy_common.c ${ENTROPY_DIR}fse_compress.c ${ENTROPY_DIR}fse_decompress.c ${ENTROPY_DIR}huf_compress.c ${ENTROPY_DIR}huf_decompress.c)
 
 if(BUILD_TOOLS AND NOT (LINK_TOOLS_WITH_LIB AND BUILD_LIBS))
-    set(LZ5_SRCS ${LZ5_SRCS} ${LZ5_SRCS_LIB} ${ENTROPY_LIB_SRCS})
+    set(LIZARD_SRCS ${LIZARD_SRCS} ${LIZARD_SRCS_LIB} ${ENTROPY_LIB_SRCS})
 endif()
 
 if(BUILD_TOOLS)
-    add_executable(lz5 ${LZ5_SRCS})
+    add_executable(lz5 ${LIZARD_SRCS})
     install(TARGETS lz5 RUNTIME DESTINATION "bin/")
 endif()
 
@@ -45,11 +45,11 @@ if(BUILD_LIBS)
 
     SET(LIBS_TARGETS "")
     IF(WIN32)
-        add_library(liblz5 STATIC ${LZ5_SRCS_LIB} ${ENTROPY_LIB_SRCS})
+        add_library(liblz5 STATIC ${LIZARD_SRCS_LIB} ${ENTROPY_LIB_SRCS})
         SET(LIBS_TARGETS liblz5)
     ELSE(WIN32)
-        add_library(liblz5 SHARED ${LZ5_SRCS_LIB} ${ENTROPY_LIB_SRCS})
-        add_library(liblz5_static STATIC ${LZ5_SRCS_LIB} ${ENTROPY_LIB_SRCS})
+        add_library(liblz5 SHARED ${LIZARD_SRCS_LIB} ${ENTROPY_LIB_SRCS})
+        add_library(liblz5_static STATIC ${LIZARD_SRCS_LIB} ${ENTROPY_LIB_SRCS})
         SET_TARGET_PROPERTIES(liblz5_static PROPERTIES OUTPUT_NAME lz5)
         SET(LIBS_TARGETS liblz5 liblz5_static)
     ENDIF(WIN32)
@@ -66,9 +66,9 @@ if(BUILD_LIBS)
     )
 
     install(FILES
-    ${LZ5_DIR}/lz5_compress.h
-    ${LZ5_DIR}/lz5_common.h
-    ${LZ5_DIR}/lz5frame.h
+    ${LIB_DIR}/lz5_compress.h
+    ${LIB_DIR}/lz5_common.h
+    ${LIB_DIR}/lz5frame.h
     DESTINATION include
     )
 
@@ -76,7 +76,7 @@ if(BUILD_LIBS)
     set(LIBDIR ${CMAKE_INSTALL_PREFIX}/lib)
     set(INCLUDEDIR ${CMAKE_INSTALL_PREFIX}/include)
     string(SUBSTRING ${CPACK_PACKAGE_VERSION_PATCH} 1 -1 VERSION)
-    configure_file(${LZ5_DIR}/liblz5.pc.in liblz5.pc @ONLY)
+    configure_file(${LIB_DIR}/liblz5.pc.in liblz5.pc @ONLY)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/liblz5.pc
     DESTINATION "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/pkgconfig"
     )
@@ -108,8 +108,8 @@ if(GNU_COMPATIBLE_COMPILER)
     # an alternative with cmake >= 3.1/3.2 is the C_STANDARD property
     ADD_DEFINITIONS("-std=gnu99")
 endif()
-ADD_DEFINITIONS("-DLZ5_VERSION=\"${CPACK_PACKAGE_VERSION_PATCH}\"")
-INCLUDE_DIRECTORIES (${LZ5_DIR})
+ADD_DEFINITIONS("-DLIZARD_VERSION=\"${CPACK_PACKAGE_VERSION_PATCH}\"")
+INCLUDE_DIRECTORIES (${LIB_DIR})
 
 
 

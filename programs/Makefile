@@ -29,16 +29,16 @@
 # ##########################################################################
 
 VOID = /dev/null
-LZ5DIR  := ../lib
-ENTROPY_FILES := $(LZ5DIR)/entropy/*.c
-#TEST_CODEWORDS := $(LZ5DIR)/test/*.h
+LIBDIR  := ../lib
+ENTROPY_FILES := $(LIBDIR)/entropy/*.c
+#TEST_CODEWORDS := $(LIBDIR)/test/*.h
 
 CFLAGS  ?= -O3   # allows custom optimization flags. For example : CFLAGS="-O2 -g" make
 CFLAGS  += -Wall -Wextra -Wundef -Wcast-qual -Wcast-align -Wshadow \
            -Wswitch-enum -Wdeclaration-after-statement -Wstrict-prototypes \
 		   -Wpointer-arith -Wstrict-aliasing=1
 CFLAGS  += $(MOREFLAGS)
-CPPFLAGS:= -I$(LZ5DIR) -DXXH_NAMESPACE=LZ5_
+CPPFLAGS:= -I$(LIBDIR) -DXXH_NAMESPACE=LZ5_
 FLAGS   := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
 # Define *.exe as extension for Windows systems
@@ -64,32 +64,32 @@ native: lz5
 all: native m32
 
 # dependencies
-$(LZ5DIR)/lz5_compress.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress*.h $(LZ5DIR)/lz5_parser_*.h $(TEST_CODEWORDS)
+$(LIBDIR)/lz5_compress.o: $(LIBDIR)/lz5_compress.c $(LIBDIR)/lz5_common.h $(LIBDIR)/lz5_compress*.h $(LIBDIR)/lz5_parser_*.h $(TEST_CODEWORDS)
 	$(CC) $(FLAGS) $< -c -o $@
 
-$(LZ5DIR)/lz5_compress32.o: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_compress*.h $(LZ5DIR)/lz5_parser_*.h $(TEST_CODEWORDS)
+$(LIBDIR)/lz5_compress32.o: $(LIBDIR)/lz5_compress.c $(LIBDIR)/lz5_common.h $(LIBDIR)/lz5_compress*.h $(LIBDIR)/lz5_parser_*.h $(TEST_CODEWORDS)
 	$(CC) -m32 $(FLAGS) $< -c -o $@
 
-$(LZ5DIR)/lz5_decompress.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress*.h $(TEST_CODEWORDS)
+$(LIBDIR)/lz5_decompress.o: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.h $(LIBDIR)/lz5_common.h $(LIBDIR)/lz5_decompress*.h $(TEST_CODEWORDS)
 	$(CC) $(FLAGS) $(ALIGN_LOOP) $< -c -o $@
 
-$(LZ5DIR)/lz5_decompress32.o: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.h $(LZ5DIR)/lz5_common.h $(LZ5DIR)/lz5_decompress*.h $(TEST_CODEWORDS)
+$(LIBDIR)/lz5_decompress32.o: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.h $(LIBDIR)/lz5_common.h $(LIBDIR)/lz5_decompress*.h $(TEST_CODEWORDS)
 	$(CC) -m32 $(FLAGS) $< -c -o $@
 
 
 
-lz5: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o bench.o lz5io.o lz5cli.o datagen.o $(ENTROPY_FILES)
+lz5: $(LIBDIR)/lz5_decompress.o $(LIBDIR)/lz5_compress.o $(LIBDIR)/lz5frame.o $(LIBDIR)/xxhash/xxhash.o bench.o lz5io.o lz5cli.o datagen.o $(ENTROPY_FILES)
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-lz5nohuf: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o bench.c lz5io.o lz5cli.c datagen.o
+lz5nohuf: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.c $(LIBDIR)/lz5frame.o $(LIBDIR)/xxhash/xxhash.o bench.c lz5io.o lz5cli.c datagen.o
 	$(CC) -DLIZARD_NO_HUFFMAN $(FLAGS) $^ -o $@$(EXT)
 
-lz5c32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash/xxhash.c bench.c lz5io.c lz5cli.c datagen.c $(ENTROPY_FILES)
+lz5c32: $(LIBDIR)/lz5_decompress32.o $(LIBDIR)/lz5_compress32.o $(LIBDIR)/lz5frame.c $(LIBDIR)/xxhash/xxhash.c bench.c lz5io.c lz5cli.c datagen.c $(ENTROPY_FILES)
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
 
 clean:
-	@$(MAKE) -C $(LZ5DIR) $@ > $(VOID)
+	@$(MAKE) -C $(LIBDIR) $@ > $(VOID)
 	@rm -f core *.o *.test tmp* \
         lz5$(EXT) lz5c32$(EXT) \
 	@echo Cleaning completed

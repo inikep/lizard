@@ -36,18 +36,18 @@ PREFIX  ?= /usr/local
 VOID    := /dev/null
 BINDIR  := $(PREFIX)/bin
 MANDIR  := $(PREFIX)/share/man/man1
-LZ5DIR  := ../lib
+LIBDIR  := ../lib
 PRGDIR  := ../programs
 TESTDIR := versionsTest
 PYTHON  ?= python3
-ENTROPY_FILES := $(LZ5DIR)/entropy/*.c
+ENTROPY_FILES := $(LIBDIR)/entropy/*.c
 
 CFLAGS  ?= -O3   # can select custom flags. For example : CFLAGS="-O2 -g" make
 CFLAGS  += -Wall -Wextra -Wundef -Wcast-qual -Wcast-align -Wshadow -Wswitch-enum \
            -Wdeclaration-after-statement -Wstrict-prototypes \
            -Wpointer-arith -Wstrict-aliasing=1
 CFLAGS  += $(MOREFLAGS)
-CPPFLAGS:= -I$(LZ5DIR) -DXXH_NAMESPACE=LZ5_
+CPPFLAGS:= -I$(LIBDIR) -DXXH_NAMESPACE=LZ5_
 FLAGS   := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
 
@@ -83,37 +83,37 @@ lz5c:
 lz5c32:
 	$(MAKE) -C $(PRGDIR) $@
 
-fullbench  : $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o fullbench.c $(ENTROPY_FILES)
+fullbench  : $(LIBDIR)/lz5_compress.o $(LIBDIR)/lz5_decompress.o $(LIBDIR)/lz5frame.o $(LIBDIR)/xxhash/xxhash.o fullbench.c $(ENTROPY_FILES)
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-fullbench32: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash/xxhash.c fullbench.c $(ENTROPY_FILES)
+fullbench32: $(LIBDIR)/lz5_compress.c $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5frame.c $(LIBDIR)/xxhash/xxhash.c fullbench.c $(ENTROPY_FILES)
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
-fullbench-lib: fullbench.c $(LZ5DIR)/xxhash/xxhash.c
-	$(MAKE) -C $(LZ5DIR) liblz5.a
-	$(CC) $(FLAGS) $^ -o $@$(EXT) $(LZ5DIR)/liblz5.a
+fullbench-lib: fullbench.c $(LIBDIR)/xxhash/xxhash.c
+	$(MAKE) -C $(LIBDIR) liblz5.a
+	$(CC) $(FLAGS) $^ -o $@$(EXT) $(LIBDIR)/liblz5.a
 
-fullbench-dll: fullbench.c $(LZ5DIR)/xxhash/xxhash.c
-	$(MAKE) -C $(LZ5DIR) liblz5
-	$(CC) $(FLAGS) $^ -o $@$(EXT) -DLIZARD_DLL_IMPORT=1 $(LZ5DIR)/dll/liblz5.dll
+fullbench-dll: fullbench.c $(LIBDIR)/xxhash/xxhash.c
+	$(MAKE) -C $(LIBDIR) liblz5
+	$(CC) $(FLAGS) $^ -o $@$(EXT) -DLIZARD_DLL_IMPORT=1 $(LIBDIR)/dll/liblz5.dll
 
-fuzzer  : $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/xxhash/xxhash.o fuzzer.c $(ENTROPY_FILES)
-	$(CC) -DLZ5_RESET_MEM $(FLAGS) $^ -o $@$(EXT)
+fuzzer  : $(LIBDIR)/lz5_compress.c $(LIBDIR)/lz5_decompress.o $(LIBDIR)/xxhash/xxhash.o fuzzer.c $(ENTROPY_FILES)
+	$(CC) -DLIZARD_RESET_MEM $(FLAGS) $^ -o $@$(EXT)
 
-fuzzer32: $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/xxhash/xxhash.c fuzzer.c $(ENTROPY_FILES)
-	$(CC) -m32 -DLZ5_RESET_MEM $(FLAGS) $^ -o $@$(EXT)
+fuzzer32: $(LIBDIR)/lz5_compress.c $(LIBDIR)/lz5_decompress.c $(LIBDIR)/xxhash/xxhash.c fuzzer.c $(ENTROPY_FILES)
+	$(CC) -m32 -DLIZARD_RESET_MEM $(FLAGS) $^ -o $@$(EXT)
 
-frametest: $(LZ5DIR)/lz5frame.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/xxhash/xxhash.o frametest.c $(ENTROPY_FILES)
+frametest: $(LIBDIR)/lz5frame.o $(LIBDIR)/lz5_compress.o $(LIBDIR)/lz5_decompress.o $(LIBDIR)/xxhash/xxhash.o frametest.c $(ENTROPY_FILES)
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-frametest32: $(LZ5DIR)/lz5frame.c $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/xxhash/xxhash.c frametest.c $(ENTROPY_FILES)
+frametest32: $(LIBDIR)/lz5frame.c $(LIBDIR)/lz5_compress.c $(LIBDIR)/lz5_decompress.c $(LIBDIR)/xxhash/xxhash.c frametest.c $(ENTROPY_FILES)
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
 datagen : $(PRGDIR)/datagen.c datagencli.c
 	$(CC) $(FLAGS) -I$(PRGDIR) $^ -o $@$(EXT)
 
 clean:
-	@$(MAKE) -C $(LZ5DIR) $@ > $(VOID)
+	@$(MAKE) -C $(LIBDIR) $@ > $(VOID)
 	@$(RM) core *.o *.test tmp* \
         fullbench-dll$(EXT) fullbench-lib$(EXT) \
         fullbench$(EXT) fullbench32$(EXT) \

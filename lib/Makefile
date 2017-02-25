@@ -44,7 +44,7 @@ LIBVER := $(shell echo $(LIBVER_SCRIPT))
 
 BUILD_STATIC:= yes
 
-CPPFLAGS= -DXXH_NAMESPACE=LZ5_
+CPPFLAGS= -DXXH_NAMESPACE=LIZARD_
 CFLAGS ?= -O3
 CFLAGS += -Wall -Wextra -Wcast-qual -Wcast-align -Wshadow \
           -Wswitch-enum -Wdeclaration-after-statement -Wstrict-prototypes -Wundef \

@@ -31,9 +31,9 @@ CFLAGS += -std=gnu99 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wstrict-protot
 FLAGS  := -I../lib $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)
 
 TESTFILE= Makefile
-LZ5DIR := ../lib
+LIBDIR := ../lib
 LZ5 = ../programs/lz5
-ENTROPY_FILES := $(LZ5DIR)/entropy/*.c
+ENTROPY_FILES := $(LIBDIR)/entropy/*.c
 
 
 # Define *.exe as extension for Windows systems
@@ -50,28 +50,28 @@ default: all
 
 all: printVersion doubleBuffer ringBuffer ringBufferHC lineCompress frameCompress
 
-printVersion: $(LZ5DIR)/lz5_compress.c printVersion.c $(ENTROPY_FILES)
+printVersion: $(LIBDIR)/lz5_compress.c printVersion.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-doubleBuffer: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c blockStreaming_doubleBuffer.c $(ENTROPY_FILES)
+doubleBuffer: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.c blockStreaming_doubleBuffer.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-ringBuffer  : $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c blockStreaming_ringBuffer.c $(ENTROPY_FILES)
+ringBuffer  : $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.c blockStreaming_ringBuffer.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-ringBufferHC: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c HCStreaming_ringBuffer.c $(ENTROPY_FILES)
+ringBufferHC: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.c HCStreaming_ringBuffer.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-lineCompress: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c blockStreaming_lineByLine.c $(ENTROPY_FILES)
+lineCompress: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.c blockStreaming_lineByLine.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
 frameCompress: frameCompress.c
-	$(CC)      $(FLAGS) $^ -o $@$(EXT) -L$(LZ5DIR) -llz5
+	$(CC)      $(FLAGS) $^ -o $@$(EXT) -L$(LIBDIR) -llz5
 
-compressFunctions: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c compress_functions.c $(ENTROPY_FILES)
+compressFunctions: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.c compress_functions.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT) -lrt
 
-simpleBuffer: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c simple_buffer.c $(ENTROPY_FILES)
+simpleBuffer: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.c simple_buffer.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
 test : all
@@ -80,7 +80,7 @@ test : all
 	./ringBuffer$(EXT)   $(TESTFILE)
 	./ringBufferHC$(EXT) $(TESTFILE)
 	./lineCompress$(EXT) $(TESTFILE)
-	LD_LIBRARY_PATH=$(LZ5DIR) ./frameCompress$(EXT) $(TESTFILE)
+	LD_LIBRARY_PATH=$(LIBDIR) ./frameCompress$(EXT) $(TESTFILE)
 	$(LZ5) -vt $(TESTFILE).lz5
 
 clean:

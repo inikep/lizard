@@ -326,7 +326,7 @@ int LZ5_sizeofState(int compressionLevel)
 static void LZ5_init(LZ5_stream_t* ctx, const BYTE* start)
 {
  // No need to use memset() on tables as values are always bound checked
-#ifdef LZ5_RESET_MEM
+#ifdef LIZARD_RESET_MEM
     MEM_INIT((void*)ctx->hashTable, 0, ctx->hashTableSize);
     MEM_INIT(ctx->chainTable, 0x01, ctx->chainTableSize);
 #endif
