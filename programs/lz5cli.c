@@ -1,5 +1,5 @@
 /*
-  LZ5cli - LZ5 Command Line Interface
+  Lizardcli - Lizard Command Line Interface
   Copyright (C) Yann Collet 2011-2016
 
   GPL v2 License
@@ -19,12 +19,12 @@
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
   You can contact the author at :
-  - LZ5 source repository : https://github.com/inikep/lz5
+  - Lizard source repository : https://github.com/inikep/lz5
 */
 /*
   Note : this is stand-alone program.
-  It is not part of LZ5 compression library, it is a user program of the LZ5 library.
-  The license of LZ5 library is BSD.
+  It is not part of Lizard compression library, it is a user program of the Lizard library.
+  The license of Lizard library is BSD.
   The license of xxHash library is BSD.
   The license of this compression CLI program is GPLv2.
 */
@@ -39,15 +39,15 @@
 #include <stdlib.h>   /* exit, calloc, free */
 #include <string.h>   /* strcmp, strlen */
 #include "bench.h"    /* BMK_benchFile, BMK_SetNbIterations, BMK_SetBlocksize, BMK_SetPause */
-#include "lz5io.h"    /* LZ5IO_compressFilename, LZ5IO_decompressFilename, LZ5IO_compressMultipleFilenames */
-#include "lz5_compress.h" /* LZ5HC_DEFAULT_CLEVEL, LIZARD_VERSION_STRING */
+#include "lz5io.h"    /* LizardIO_compressFilename, LizardIO_decompressFilename, LizardIO_compressMultipleFilenames */
+#include "lz5_compress.h" /* LizardHC_DEFAULT_CLEVEL, LIZARD_VERSION_STRING */
 
 
 
 /*****************************
 *  Constants
 ******************************/
-#define COMPRESSOR_NAME "LZ5 command line interface"
+#define COMPRESSOR_NAME "Lizard command line interface"
 #define AUTHOR "Y.Collet & P.Skibinski"
 #define WELCOME_MESSAGE "%s %i-bit %s by %s (%s)\n", COMPRESSOR_NAME, (int)(sizeof(void*)*8), LIZARD_VERSION_STRING, AUTHOR, __DATE__
 #define LIZARD_EXTENSION ".lz5"
@@ -90,9 +90,9 @@ static unsigned displayLevel = 2;   /* 0 : no display ; 1: errors only ; 2 : dow
 #define EXTENDED_ARGUMENTS
 #define EXTENDED_HELP
 #define EXTENDED_FORMAT
-#define DEFAULT_COMPRESSOR   LZ5IO_compressFilename
-#define DEFAULT_DECOMPRESSOR LZ5IO_decompressFilename
-int LZ5IO_compressFilename_Legacy(const char* input_filename, const char* output_filename, int compressionlevel);   /* hidden function */
+#define DEFAULT_COMPRESSOR   LizardIO_compressFilename
+#define DEFAULT_DECOMPRESSOR LizardIO_decompressFilename
+int LizardIO_compressFilename_Legacy(const char* input_filename, const char* output_filename, int compressionlevel);   /* hidden function */
 
 
 /*-***************************
@@ -252,7 +252,7 @@ int main(int argc, const char** argv)
     unsigned ifnIdx=0;
     const char nullOutput[] = NULL_OUTPUT;
     const char extension[] = LIZARD_EXTENSION;
-    size_t blockSize = LZ5IO_setBlockSizeID(LIZARD_BLOCKSIZEID_DEFAULT);
+    size_t blockSize = LizardIO_setBlockSizeID(LIZARD_BLOCKSIZEID_DEFAULT);
     const char* const exeName = lastNameFromPath(argv[0]);
 #ifdef UTIL_HAS_CREATEFILELIST
     const char** extendedFileList = NULL;
@@ -266,12 +266,12 @@ int main(int argc, const char** argv)
         return 1;
     }
     inFileNames[0] = stdinmark;
-    LZ5IO_setOverwrite(0);
+    LizardIO_setOverwrite(0);
 
     /* lz5cat predefined behavior */
     if (!strcmp(exeName, LIZARDCAT)) {
         mode = om_decompress;
-        LZ5IO_setOverwrite(1);
+        LizardIO_setOverwrite(1);
         forceStdout=1;
         output_filename=stdoutmark;
         displayLevel=1;
@@ -301,22 +301,22 @@ int main(int argc, const char** argv)
                     || (!strcmp(argument, "--uncompress"))) { mode = om_decompress; continue; }
                 if (!strcmp(argument,  "--multiple")) { multiple_inputs = 1; continue; }
                 if (!strcmp(argument,  "--test")) { mode = om_test; continue; }
-                if (!strcmp(argument,  "--force")) { LZ5IO_setOverwrite(1); continue; }
-                if (!strcmp(argument,  "--no-force")) { LZ5IO_setOverwrite(0); continue; }
+                if (!strcmp(argument,  "--force")) { LizardIO_setOverwrite(1); continue; }
+                if (!strcmp(argument,  "--no-force")) { LizardIO_setOverwrite(0); continue; }
                 if ((!strcmp(argument, "--stdout"))
                     || (!strcmp(argument, "--to-stdout"))) { forceStdout=1; output_filename=stdoutmark; continue; }
-                if (!strcmp(argument,  "--frame-crc")) { LZ5IO_setStreamChecksumMode(1); continue; }
-                if (!strcmp(argument,  "--no-frame-crc")) { LZ5IO_setStreamChecksumMode(0); continue; }
-                if (!strcmp(argument,  "--content-size")) { LZ5IO_setContentSize(1); continue; }
-                if (!strcmp(argument,  "--no-content-size")) { LZ5IO_setContentSize(0); continue; }
-                if (!strcmp(argument,  "--sparse")) { LZ5IO_setSparseFile(2); continue; }
-                if (!strcmp(argument,  "--no-sparse")) { LZ5IO_setSparseFile(0); continue; }
+                if (!strcmp(argument,  "--frame-crc")) { LizardIO_setStreamChecksumMode(1); continue; }
+                if (!strcmp(argument,  "--no-frame-crc")) { LizardIO_setStreamChecksumMode(0); continue; }
+                if (!strcmp(argument,  "--content-size")) { LizardIO_setContentSize(1); continue; }
+                if (!strcmp(argument,  "--no-content-size")) { LizardIO_setContentSize(0); continue; }
+                if (!strcmp(argument,  "--sparse")) { LizardIO_setSparseFile(2); continue; }
+                if (!strcmp(argument,  "--no-sparse")) { LizardIO_setSparseFile(0); continue; }
                 if (!strcmp(argument,  "--verbose")) { displayLevel++; continue; }
                 if (!strcmp(argument,  "--quiet")) { if (displayLevel) displayLevel--; continue; }
                 if (!strcmp(argument,  "--version")) { DISPLAY(WELCOME_MESSAGE); return 0; }
                 if (!strcmp(argument,  "--help")) { usage_advanced(exeName); goto _cleanup; }
-                if (!strcmp(argument,  "--keep")) { LZ5IO_setRemoveSrcFile(0); continue; }   /* keep source file (default) */
-                if (!strcmp(argument,  "--rm")) { LZ5IO_setRemoveSrcFile(1); continue; }
+                if (!strcmp(argument,  "--keep")) { LizardIO_setRemoveSrcFile(0); continue; }   /* keep source file (default) */
+                if (!strcmp(argument,  "--rm")) { LizardIO_setRemoveSrcFile(1); continue; }
             }
 
             while (argument[1]!=0) {
@@ -355,7 +355,7 @@ int main(int argc, const char** argv)
                 case 't': mode = om_test; break;
 
                     /* Overwrite */
-                case 'f': LZ5IO_setOverwrite(1); break;
+                case 'f': LizardIO_setOverwrite(1); break;
 
                     /* Verbose mode */
                 case 'v': displayLevel++; break;
@@ -364,7 +364,7 @@ int main(int argc, const char** argv)
                 case 'q': if (displayLevel) displayLevel--; break;
 
                     /* keep source file (default anyway, so useless) (for xz/lzma compatibility) */
-                case 'k': LZ5IO_setRemoveSrcFile(0); break;
+                case 'k': LizardIO_setRemoveSrcFile(0); break;
 
                     /* Modify Block Properties */
                 case 'B':
@@ -372,8 +372,8 @@ int main(int argc, const char** argv)
                         int exitBlockProperties=0;
                         switch(argument[1])
                         {
-                        case 'D': LZ5IO_setBlockMode(LZ5IO_blockLinked); argument++; break;
-                        case 'X': LZ5IO_setBlockChecksumMode(1); argument ++; break;   /* disabled by default */
+                        case 'D': LizardIO_setBlockMode(LizardIO_blockLinked); argument++; break;
+                        case 'X': LizardIO_setBlockChecksumMode(1); argument ++; break;   /* disabled by default */
                         default :
                             if (argument[1] < '0' || argument[1] > '9') {
                                 exitBlockProperties=1;
@@ -385,7 +385,7 @@ int main(int argc, const char** argv)
                                 argument--;
                                 if (B < 1) badusage(exeName);
                                 if (B <= 7) {
-                                    blockSize = LZ5IO_setBlockSizeID(B);
+                                    blockSize = LizardIO_setBlockSizeID(B);
                                     BMK_SetBlockSize(blockSize);
                                     DISPLAYLEVEL(2, "using blocks of size %u KB \n", (U32)(blockSize>>10));
                                 } else {
@@ -484,7 +484,7 @@ int main(int argc, const char** argv)
     }
 
     if (mode == om_test) {
-        LZ5IO_setTestMode(1);
+        LizardIO_setTestMode(1);
         output_filename = nulmark;
         mode = om_decompress;   /* defer to decompress */
     }
@@ -549,19 +549,19 @@ int main(int argc, const char** argv)
     if ((multiple_inputs) && (displayLevel==2)) displayLevel=1;
 
     /* IO Stream/File */
-    LZ5IO_setNotificationLevel(displayLevel);
+    LizardIO_setNotificationLevel(displayLevel);
     if (ifnIdx == 0) multiple_inputs = 0;
     if (mode == om_decompress) {
         if (multiple_inputs)
-            operationResult = LZ5IO_decompressMultipleFilenames(inFileNames, ifnIdx, !strcmp(output_filename,stdoutmark) ? stdoutmark : LIZARD_EXTENSION);
+            operationResult = LizardIO_decompressMultipleFilenames(inFileNames, ifnIdx, !strcmp(output_filename,stdoutmark) ? stdoutmark : LIZARD_EXTENSION);
         else
-            operationResult = LZ5IO_decompressFilename(input_filename, output_filename);
+            operationResult = LizardIO_decompressFilename(input_filename, output_filename);
     } else {   /* compression is default action */
         {
             if (multiple_inputs)
-                operationResult = LZ5IO_compressMultipleFilenames(inFileNames, ifnIdx, LIZARD_EXTENSION, cLevel);
+                operationResult = LizardIO_compressMultipleFilenames(inFileNames, ifnIdx, LIZARD_EXTENSION, cLevel);
             else
-                operationResult = LZ5IO_compressFilename(input_filename, output_filename, cLevel);
+                operationResult = LizardIO_compressFilename(input_filename, output_filename, cLevel);
         }
     }
 

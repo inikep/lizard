@@ -8,7 +8,7 @@ Andrew Wu's build-djgpp cross compilers ([GH][0], [Binaries][1]) on OSX, Linux.
 * Add the `bin` folder to your `PATH`.  In bash, do `export PATH=/home/user/djgpp/bin:$PATH`.
 * The `Makefile` in `contrib/djgpp/` sets up `CC`, `AR`, `LD` for you.  So, `CC=i586-pc-msdosdjgpp-gcc`, `AR=i586-pc-msdosdjgpp-ar`, `LD=i586-pc-msdosdjgpp-gcc`.
 
-## Building LZ5 for DOS
+## Building Lizard for DOS
 In the base dir of lz5 and with `contrib/djgpp/Makefile`, try:
 Try:
 * `make -f contrib/djgpp/Makefile`

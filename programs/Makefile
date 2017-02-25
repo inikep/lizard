@@ -1,5 +1,5 @@
 # ##########################################################################
-# LZ5 programs - Makefile
+# Lizard programs - Makefile
 # Copyright (C) Yann Collet 2011-2016
 # Copyright (C) Przemyslaw Skibinski 2016
 #
@@ -22,7 +22,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # You can contact the author at :
-#  - LZ5 source repository : https://github.com/inikep/lz5
+#  - Lizard source repository : https://github.com/inikep/lz5
 # ##########################################################################
 # lz5 : Command Line Utility, supporting gzip-like arguments
 # lz5c32: Same as lz5, but forced to compile in 32-bits mode
@@ -38,7 +38,7 @@ CFLAGS  += -Wall -Wextra -Wundef -Wcast-qual -Wcast-align -Wshadow \
            -Wswitch-enum -Wdeclaration-after-statement -Wstrict-prototypes \
 		   -Wpointer-arith -Wstrict-aliasing=1
 CFLAGS  += $(MOREFLAGS)
-CPPFLAGS:= -I$(LIBDIR) -DXXH_NAMESPACE=LZ5_
+CPPFLAGS:= -I$(LIBDIR) -DXXH_NAMESPACE=Lizard_
 FLAGS   := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
 # Define *.exe as extension for Windows systems

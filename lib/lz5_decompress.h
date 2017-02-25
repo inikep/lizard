@@ -1,5 +1,5 @@
 /*
-   LZ5 - Fast LZ compression algorithm
+   Lizard - Fast LZ compression algorithm
    Header File
    Copyright (C) 2011-2016, Yann Collet.
    Copyright (C) 2016, Przemyslaw Skibinski <inikep@gmail.com>
@@ -30,7 +30,7 @@
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    You can contact the author at :
-    - LZ5 source repository : https://github.com/inikep/lz5
+    - Lizard source repository : https://github.com/inikep/lz5
 */
 #ifndef LIZARD_DECOMPRESS_H_2983
 #define LIZARD_DECOMPRESS_H_2983
@@ -63,7 +63,7 @@ extern "C" {
 **************************************/
 
 /*
-LZ5_decompress_safe() :
+Lizard_decompress_safe() :
     compressedSize : is the precise full size of the compressed block.
     maxDecompressedSize : is the size of destination buffer, which must be already allocated.
     return : the number of bytes decompressed into destination buffer (necessarily <= maxDecompressedSize)
@@ -72,12 +72,12 @@ LZ5_decompress_safe() :
              This function is protected against buffer overflow exploits, including malicious data packets.
              It never writes outside output buffer, nor reads outside input buffer.
 */
-LIZARDDLIB_API int LZ5_decompress_safe (const char* source, char* dest, int compressedSize, int maxDecompressedSize);
+LIZARDDLIB_API int Lizard_decompress_safe (const char* source, char* dest, int compressedSize, int maxDecompressedSize);
 
 
 
 /*!
-LZ5_decompress_safe_partial() :
+Lizard_decompress_safe_partial() :
     This function decompress a compressed block of size 'compressedSize' at position 'source'
     into destination buffer 'dest' of size 'maxDecompressedSize'.
     The function tries to stop decompressing operation as soon as 'targetOutputSize' has been reached,
@@ -88,7 +88,7 @@ LZ5_decompress_safe_partial() :
              If the source stream is detected malformed, the function will stop decoding and return a negative result.
              This function never writes outside of output buffer, and never reads outside of input buffer. It is therefore protected against malicious data packets
 */
-LIZARDDLIB_API int LZ5_decompress_safe_partial (const char* source, char* dest, int compressedSize, int targetOutputSize, int maxDecompressedSize);
+LIZARDDLIB_API int Lizard_decompress_safe_partial (const char* source, char* dest, int compressedSize, int targetOutputSize, int maxDecompressedSize);
 
 
 
@@ -100,27 +100,27 @@ typedef struct {
     size_t extDictSize;
     const BYTE* prefixEnd;
     size_t prefixSize;
-} LZ5_streamDecode_t;
+} Lizard_streamDecode_t;
 
 /*
- * LZ5_streamDecode_t
- * information structure to track an LZ5 stream.
- * init this structure content using LZ5_setStreamDecode or memset() before first use !
+ * Lizard_streamDecode_t
+ * information structure to track an Lizard stream.
+ * init this structure content using Lizard_setStreamDecode or memset() before first use !
  *
  * In the context of a DLL (liblz5) please prefer usage of construction methods below.
- * They are more future proof, in case of a change of LZ5_streamDecode_t size in the future.
- * LZ5_createStreamDecode will allocate and initialize an LZ5_streamDecode_t structure
- * LZ5_freeStreamDecode releases its memory.
+ * They are more future proof, in case of a change of Lizard_streamDecode_t size in the future.
+ * Lizard_createStreamDecode will allocate and initialize an Lizard_streamDecode_t structure
+ * Lizard_freeStreamDecode releases its memory.
  */
-LIZARDDLIB_API LZ5_streamDecode_t* LZ5_createStreamDecode(void);
-LIZARDDLIB_API int                 LZ5_freeStreamDecode (LZ5_streamDecode_t* LZ5_stream);
+LIZARDDLIB_API Lizard_streamDecode_t* Lizard_createStreamDecode(void);
+LIZARDDLIB_API int                 Lizard_freeStreamDecode (Lizard_streamDecode_t* Lizard_stream);
 
-/*! LZ5_setStreamDecode() :
+/*! Lizard_setStreamDecode() :
  *  Use this function to instruct where to find the dictionary.
  *  Setting a size of 0 is allowed (same effect as reset).
  *  @return : 1 if OK, 0 if error
  */
-LIZARDDLIB_API int LZ5_setStreamDecode (LZ5_streamDecode_t* LZ5_streamDecode, const char* dictionary, int dictSize);
+LIZARDDLIB_API int Lizard_setStreamDecode (Lizard_streamDecode_t* Lizard_streamDecode, const char* dictionary, int dictSize);
 
 /*
 *_continue() :
@@ -137,19 +137,19 @@ LIZARDDLIB_API int LZ5_setStreamDecode (LZ5_streamDecode_t* LZ5_streamDecode, co
       In which case, encoding and decoding buffers do not need to be synchronized,
       and encoding ring buffer can have any size, including larger than decoding buffer.
     Whenever these conditions are not possible, save the last LIZARD_DICT_SIZE of decoded data into a safe buffer,
-    and indicate where it is saved using LZ5_setStreamDecode()
+    and indicate where it is saved using Lizard_setStreamDecode()
 */
-LIZARDDLIB_API int LZ5_decompress_safe_continue (LZ5_streamDecode_t* LZ5_streamDecode, const char* source, char* dest, int compressedSize, int maxDecompressedSize);
+LIZARDDLIB_API int Lizard_decompress_safe_continue (Lizard_streamDecode_t* Lizard_streamDecode, const char* source, char* dest, int compressedSize, int maxDecompressedSize);
 
 
 /*
 Advanced decoding functions :
 *_usingDict() :
     These decoding functions work the same as
-    a combination of LZ5_setStreamDecode() followed by LZ5_decompress_x_continue()
-    They are stand-alone. They don't need nor update an LZ5_streamDecode_t structure.
+    a combination of Lizard_setStreamDecode() followed by Lizard_decompress_x_continue()
+    They are stand-alone. They don't need nor update an Lizard_streamDecode_t structure.
 */
-LIZARDDLIB_API int LZ5_decompress_safe_usingDict (const char* source, char* dest, int compressedSize, int maxDecompressedSize, const char* dictStart, int dictSize);
+LIZARDDLIB_API int Lizard_decompress_safe_usingDict (const char* source, char* dest, int compressedSize, int maxDecompressedSize, const char* dictStart, int dictSize);
 
 
 #if defined (__cplusplus)

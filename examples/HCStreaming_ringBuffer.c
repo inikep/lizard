@@ -1,4 +1,4 @@
-// LZ5 streaming API example : ring buffer
+// Lizard streaming API example : ring buffer
 // Based on previous work from Takayuki Matsuoka
 
 
@@ -54,7 +54,7 @@ size_t read_bin(FILE* fp, void* array, int arrayBytes) {
 
 void test_compress(FILE* outFp, FILE* inpFp)
 {
-    LZ5_stream_t* lz5Stream = LZ5_createStream(0);
+    Lizard_stream_t* lz5Stream = Lizard_createStream(0);
     static char inpBuf[RING_BUFFER_BYTES];
     int inpOffset = 0;
 
@@ -70,7 +70,7 @@ void test_compress(FILE* outFp, FILE* inpFp)
 
         {
             char cmpBuf[LIZARD_COMPRESSBOUND(MESSAGE_MAX_BYTES)];
-            const int cmpBytes = LZ5_compress_continue(lz5Stream, inpPtr, cmpBuf, inpBytes, LZ5_compressBound(inpBytes));
+            const int cmpBytes = Lizard_compress_continue(lz5Stream, inpPtr, cmpBuf, inpBytes, Lizard_compressBound(inpBytes));
 
             if(cmpBytes <= 0) break;
             write_int32(outFp, cmpBytes);
@@ -85,7 +85,7 @@ void test_compress(FILE* outFp, FILE* inpFp)
     }
 
     write_int32(outFp, 0);
-    LZ5_freeStream(lz5Stream);
+    Lizard_freeStream(lz5Stream);
 }
 
 
@@ -93,8 +93,8 @@ void test_decompress(FILE* outFp, FILE* inpFp)
 {
     static char decBuf[DEC_BUFFER_BYTES];
     int decOffset = 0;
-    LZ5_streamDecode_t lz5StreamDecode_body = { 0 };
-    LZ5_streamDecode_t* lz5StreamDecode = &lz5StreamDecode_body;
+    Lizard_streamDecode_t lz5StreamDecode_body = { 0 };
+    Lizard_streamDecode_t* lz5StreamDecode = &lz5StreamDecode_body;
 
     for(;;)
     {
@@ -114,7 +114,7 @@ void test_decompress(FILE* outFp, FILE* inpFp)
 
         {
             char* const decPtr = &decBuf[decOffset];
-            const int decBytes = LZ5_decompress_safe_continue(
+            const int decBytes = Lizard_decompress_safe_continue(
                 lz5StreamDecode, cmpBuf, decPtr, cmpBytes, MESSAGE_MAX_BYTES);
             if(decBytes <= 0)
                 break;

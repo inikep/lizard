@@ -1,5 +1,5 @@
 /*
-  LZ5io.c - LZ5 File/Stream Interface
+  Lizardio.c - Lizard File/Stream Interface
   Copyright (C) Yann Collet 2011-2015
 
   GPL v2 License
@@ -19,12 +19,12 @@
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
   You can contact the author at :
-  - LZ5 source repository : https://github.com/inikep/lz5
+  - Lizard source repository : https://github.com/inikep/lz5
 */
 /*
   Note : this is stand-alone program.
-  It is not part of LZ5 compression library, it is a user code of the LZ5 library.
-  - The license of LZ5 library is BSD.
+  It is not part of Lizard compression library, it is a user code of the Lizard library.
+  - The license of Lizard library is BSD.
   - The license of xxHash library is BSD.
   - The license of this source file is GPLv2.
 */
@@ -133,7 +133,7 @@ static int g_contentSizeFlag = 0;
 #define EXTENDED_ARGUMENTS
 #define EXTENDED_HELP
 #define EXTENDED_FORMAT
-#define DEFAULT_DECOMPRESSOR LZ5IO_decompressLZ5F
+#define DEFAULT_DECOMPRESSOR LizardIO_decompressLizardF
 
 
 /* ************************************************** */
@@ -141,21 +141,21 @@ static int g_contentSizeFlag = 0;
 /* ************************************************** */
 
 /* Default setting : overwrite = 1; return : overwrite mode (0/1) */
-int LZ5IO_setOverwrite(int yes)
+int LizardIO_setOverwrite(int yes)
 {
    g_overwrite = (yes!=0);
    return g_overwrite;
 }
 
 /* Default setting : testMode = 0; return : testMode (0/1) */
-int LZ5IO_setTestMode(int yes)
+int LizardIO_setTestMode(int yes)
 {
    g_testMode = (yes!=0);
    return g_testMode;
 }
 
 /* blockSizeID : valid values : 1-7 */
-size_t LZ5IO_setBlockSizeID(unsigned bsid)
+size_t LizardIO_setBlockSizeID(unsigned bsid)
 {
     static const int blockSizeTable[] = { 128 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
     static const unsigned minBlockSizeID = 1;
@@ -167,7 +167,7 @@ size_t LZ5IO_setBlockSizeID(unsigned bsid)
 } 
 
 
-static size_t LZ5IO_GetBlockSize_FromBlockId(unsigned blockSizeID)
+static size_t LizardIO_GetBlockSize_FromBlockId(unsigned blockSizeID)
 {
     static const size_t blockSizes[7] = { 128 KB, 256 KB, 1 MB, 4 MB, 16 MB, 64 MB, 256 MB };
 
@@ -180,63 +180,63 @@ static size_t LZ5IO_GetBlockSize_FromBlockId(unsigned blockSizeID)
 
 
 
-int LZ5IO_setBlockMode(LZ5IO_blockMode_t blockMode)
+int LizardIO_setBlockMode(LizardIO_blockMode_t blockMode)
 {
-    g_blockIndependence = (blockMode == LZ5IO_blockIndependent);
+    g_blockIndependence = (blockMode == LizardIO_blockIndependent);
     return g_blockIndependence;
 }
 
 /* Default setting : no checksum */
-int LZ5IO_setBlockChecksumMode(int xxhash)
+int LizardIO_setBlockChecksumMode(int xxhash)
 {
     g_blockChecksum = (xxhash != 0);
     return g_blockChecksum;
 }
 
 /* Default setting : checksum enabled */
-int LZ5IO_setStreamChecksumMode(int xxhash)
+int LizardIO_setStreamChecksumMode(int xxhash)
 {
     g_streamChecksum = (xxhash != 0);
     return g_streamChecksum;
 }
 
 /* Default setting : 0 (no notification) */
-int LZ5IO_setNotificationLevel(int level)
+int LizardIO_setNotificationLevel(int level)
 {
     g_displayLevel = level;
     return g_displayLevel;
 }
 
 /* Default setting : 0 (disabled) */
-int LZ5IO_setSparseFile(int enable)
+int LizardIO_setSparseFile(int enable)
 {
     g_sparseFileSupport = (enable!=0);
     return g_sparseFileSupport;
 }
 
 /* Default setting : 0 (disabled) */
-int LZ5IO_setContentSize(int enable)
+int LizardIO_setContentSize(int enable)
 {
     g_contentSizeFlag = (enable!=0);
     return g_contentSizeFlag;
 }
 
 static U32 g_removeSrcFile = 0;
-void LZ5IO_setRemoveSrcFile(unsigned flag) { g_removeSrcFile = (flag>0); }
+void LizardIO_setRemoveSrcFile(unsigned flag) { g_removeSrcFile = (flag>0); }
 
 
 
 /* ************************************************************************ **
-** ********************** LZ5 File / Pipe compression ********************* **
+** ********************** Lizard File / Pipe compression ********************* **
 ** ************************************************************************ */
 
-static int LZ5IO_isSkippableMagicNumber(unsigned int magic) { return (magic & LIZARDIO_SKIPPABLEMASK) == LIZARDIO_SKIPPABLE0; }
+static int LizardIO_isSkippableMagicNumber(unsigned int magic) { return (magic & LIZARDIO_SKIPPABLEMASK) == LIZARDIO_SKIPPABLE0; }
 
 
-/** LZ5IO_openSrcFile() :
+/** LizardIO_openSrcFile() :
  * condition : `dstFileName` must be non-NULL.
  * @result : FILE* to `dstFileName`, or NULL if it fails */
-static FILE* LZ5IO_openSrcFile(const char* srcFileName)
+static FILE* LizardIO_openSrcFile(const char* srcFileName)
 {
     FILE* f;
 
@@ -255,7 +255,7 @@ static FILE* LZ5IO_openSrcFile(const char* srcFileName)
 /** FIO_openDstFile() :
  * condition : `dstFileName` must be non-NULL.
  * @result : FILE* to `dstFileName`, or NULL if it fails */
-static FILE* LZ5IO_openDstFile(const char* dstFileName)
+static FILE* LizardIO_openDstFile(const char* dstFileName)
 {
     FILE* f;
 
@@ -296,7 +296,7 @@ static FILE* LZ5IO_openDstFile(const char* dstFileName)
 
 
 /* unoptimized version; solves endianess & alignment issues */
-static void LZ5IO_writeLE32 (void* p, unsigned value32)
+static void LizardIO_writeLE32 (void* p, unsigned value32)
 {
     unsigned char* dstPtr = (unsigned char*)p;
     dstPtr[0] = (unsigned char)value32;
@@ -316,41 +316,41 @@ typedef struct {
     size_t srcBufferSize;
     void*  dstBuffer;
     size_t dstBufferSize;
-    LZ5F_compressionContext_t ctx;
+    LizardF_compressionContext_t ctx;
 } cRess_t;
 
-static cRess_t LZ5IO_createCResources(void)
+static cRess_t LizardIO_createCResources(void)
 {
-    const size_t blockSize = (size_t)LZ5IO_GetBlockSize_FromBlockId (g_blockSizeId);
+    const size_t blockSize = (size_t)LizardIO_GetBlockSize_FromBlockId (g_blockSizeId);
     cRess_t ress;
 
-    LZ5F_errorCode_t const errorCode = LZ5F_createCompressionContext(&(ress.ctx), LIZARDF_VERSION);
-    if (LZ5F_isError(errorCode)) EXM_THROW(30, "Allocation error : can't create LZ5F context : %s", LZ5F_getErrorName(errorCode));
+    LizardF_errorCode_t const errorCode = LizardF_createCompressionContext(&(ress.ctx), LIZARDF_VERSION);
+    if (LizardF_isError(errorCode)) EXM_THROW(30, "Allocation error : can't create LizardF context : %s", LizardF_getErrorName(errorCode));
 
     /* Allocate Memory */
     ress.srcBuffer = malloc(blockSize);
     ress.srcBufferSize = blockSize;
-    ress.dstBufferSize = LZ5F_compressFrameBound(blockSize, NULL);   /* cover worst case */
+    ress.dstBufferSize = LizardF_compressFrameBound(blockSize, NULL);   /* cover worst case */
     ress.dstBuffer = malloc(ress.dstBufferSize);
     if (!ress.srcBuffer || !ress.dstBuffer) EXM_THROW(31, "Allocation error : not enough memory");
 
     return ress;
 }
 
-static void LZ5IO_freeCResources(cRess_t ress)
+static void LizardIO_freeCResources(cRess_t ress)
 {
     free(ress.srcBuffer);
     free(ress.dstBuffer);
-    { LZ5F_errorCode_t const errorCode = LZ5F_freeCompressionContext(ress.ctx);
-      if (LZ5F_isError(errorCode)) EXM_THROW(38, "Error : can't free LZ5F context resource : %s", LZ5F_getErrorName(errorCode)); }
+    { LizardF_errorCode_t const errorCode = LizardF_freeCompressionContext(ress.ctx);
+      if (LizardF_isError(errorCode)) EXM_THROW(38, "Error : can't free LizardF context resource : %s", LizardF_getErrorName(errorCode)); }
 }
 
 /*
- * LZ5IO_compressFilename_extRess()
+ * LizardIO_compressFilename_extRess()
  * result : 0 : compression completed correctly
  *          1 : missing or pb opening srcFileName
  */
-static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName, const char* dstFileName, int compressionLevel)
+static int LizardIO_compressFilename_extRess(cRess_t ress, const char* srcFileName, const char* dstFileName, int compressionLevel)
 {
     unsigned long long filesize = 0;
     unsigned long long compressedfilesize = 0;
@@ -359,15 +359,15 @@ static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName,
     void* const srcBuffer = ress.srcBuffer;
     void* const dstBuffer = ress.dstBuffer;
     const size_t dstBufferSize = ress.dstBufferSize;
-    const size_t blockSize = (size_t)LZ5IO_GetBlockSize_FromBlockId (g_blockSizeId);
+    const size_t blockSize = (size_t)LizardIO_GetBlockSize_FromBlockId (g_blockSizeId);
     size_t readSize;
-    LZ5F_compressionContext_t ctx = ress.ctx;   /* just a pointer */
-    LZ5F_preferences_t prefs;
+    LizardF_compressionContext_t ctx = ress.ctx;   /* just a pointer */
+    LizardF_preferences_t prefs;
 
     /* Init */
-    srcFile = LZ5IO_openSrcFile(srcFileName);
+    srcFile = LizardIO_openSrcFile(srcFileName);
     if (srcFile == NULL) return 1;
-    dstFile = LZ5IO_openDstFile(dstFileName);
+    dstFile = LizardIO_openDstFile(dstFileName);
     if (dstFile == NULL) { fclose(srcFile); return 1; }
     memset(&prefs, 0, sizeof(prefs));
 
@@ -375,9 +375,9 @@ static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName,
     /* Set compression parameters */
     prefs.autoFlush = 1;
     prefs.compressionLevel = compressionLevel;
-    prefs.frameInfo.blockMode = (LZ5F_blockMode_t)g_blockIndependence;
-    prefs.frameInfo.blockSizeID = (LZ5F_blockSizeID_t)g_blockSizeId;
-    prefs.frameInfo.contentChecksumFlag = (LZ5F_contentChecksum_t)g_streamChecksum;
+    prefs.frameInfo.blockMode = (LizardF_blockMode_t)g_blockIndependence;
+    prefs.frameInfo.blockSizeID = (LizardF_blockSizeID_t)g_blockSizeId;
+    prefs.frameInfo.contentChecksumFlag = (LizardF_contentChecksum_t)g_streamChecksum;
     if (g_contentSizeFlag) {
       U64 const fileSize = UTIL_getFileSize(srcFileName);
       prefs.frameInfo.contentSize = fileSize;   /* == 0 if input == stdin */
@@ -393,8 +393,8 @@ static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName,
     /* single-block file */
     if (readSize < blockSize) {
         /* Compress in single pass */
-        size_t const cSize = LZ5F_compressFrame(dstBuffer, dstBufferSize, srcBuffer, readSize, &prefs);
-        if (LZ5F_isError(cSize)) EXM_THROW(31, "Compression failed : %s", LZ5F_getErrorName(cSize));
+        size_t const cSize = LizardF_compressFrame(dstBuffer, dstBufferSize, srcBuffer, readSize, &prefs);
+        if (LizardF_isError(cSize)) EXM_THROW(31, "Compression failed : %s", LizardF_getErrorName(cSize));
         compressedfilesize = cSize;
         DISPLAYUPDATE(2, "\rRead : %u MB   ==> %.2f%%   ",
                       (unsigned)(filesize>>20), (double)compressedfilesize/(filesize+!filesize)*100);   /* avoid division by zero */
@@ -409,8 +409,8 @@ static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName,
     /* multiple-blocks file */
     {
         /* Write Archive Header */
-        size_t headerSize = LZ5F_compressBegin(ctx, dstBuffer, dstBufferSize, &prefs);
-        if (LZ5F_isError(headerSize)) EXM_THROW(33, "File header generation failed : %s", LZ5F_getErrorName(headerSize));
+        size_t headerSize = LizardF_compressBegin(ctx, dstBuffer, dstBufferSize, &prefs);
+        if (LizardF_isError(headerSize)) EXM_THROW(33, "File header generation failed : %s", LizardF_getErrorName(headerSize));
         { size_t const sizeCheck = fwrite(dstBuffer, 1, headerSize, dstFile);
           if (sizeCheck!=headerSize) EXM_THROW(34, "Write error : cannot write header"); }
         compressedfilesize += headerSize;
@@ -420,8 +420,8 @@ static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName,
             size_t outSize;
 
             /* Compress Block */
-            outSize = LZ5F_compressUpdate(ctx, dstBuffer, dstBufferSize, srcBuffer, readSize, NULL);
-            if (LZ5F_isError(outSize)) EXM_THROW(35, "Compression failed : %s", LZ5F_getErrorName(outSize));
+            outSize = LizardF_compressUpdate(ctx, dstBuffer, dstBufferSize, srcBuffer, readSize, NULL);
+            if (LizardF_isError(outSize)) EXM_THROW(35, "Compression failed : %s", LizardF_getErrorName(outSize));
             compressedfilesize += outSize;
             DISPLAYUPDATE(2, "\rRead : %u MB   ==> %.2f%%   ", (unsigned)(filesize>>20), (double)compressedfilesize/filesize*100);
 
@@ -436,8 +436,8 @@ static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName,
         if (ferror(srcFile)) EXM_THROW(37, "Error reading %s ", srcFileName);
 
         /* End of Stream mark */
-        headerSize = LZ5F_compressEnd(ctx, dstBuffer, dstBufferSize, NULL);
-        if (LZ5F_isError(headerSize)) EXM_THROW(38, "End of file generation failed : %s", LZ5F_getErrorName(headerSize));
+        headerSize = LizardF_compressEnd(ctx, dstBuffer, dstBufferSize, NULL);
+        if (LizardF_isError(headerSize)) EXM_THROW(38, "End of file generation failed : %s", LizardF_getErrorName(headerSize));
 
         { size_t const sizeCheck = fwrite(dstBuffer, 1, headerSize, dstFile);
           if (sizeCheck!=headerSize) EXM_THROW(39, "Write error : cannot write end of stream"); }
@@ -465,15 +465,15 @@ static int LZ5IO_compressFilename_extRess(cRess_t ress, const char* srcFileName,
 }
 
 
-int LZ5IO_compressFilename(const char* srcFileName, const char* dstFileName, int compressionLevel)
+int LizardIO_compressFilename(const char* srcFileName, const char* dstFileName, int compressionLevel)
 {
     clock_t const start = clock();
-    cRess_t const ress = LZ5IO_createCResources();
+    cRess_t const ress = LizardIO_createCResources();
 
-    int const issueWithSrcFile = LZ5IO_compressFilename_extRess(ress, srcFileName, dstFileName, compressionLevel);
+    int const issueWithSrcFile = LizardIO_compressFilename_extRess(ress, srcFileName, dstFileName, compressionLevel);
 
     /* Free resources */
-    LZ5IO_freeCResources(ress);
+    LizardIO_freeCResources(ress);
 
     /* Final Status */
     {   clock_t const end = clock();
@@ -486,14 +486,14 @@ int LZ5IO_compressFilename(const char* srcFileName, const char* dstFileName, int
 
 
 #define FNSPACE 30
-int LZ5IO_compressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix, int compressionLevel)
+int LizardIO_compressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix, int compressionLevel)
 {
     int i;
     int missed_files = 0;
     char* dstFileName = (char*)malloc(FNSPACE);
     size_t ofnSize = FNSPACE;
     const size_t suffixSize = strlen(suffix);
-    cRess_t const ress = LZ5IO_createCResources();
+    cRess_t const ress = LizardIO_createCResources();
 
 	if (dstFileName == NULL) return ifntSize;   /* not enough memory */
 
@@ -504,11 +504,11 @@ int LZ5IO_compressMultipleFilenames(const char** inFileNamesTable, int ifntSize,
         strcpy(dstFileName, inFileNamesTable[i]);
         strcat(dstFileName, suffix);
 
-        missed_files += LZ5IO_compressFilename_extRess(ress, inFileNamesTable[i], dstFileName, compressionLevel);
+        missed_files += LizardIO_compressFilename_extRess(ress, inFileNamesTable[i], dstFileName, compressionLevel);
     }
 
     /* Close & Free */
-    LZ5IO_freeCResources(ress);
+    LizardIO_freeCResources(ress);
     free(dstFileName);
 
     return missed_files;
@@ -516,10 +516,10 @@ int LZ5IO_compressMultipleFilenames(const char** inFileNamesTable, int ifntSize,
 
 
 /* ********************************************************************* */
-/* ********************** LZ5 file-stream Decompression **************** */
+/* ********************** Lizard file-stream Decompression **************** */
 /* ********************************************************************* */
 
-static unsigned LZ5IO_readLE32 (const void* s)
+static unsigned LizardIO_readLE32 (const void* s)
 {
     const unsigned char* const srcPtr = (const unsigned char*)s;
     unsigned value32 = srcPtr[0];
@@ -529,7 +529,7 @@ static unsigned LZ5IO_readLE32 (const void* s)
     return value32;
 }
 
-static unsigned LZ5IO_fwriteSparse(FILE* file, const void* buffer, size_t bufferSize, unsigned storedSkips)
+static unsigned LizardIO_fwriteSparse(FILE* file, const void* buffer, size_t bufferSize, unsigned storedSkips)
 {
     const size_t* const bufferT = (const size_t*)buffer;   /* Buffer is supposed malloc'ed, hence aligned on size_t */
     const size_t* ptrT = bufferT;
@@ -591,7 +591,7 @@ static unsigned LZ5IO_fwriteSparse(FILE* file, const void* buffer, size_t buffer
     return storedSkips;
 }
 
-static void LZ5IO_fwriteSparseEnd(FILE* file, unsigned storedSkips)
+static void LizardIO_fwriteSparseEnd(FILE* file, unsigned storedSkips)
 {
     if (storedSkips>0) {   /* implies g_sparseFileSupport>0 */
         int const seekResult = UTIL_fseek(file, storedSkips-1, SEEK_CUR);
@@ -610,23 +610,23 @@ typedef struct {
     void*  dstBuffer;
     size_t dstBufferSize;
     FILE*  dstFile;
-    LZ5F_decompressionContext_t dCtx;
+    LizardF_decompressionContext_t dCtx;
 } dRess_t;
 
-static const size_t LZ5IO_dBufferSize = 64 KB;
+static const size_t LizardIO_dBufferSize = 64 KB;
 static unsigned g_magicRead = 0;
-static dRess_t LZ5IO_createDResources(void)
+static dRess_t LizardIO_createDResources(void)
 {
     dRess_t ress;
 
     /* init */
-    LZ5F_errorCode_t const errorCode = LZ5F_createDecompressionContext(&ress.dCtx, LIZARDF_VERSION);
-    if (LZ5F_isError(errorCode)) EXM_THROW(60, "Can't create LZ5F context : %s", LZ5F_getErrorName(errorCode));
+    LizardF_errorCode_t const errorCode = LizardF_createDecompressionContext(&ress.dCtx, LIZARDF_VERSION);
+    if (LizardF_isError(errorCode)) EXM_THROW(60, "Can't create LizardF context : %s", LizardF_getErrorName(errorCode));
 
     /* Allocate Memory */
-    ress.srcBufferSize = LZ5IO_dBufferSize;
+    ress.srcBufferSize = LizardIO_dBufferSize;
     ress.srcBuffer = malloc(ress.srcBufferSize);
-    ress.dstBufferSize = LZ5IO_dBufferSize;
+    ress.dstBufferSize = LizardIO_dBufferSize;
     ress.dstBuffer = malloc(ress.dstBufferSize);
     if (!ress.srcBuffer || !ress.dstBuffer) EXM_THROW(61, "Allocation error : not enough memory");
 
@@ -634,27 +634,27 @@ static dRess_t LZ5IO_createDResources(void)
     return ress;
 }
 
-static void LZ5IO_freeDResources(dRess_t ress)
+static void LizardIO_freeDResources(dRess_t ress)
 {
-    LZ5F_errorCode_t errorCode = LZ5F_freeDecompressionContext(ress.dCtx);
-    if (LZ5F_isError(errorCode)) EXM_THROW(69, "Error : can't free LZ5F context resource : %s", LZ5F_getErrorName(errorCode));
+    LizardF_errorCode_t errorCode = LizardF_freeDecompressionContext(ress.dCtx);
+    if (LizardF_isError(errorCode)) EXM_THROW(69, "Error : can't free LizardF context resource : %s", LizardF_getErrorName(errorCode));
     free(ress.srcBuffer);
     free(ress.dstBuffer);
 }
 
 
-static unsigned long long LZ5IO_decompressLZ5F(dRess_t ress, FILE* srcFile, FILE* dstFile)
+static unsigned long long LizardIO_decompressLizardF(dRess_t ress, FILE* srcFile, FILE* dstFile)
 {
     unsigned long long filesize = 0;
-    LZ5F_errorCode_t nextToLoad;
+    LizardF_errorCode_t nextToLoad;
     unsigned storedSkips = 0;
 
     /* Init feed with magic number (already consumed from FILE* sFile) */
     {   size_t inSize = MAGICNUMBER_SIZE;
         size_t outSize= 0;
-        LZ5IO_writeLE32(ress.srcBuffer, LIZARDIO_MAGICNUMBER);
-        nextToLoad = LZ5F_decompress(ress.dCtx, ress.dstBuffer, &outSize, ress.srcBuffer, &inSize, NULL);
-        if (LZ5F_isError(nextToLoad)) EXM_THROW(62, "Header error : %s", LZ5F_getErrorName(nextToLoad));
+        LizardIO_writeLE32(ress.srcBuffer, LIZARDIO_MAGICNUMBER);
+        nextToLoad = LizardF_decompress(ress.dCtx, ress.dstBuffer, &outSize, ress.srcBuffer, &inSize, NULL);
+        if (LizardF_isError(nextToLoad)) EXM_THROW(62, "Header error : %s", LizardF_getErrorName(nextToLoad));
     }
 
     /* Main Loop */
@@ -672,14 +672,14 @@ static unsigned long long LZ5IO_decompressLZ5F(dRess_t ress, FILE* srcFile, FILE
             /* Decode Input (at least partially) */
             size_t remaining = readSize - pos;
             decodedBytes = ress.dstBufferSize;
-            nextToLoad = LZ5F_decompress(ress.dCtx, ress.dstBuffer, &decodedBytes, (char*)(ress.srcBuffer)+pos, &remaining, NULL);
-            if (LZ5F_isError(nextToLoad)) EXM_THROW(66, "Decompression error : %s", LZ5F_getErrorName(nextToLoad));
+            nextToLoad = LizardF_decompress(ress.dCtx, ress.dstBuffer, &decodedBytes, (char*)(ress.srcBuffer)+pos, &remaining, NULL);
+            if (LizardF_isError(nextToLoad)) EXM_THROW(66, "Decompression error : %s", LizardF_getErrorName(nextToLoad));
             pos += remaining;
 
             /* Write Block */
             if (decodedBytes) {
                 if (!g_testMode)
-                    storedSkips = LZ5IO_fwriteSparse(dstFile, ress.dstBuffer, decodedBytes, storedSkips);
+                    storedSkips = LizardIO_fwriteSparse(dstFile, ress.dstBuffer, decodedBytes, storedSkips);
                 filesize += decodedBytes;
                 DISPLAYUPDATE(2, "\rDecompressed : %u MB  ", (unsigned)(filesize>>20));
             }
@@ -690,7 +690,7 @@ static unsigned long long LZ5IO_decompressLZ5F(dRess_t ress, FILE* srcFile, FILE
     /* can be out because readSize == 0, which could be an fread() error */
     if (ferror(srcFile)) EXM_THROW(67, "Read error");
 
-    if (!g_testMode) LZ5IO_fwriteSparseEnd(dstFile, storedSkips);
+    if (!g_testMode) LizardIO_fwriteSparseEnd(dstFile, storedSkips);
     if (nextToLoad!=0) EXM_THROW(68, "Unfinished stream");
 
     return filesize;
@@ -699,7 +699,7 @@ static unsigned long long LZ5IO_decompressLZ5F(dRess_t ress, FILE* srcFile, FILE
 
 #define PTSIZE  (64 KB)
 #define PTSIZET (PTSIZE / sizeof(size_t))
-static unsigned long long LZ5IO_passThrough(FILE* finput, FILE* foutput, unsigned char MNstore[MAGICNUMBER_SIZE])
+static unsigned long long LizardIO_passThrough(FILE* finput, FILE* foutput, unsigned char MNstore[MAGICNUMBER_SIZE])
 {
 	size_t buffer[PTSIZET];
     size_t readBytes = 1;
@@ -712,11 +712,11 @@ static unsigned long long LZ5IO_passThrough(FILE* finput, FILE* foutput, unsigne
     while (readBytes) {
         readBytes = fread(buffer, 1, PTSIZE, finput);
         total += readBytes;
-        storedSkips = LZ5IO_fwriteSparse(foutput, buffer, readBytes, storedSkips);
+        storedSkips = LizardIO_fwriteSparse(foutput, buffer, readBytes, storedSkips);
     }
     if (ferror(finput)) EXM_THROW(51, "Read Error")
 
-    LZ5IO_fwriteSparseEnd(foutput, storedSkips);
+    LizardIO_fwriteSparseEnd(foutput, storedSkips);
     return total;
 }
 
@@ -756,19 +756,19 @@ static unsigned long long selectDecoder(dRess_t ress, FILE* finput, FILE* foutpu
       size_t const nbReadBytes = fread(MNstore, 1, MAGICNUMBER_SIZE, finput);
       if (nbReadBytes==0) { nbCalls = 0; return ENDOFSTREAM; }   /* EOF */
       if (nbReadBytes != MAGICNUMBER_SIZE) EXM_THROW(40, "Unrecognized header : Magic Number unreadable");
-      magicNumber = LZ5IO_readLE32(MNstore);   /* Little Endian format */
+      magicNumber = LizardIO_readLE32(MNstore);   /* Little Endian format */
     }
-    if (LZ5IO_isSkippableMagicNumber(magicNumber)) magicNumber = LIZARDIO_SKIPPABLE0;  /* fold skippable magic numbers */
+    if (LizardIO_isSkippableMagicNumber(magicNumber)) magicNumber = LIZARDIO_SKIPPABLE0;  /* fold skippable magic numbers */
 
     switch(magicNumber)
     {
     case LIZARDIO_MAGICNUMBER:
-        return LZ5IO_decompressLZ5F(ress, finput, foutput);
+        return LizardIO_decompressLizardF(ress, finput, foutput);
     case LIZARDIO_SKIPPABLE0:
         DISPLAYLEVEL(4, "Skipping detected skippable area \n");
         { size_t const nbReadBytes = fread(MNstore, 1, 4, finput);
           if (nbReadBytes != 4) EXM_THROW(42, "Stream error : skippable size unreadable"); }
-        { unsigned const size = LZ5IO_readLE32(MNstore);     /* Little Endian format */
+        { unsigned const size = LizardIO_readLE32(MNstore);     /* Little Endian format */
           int const errorNb = fseek_u32(finput, size, SEEK_CUR);
           if (errorNb != 0) EXM_THROW(43, "Stream error : cannot skip skippable area"); }
         return 0;
@@ -777,7 +777,7 @@ static unsigned long long selectDecoder(dRess_t ress, FILE* finput, FILE* foutpu
         if (nbCalls == 1) {  /* just started */
             if (!g_testMode && g_overwrite) {
                 nbCalls = 0;
-                return LZ5IO_passThrough(finput, foutput, MNstore);
+                return LizardIO_passThrough(finput, foutput, MNstore);
             }
             EXM_THROW(44,"Unrecognized header : file cannot be decoded");   /* Wrong magic number at the beginning of 1st stream */
         }
@@ -787,14 +787,14 @@ static unsigned long long selectDecoder(dRess_t ress, FILE* finput, FILE* foutpu
 }
 
 
-static int LZ5IO_decompressSrcFile(dRess_t ress, const char* input_filename, const char* output_filename)
+static int LizardIO_decompressSrcFile(dRess_t ress, const char* input_filename, const char* output_filename)
 {
     FILE* const foutput = ress.dstFile;
     unsigned long long filesize = 0, decodedSize=0;
     FILE* finput;
 
     /* Init */
-    finput = LZ5IO_openSrcFile(input_filename);
+    finput = LizardIO_openSrcFile(input_filename);
     if (finput==NULL) return 1;
 
     /* Loop over multiple streams */
@@ -818,16 +818,16 @@ static int LZ5IO_decompressSrcFile(dRess_t ress, const char* input_filename, con
 }
 
 
-static int LZ5IO_decompressDstFile(dRess_t ress, const char* input_filename, const char* output_filename)
+static int LizardIO_decompressDstFile(dRess_t ress, const char* input_filename, const char* output_filename)
 {
     FILE* foutput;
 
     /* Init */
-    foutput = LZ5IO_openDstFile(output_filename);
+    foutput = LizardIO_openDstFile(output_filename);
     if (foutput==NULL) return 1;   /* failure */
 
     ress.dstFile = foutput;
-    LZ5IO_decompressSrcFile(ress, input_filename, output_filename);
+    LizardIO_decompressSrcFile(ress, input_filename, output_filename);
 
     fclose(foutput);
 
@@ -841,24 +841,24 @@ static int LZ5IO_decompressDstFile(dRess_t ress, const char* input_filename, con
 }
 
 
-int LZ5IO_decompressFilename(const char* input_filename, const char* output_filename)
+int LizardIO_decompressFilename(const char* input_filename, const char* output_filename)
 {
-    dRess_t const ress = LZ5IO_createDResources();
+    dRess_t const ress = LizardIO_createDResources();
     clock_t const start = clock();
 
-    int const missingFiles = LZ5IO_decompressDstFile(ress, input_filename, output_filename);
+    int const missingFiles = LizardIO_decompressDstFile(ress, input_filename, output_filename);
 
     {   clock_t const end = clock();
         double const seconds = (double)(end - start) / CLOCKS_PER_SEC;
         DISPLAYLEVEL(4, "Done in %.2f sec  \n", seconds);
     }
 
-    LZ5IO_freeDResources(ress);
+    LizardIO_freeDResources(ress);
     return missingFiles;
 }
 
 
-int LZ5IO_decompressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix)
+int LizardIO_decompressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix)
 {
     int i;
     int skippedFiles = 0;
@@ -866,16 +866,16 @@ int LZ5IO_decompressMultipleFilenames(const char** inFileNamesTable, int ifntSiz
     char* outFileName = (char*)malloc(FNSPACE);
     size_t ofnSize = FNSPACE;
     size_t const suffixSize = strlen(suffix);
-    dRess_t ress = LZ5IO_createDResources();
+    dRess_t ress = LizardIO_createDResources();
 
     if (outFileName==NULL) return ifntSize;   /* not enough memory */
-    ress.dstFile = LZ5IO_openDstFile(stdoutmark);
+    ress.dstFile = LizardIO_openDstFile(stdoutmark);
 
     for (i=0; i<ifntSize; i++) {
         size_t const ifnSize = strlen(inFileNamesTable[i]);
         const char* const suffixPtr = inFileNamesTable[i] + ifnSize - suffixSize;
         if (!strcmp(suffix, stdoutmark)) {
-            missingFiles += LZ5IO_decompressSrcFile(ress, inFileNamesTable[i], stdoutmark);
+            missingFiles += LizardIO_decompressSrcFile(ress, inFileNamesTable[i], stdoutmark);
             continue;
         }
         if (ofnSize <= ifnSize-suffixSize+1) { free(outFileName); ofnSize = ifnSize + 20; outFileName = (char*)malloc(ofnSize); if (outFileName==NULL)  return ifntSize; }
@@ -886,10 +886,10 @@ int LZ5IO_decompressMultipleFilenames(const char** inFileNamesTable, int ifntSiz
         }
         memcpy(outFileName, inFileNamesTable[i], ifnSize - suffixSize);
         outFileName[ifnSize-suffixSize] = '\0';
-        missingFiles += LZ5IO_decompressDstFile(ress, inFileNamesTable[i], outFileName);
+        missingFiles += LizardIO_decompressDstFile(ress, inFileNamesTable[i], outFileName);
     }
 
-    LZ5IO_freeDResources(ress);
+    LizardIO_freeDResources(ress);
     free(outFileName);
     return missingFiles + skippedFiles;
 }

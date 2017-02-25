@@ -1,5 +1,5 @@
 # ##########################################################################
-# LZ5 examples - Makefile
+# Lizard examples - Makefile
 # Copyright (C) Yann Collet 2011-2014
 #
 # GPL v2 License
@@ -19,10 +19,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # You can contact the author at :
-#  - LZ5 source repository : https://github.com/inikep/lz5
+#  - Lizard source repository : https://github.com/inikep/lz5
 # ##########################################################################
 # This makefile compile and test
-# example programs, using (mostly) LZ5 streaming library,
+# example programs, using (mostly) Lizard streaming library,
 # kindly provided by Takayuki Matsuoka
 # ##########################################################################
 
@@ -32,7 +32,7 @@ FLAGS  := -I../lib $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)
 
 TESTFILE= Makefile
 LIBDIR := ../lib
-LZ5 = ../programs/lz5
+Lizard = ../programs/lz5
 ENTROPY_FILES := $(LIBDIR)/entropy/*.c
 
 
@@ -81,7 +81,7 @@ test : all
 	./ringBufferHC$(EXT) $(TESTFILE)
 	./lineCompress$(EXT) $(TESTFILE)
 	LD_LIBRARY_PATH=$(LIBDIR) ./frameCompress$(EXT) $(TESTFILE)
-	$(LZ5) -vt $(TESTFILE).lz5
+	$(Lizard) -vt $(TESTFILE).lz5
 
 clean:
 	@rm -f core *.o *.dec *-0 *-9 *-8192 *.lz5s *.lz5 \

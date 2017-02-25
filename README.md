@@ -1,14 +1,14 @@
-LZ5 - efficient compression with very fast decompression
+Lizard - efficient compression with very fast decompression
 --------------------------------------------------------
 
-LZ5 is a lossless compression algorithm which contains 4 compression methods:
+Lizard is a lossless compression algorithm which contains 4 compression methods:
 - fastLZ4 : compression levels -10...-19 are designed to give better decompression speed than [LZ4] i.e. over 2000 MB/s
 - LIZv1 : compression levels -20...-29 are designed to give better ratio than [LZ4] keeping 75% decompression speed
 - fastLZ4 + Huffman : compression levels -30...-39 add Huffman coding to fastLZ4
 - LIZv1 + Huffman : compression levels -40...-49 give the best ratio (comparable to [zlib] and low levels of [zstd]/[brotli]) at decompression speed of 1000 MB/s 
 
-LZ5 library is based on frequently used [LZ4] library by Yann Collet but the LZ5 compression format is not compatible with LZ4.
-LZ5 library is provided as open-source software using BSD 2-Clause license.
+Lizard library is based on frequently used [LZ4] library by Yann Collet but the Lizard compression format is not compatible with LZ4.
+Lizard library is provided as open-source software using BSD 2-Clause license.
 The high compression/decompression speed is achieved without any SSE and AVX extensions.
 
 
@@ -84,12 +84,12 @@ with [silesia.tar] which contains tarred files from [Silesia compression corpus]
 Documentation
 -------------------------
 
-The raw LZ5 block compression format is detailed within [lz5_Block_format].
+The raw Lizard block compression format is detailed within [lz5_Block_format].
 
 To compress an arbitrarily long file or data stream, multiple blocks are required.
 Organizing these blocks and providing a common header format to handle their content
 is the purpose of the Frame format, defined into [lz5_Frame_format].
-Interoperable versions of LZ5 must respect this frame format.
+Interoperable versions of Lizard must respect this frame format.
 
 [lz5_Block_format]: doc/lz5_Block_format.md
 [lz5_Frame_format]: doc/lz5_Frame_format.md

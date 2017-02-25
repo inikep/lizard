@@ -31,12 +31,12 @@ following projects:
 - `frametest` : Test tool that checks lz5frame integrity on target platform
 - `fullbench`  : Precisely measure speed for each lz5 inner functions
 - `fuzzer` : Test tool, to check lz5 integrity on target platform 
-- `liblz5` : A static LZ5 library compiled to `liblz5_static.lib`
-- `liblz5-dll` : A dynamic LZ5 library (DLL) compiled to `liblz5.dll` with the import library `liblz5.lib`
-- `fullbench-dll` : The fullbench program compiled with the import library; the executable requires LZ5 DLL
+- `liblz5` : A static Lizard library compiled to `liblz5_static.lib`
+- `liblz5-dll` : A dynamic Lizard library (DLL) compiled to `liblz5.dll` with the import library `liblz5.lib`
+- `fullbench-dll` : The fullbench program compiled with the import library; the executable requires Lizard DLL
 
 
-#### Using LZ5 DLL with Microsoft Visual C++ project
+#### Using Lizard DLL with Microsoft Visual C++ project
 
 The header files `lib\lz5.h`, `lib\lz5hc.h`, `lib\lz5frame.h` and the import library
 `visual\VS2010\bin\$(Platform)_$(Configuration)\liblz5.lib` are required to compile a
@@ -49,5 +49,5 @@ project using Visual C++.
    If one will provide only the name `liblz5.lib` without a full path to the library
    then the directory has to be added to `Linker\General\Additional Library Directories`.
 
-The compiled executable will require LZ5 DLL which is available at
+The compiled executable will require Lizard DLL which is available at
 `visual\VS2010\bin\$(Platform)_$(Configuration)\liblz5.dll`.

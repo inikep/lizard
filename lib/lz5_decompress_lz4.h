@@ -1,11 +1,11 @@
-/*! LZ5_decompress_LZ4() :
+/*! Lizard_decompress_LZ4() :
  *  This generic decompression function cover all use cases.
  *  It shall be instantiated several times, using different sets of directives
  *  Note that it is important this generic function is really inlined,
  *  in order to remove useless branches during compilation optimization.
  */
-FORCE_INLINE int LZ5_decompress_LZ4(
-                 LZ5_dstream_t* ctx,
+FORCE_INLINE int Lizard_decompress_LZ4(
+                 Lizard_dstream_t* ctx,
                  BYTE* const dest,
                  int outputSize,         /* this value is the max size of Output Buffer. */
 
@@ -68,14 +68,14 @@ FORCE_INLINE int LZ5_decompress_LZ4(
         if (unlikely(cpy > oend - WILDCOPYLENGTH || ctx->literalsPtr + length > iend - (2 + WILDCOPYLENGTH))) { LIZARD_LOG_DECOMPRESS_LZ4("offset outside buffers\n"); goto _output_error; }   /* Error : offset outside buffers */
 
 #if 1
-        LZ5_wildCopy16(op, ctx->literalsPtr, cpy);
+        Lizard_wildCopy16(op, ctx->literalsPtr, cpy);
         op = cpy;
         ctx->literalsPtr += length; 
 #else
-        LZ5_copy8(op, ctx->literalsPtr);
-        LZ5_copy8(op+8, ctx->literalsPtr+8);
+        Lizard_copy8(op, ctx->literalsPtr);
+        Lizard_copy8(op+8, ctx->literalsPtr+8);
         if (length > 16)
-            LZ5_wildCopy16(op + 16, ctx->literalsPtr + 16, cpy);
+            Lizard_wildCopy16(op + 16, ctx->literalsPtr + 16, cpy);
         op = cpy;
         ctx->literalsPtr += length; 
 #endif
@@ -136,10 +136,10 @@ FORCE_INLINE int LZ5_decompress_LZ4(
         /* copy match within block */
         cpy = op + length;
         if (unlikely(cpy > oend - WILDCOPYLENGTH)) { LIZARD_LOG_DECOMPRESS_LZ4("1match=%p lowLimit=%p\n", match, lowLimit); goto _output_error; }   /* Error : offset outside buffers */
-        LZ5_copy8(op, match);
-        LZ5_copy8(op+8, match+8);
+        Lizard_copy8(op, match);
+        Lizard_copy8(op+8, match+8);
         if (length > 16)
-            LZ5_wildCopy16(op + 16, match + 16, cpy);
+            Lizard_wildCopy16(op + 16, match + 16, cpy);
         op = cpy;
         if ((partialDecoding) && (op >= oexit)) return (int) (op-dest);
     }

@@ -1,5 +1,5 @@
 /*
-   LZ5 auto-framing library
+   Lizard auto-framing library
    Header File for static linking only
    Copyright (C) 2011-2015, Yann Collet.
 
@@ -29,7 +29,7 @@
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    You can contact the author at :
-   - LZ5 source repository : https://github.com/inikep/lz5
+   - Lizard source repository : https://github.com/inikep/lz5
 */
 
 #pragma once
@@ -68,11 +68,11 @@ extern "C" {
 
 //#define LIZARDF_DISABLE_OLD_ENUMS
 #ifndef LIZARDF_DISABLE_OLD_ENUMS
-#define LIZARDF_GENERATE_ENUM(ENUM) LZ5F_##ENUM, ENUM = LZ5F_##ENUM,
+#define LIZARDF_GENERATE_ENUM(ENUM) LizardF_##ENUM, ENUM = LizardF_##ENUM,
 #else
-#define LIZARDF_GENERATE_ENUM(ENUM) LZ5F_##ENUM,
+#define LIZARDF_GENERATE_ENUM(ENUM) LizardF_##ENUM,
 #endif
-typedef enum { LIZARDF_LIST_ERRORS(LIZARDF_GENERATE_ENUM) } LZ5F_errorCodes;  /* enum is exposed, to handle specific errors; compare function result to -enum value */
+typedef enum { LIZARDF_LIST_ERRORS(LIZARDF_GENERATE_ENUM) } LizardF_errorCodes;  /* enum is exposed, to handle specific errors; compare function result to -enum value */
 
 
 #if defined (__cplusplus)

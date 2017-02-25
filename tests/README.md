@@ -1,4 +1,4 @@
-Programs and scripts for automated testing of LZ5
+Programs and scripts for automated testing of Lizard
 =======================================================
 
 This directory contains the following programs and scripts:

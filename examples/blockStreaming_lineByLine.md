@@ -1,11 +1,11 @@
-# LZ5 streaming API Example : Line by Line Text Compression
+# Lizard streaming API Example : Line by Line Text Compression
 by *Takayuki Matsuoka*
 
-`blockStreaming_lineByLine.c` is LZ5 Straming API example which implements line by line incremental (de)compression.
+`blockStreaming_lineByLine.c` is Lizard Straming API example which implements line by line incremental (de)compression.
 
 Please note the following restrictions :
 
- - Firstly, read "LZ5 Streaming API Basics".
+ - Firstly, read "Lizard Streaming API Basics".
  - This is relatively advanced application example.
  - Output file is not compatible with lz5frame and platform dependent.
 
@@ -20,7 +20,7 @@ Please note the following restrictions :
 
 ## How the compression works
 
-First of all, allocate "Ring Buffer" for input and LZ5 compressed data buffer for output.
+First of all, allocate "Ring Buffer" for input and Lizard compressed data buffer for output.
 
 ```
 (1)
@@ -90,21 +90,21 @@ First of all, allocate "Ring Buffer" for input and LZ5 compressed data buffer fo
                           Reset
 ```
 
-Next (see (1)), read first line to ringbuffer and compress it by `LZ5_compress_continue()`.
-For the first time, LZ5 doesn't know any previous dependencies,
-so it just compress the line without dependencies and generates compressed line {Out#1} to LZ5 compressed data buffer.
+Next (see (1)), read first line to ringbuffer and compress it by `Lizard_compress_continue()`.
+For the first time, Lizard doesn't know any previous dependencies,
+so it just compress the line without dependencies and generates compressed line {Out#1} to Lizard compressed data buffer.
 After that, write {Out#1} to the file and forward ringbuffer offset.
 
 Do the same things to second line (see (2)).
-But in this time, LZ5 can use dependency to Line#1 to improve compression ratio.
+But in this time, Lizard can use dependency to Line#1 to improve compression ratio.
 This dependency is called "Prefix mode".
 
 Eventually, we'll reach end of ringbuffer at Line#X (see (4)).
 This time, we should reset ringbuffer offset.
-After resetting, at Line#X+1 pointer is not adjacent, but LZ5 still maintain its memory.
+After resetting, at Line#X+1 pointer is not adjacent, but Lizard still maintain its memory.
 This is called "External Dictionary Mode".
 
-In Line#X+2 (see (5)), finally LZ5 forget almost all memories but still remains Line#X+1.
+In Line#X+2 (see (5)), finally Lizard forget almost all memories but still remains Line#X+1.
 This is the same situation as Line#2.
 
 Continue these procedure to the end of text file.

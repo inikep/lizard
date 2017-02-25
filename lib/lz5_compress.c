@@ -1,5 +1,5 @@
 /*
-    LZ5 - Fast LZ compression algorithm 
+    Lizard - Fast LZ compression algorithm 
     Copyright (C) 2011-2015, Yann Collet.
     Copyright (C) 2015-2016, Przemyslaw Skibinski <inikep@gmail.com>
 
@@ -21,7 +21,7 @@
     LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
     A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
     OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOTLZ5_hash4Ptr
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOTLizard_hash4Ptr
     LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
     DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
     THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -29,7 +29,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     You can contact the author at :
-       - LZ5 source repository : https://github.com/inikep/lz5
+       - Lizard source repository : https://github.com/inikep/lz5
 */
 
 
@@ -63,9 +63,9 @@
 /*-************************************
 *  Local Utils
 **************************************/
-int LZ5_versionNumber (void) { return LIZARD_VERSION_NUMBER; }
-int LZ5_compressBound(int isize)  { return LIZARD_COMPRESSBOUND(isize); }
-int LZ5_sizeofState_MinLevel() { return LZ5_sizeofState(LIZARD_MIN_CLEVEL); }
+int Lizard_versionNumber (void) { return LIZARD_VERSION_NUMBER; }
+int Lizard_compressBound(int isize)  { return LIZARD_COMPRESSBOUND(isize); }
+int Lizard_sizeofState_MinLevel() { return Lizard_sizeofState(LIZARD_MIN_CLEVEL); }
 
 
 
@@ -80,31 +80,31 @@ static const U64 prime7bytes = 58295818150454627ULL;
 
 #if MINMATCH == 3
 static const U32 prime3bytes = 506832829U;
-static U32 LZ5_hash3(U32 u, U32 h) { return (u * prime3bytes) << (32-24) >> (32-h) ; }
-static size_t LZ5_hash3Ptr(const void* ptr, U32 h) { return LZ5_hash3(MEM_read32(ptr), h); }
+static U32 Lizard_hash3(U32 u, U32 h) { return (u * prime3bytes) << (32-24) >> (32-h) ; }
+static size_t Lizard_hash3Ptr(const void* ptr, U32 h) { return Lizard_hash3(MEM_read32(ptr), h); }
 #endif
 
-static U32 LZ5_hash4(U32 u, U32 h) { return (u * prime4bytes) >> (32-h) ; }
-static size_t LZ5_hash4Ptr(const void* ptr, U32 h) { return LZ5_hash4(MEM_read32(ptr), h); }
+static U32 Lizard_hash4(U32 u, U32 h) { return (u * prime4bytes) >> (32-h) ; }
+static size_t Lizard_hash4Ptr(const void* ptr, U32 h) { return Lizard_hash4(MEM_read32(ptr), h); }
 
-static size_t LZ5_hash5(U64 u, U32 h) { return (size_t)((u * prime5bytes) << (64-40) >> (64-h)) ; }
-static size_t LZ5_hash5Ptr(const void* p, U32 h) { return LZ5_hash5(MEM_read64(p), h); }
+static size_t Lizard_hash5(U64 u, U32 h) { return (size_t)((u * prime5bytes) << (64-40) >> (64-h)) ; }
+static size_t Lizard_hash5Ptr(const void* p, U32 h) { return Lizard_hash5(MEM_read64(p), h); }
 
-static size_t LZ5_hash6(U64 u, U32 h) { return (size_t)((u * prime6bytes) << (64-48) >> (64-h)) ; }
-static size_t LZ5_hash6Ptr(const void* p, U32 h) { return LZ5_hash6(MEM_read64(p), h); }
+static size_t Lizard_hash6(U64 u, U32 h) { return (size_t)((u * prime6bytes) << (64-48) >> (64-h)) ; }
+static size_t Lizard_hash6Ptr(const void* p, U32 h) { return Lizard_hash6(MEM_read64(p), h); }
 
-static size_t LZ5_hash7(U64 u, U32 h) { return (size_t)((u * prime7bytes) << (64-56) >> (64-h)) ; }
-static size_t LZ5_hash7Ptr(const void* p, U32 h) { return LZ5_hash7(MEM_read64(p), h); }
+static size_t Lizard_hash7(U64 u, U32 h) { return (size_t)((u * prime7bytes) << (64-56) >> (64-h)) ; }
+static size_t Lizard_hash7Ptr(const void* p, U32 h) { return Lizard_hash7(MEM_read64(p), h); }
 
-static size_t LZ5_hashPtr(const void* p, U32 hBits, U32 mls)
+static size_t Lizard_hashPtr(const void* p, U32 hBits, U32 mls)
 {
     switch(mls)
     {
     default:
-    case 4: return LZ5_hash4Ptr(p, hBits);
-    case 5: return LZ5_hash5Ptr(p, hBits);
-    case 6: return LZ5_hash6Ptr(p, hBits);
-    case 7: return LZ5_hash7Ptr(p, hBits);
+    case 4: return Lizard_hash4Ptr(p, hBits);
+    case 5: return Lizard_hash5Ptr(p, hBits);
+    case 6: return Lizard_hash6Ptr(p, hBits);
+    case 7: return Lizard_hash7Ptr(p, hBits);
     }
 } 
 
@@ -114,20 +114,20 @@ static size_t LZ5_hashPtr(const void* p, U32 hBits, U32 mls)
 /**************************************
 *  Internal functions
 **************************************/
-/** LZ5_count_2segments() :
+/** Lizard_count_2segments() :
 *   can count match length with `ip` & `match` in 2 different segments.
 *   convention : on reaching mEnd, match count continue starting from iStart
 */
-static size_t LZ5_count_2segments(const BYTE* ip, const BYTE* match, const BYTE* iEnd, const BYTE* mEnd, const BYTE* iStart)
+static size_t Lizard_count_2segments(const BYTE* ip, const BYTE* match, const BYTE* iEnd, const BYTE* mEnd, const BYTE* iStart)
 {
     const BYTE* const vEnd = MIN( ip + (mEnd - match), iEnd);
-    size_t const matchLength = LZ5_count(ip, match, vEnd);
+    size_t const matchLength = Lizard_count(ip, match, vEnd);
     if (match + matchLength != mEnd) return matchLength;
-    return matchLength + LZ5_count(ip+matchLength, iStart, iEnd);
+    return matchLength + Lizard_count(ip+matchLength, iStart, iEnd);
 }
 
 
-void LZ5_initBlock(LZ5_stream_t* ctx)
+void Lizard_initBlock(Lizard_stream_t* ctx)
 {
     ctx->offset16Ptr = ctx->offset16Base;
     ctx->offset24Ptr = ctx->offset24Base;
@@ -138,7 +138,7 @@ void LZ5_initBlock(LZ5_stream_t* ctx)
 }
 
 
-FORCE_INLINE int LZ5_writeStream(int useHuff, LZ5_stream_t* ctx, BYTE* streamPtr, uint32_t streamLen, BYTE** op, BYTE* oend)
+FORCE_INLINE int Lizard_writeStream(int useHuff, Lizard_stream_t* ctx, BYTE* streamPtr, uint32_t streamLen, BYTE** op, BYTE* oend)
 {
     if (useHuff && streamLen > 1024) {
 #ifndef LIZARD_NO_HUFFMAN
@@ -183,7 +183,7 @@ FORCE_INLINE int LZ5_writeStream(int useHuff, LZ5_stream_t* ctx, BYTE* streamPtr
 }
 
 
-int LZ5_writeBlock(LZ5_stream_t* ctx, const BYTE* ip, uint32_t inputSize, BYTE** op, BYTE* oend)
+int Lizard_writeBlock(Lizard_stream_t* ctx, const BYTE* ip, uint32_t inputSize, BYTE** op, BYTE* oend)
 {
     int res;
     uint32_t flagsLen = (uint32_t)(ctx->flagsPtr - ctx->flagsBase);
@@ -203,22 +203,22 @@ int LZ5_writeBlock(LZ5_stream_t* ctx, const BYTE* ip, uint32_t inputSize, BYTE**
     *start = 0;
     *op += 1;
 
-    res = LZ5_writeStream(0, ctx, ctx->lenBase, lenLen, op, oend);
+    res = Lizard_writeStream(0, ctx, ctx->lenBase, lenLen, op, oend);
     if (res < 0) goto _output_error; else *start += (BYTE)(res*LIZARD_FLAG_LEN);
 
-    res = LZ5_writeStream(ctx->huffType&LIZARD_FLAG_OFFSET16, ctx, ctx->offset16Base, offset16Len, op, oend);
+    res = Lizard_writeStream(ctx->huffType&LIZARD_FLAG_OFFSET16, ctx, ctx->offset16Base, offset16Len, op, oend);
     if (res < 0) goto _output_error; else *start += (BYTE)(res*LIZARD_FLAG_OFFSET16);
 
-    res = LZ5_writeStream(ctx->huffType&LIZARD_FLAG_OFFSET24, ctx, ctx->offset24Base, offset24Len, op, oend);
+    res = Lizard_writeStream(ctx->huffType&LIZARD_FLAG_OFFSET24, ctx, ctx->offset24Base, offset24Len, op, oend);
     if (res < 0) goto _output_error; else *start += (BYTE)(res*LIZARD_FLAG_OFFSET24);
 
-    res = LZ5_writeStream(ctx->huffType&LIZARD_FLAG_FLAGS, ctx, ctx->flagsBase, flagsLen, op, oend);
+    res = Lizard_writeStream(ctx->huffType&LIZARD_FLAG_FLAGS, ctx, ctx->flagsBase, flagsLen, op, oend);
     if (res < 0) goto _output_error; else *start += (BYTE)(res*LIZARD_FLAG_FLAGS);
 #ifdef LIZARD_USE_LOGS
     comprFlagsLen = ctx->comprStreamLen;
 #endif
 
-    res = LZ5_writeStream(ctx->huffType&LIZARD_FLAG_LITERALS, ctx, ctx->literalsBase, literalsLen, op, oend);
+    res = Lizard_writeStream(ctx->huffType&LIZARD_FLAG_LITERALS, ctx, ctx->literalsBase, literalsLen, op, oend);
     if (res < 0) goto _output_error; else *start += (BYTE)(res*LIZARD_FLAG_LITERALS);
 #ifdef LIZARD_USE_LOGS
     comprLiteralsLen = ctx->comprStreamLen;
@@ -245,42 +245,42 @@ _write_uncompressed:
     return 0;
 
 _output_error:
-    LIZARD_LOG_COMPRESS("LZ5_writeBlock ERROR size=%d/%d flagsLen=%d literalsLen=%d lenLen=%d offset16Len=%d offset24Len=%d\n", (int)(*op-start), (int)(oend-start), flagsLen, literalsLen, lenLen, offset16Len, offset24Len);
+    LIZARD_LOG_COMPRESS("Lizard_writeBlock ERROR size=%d/%d flagsLen=%d literalsLen=%d lenLen=%d offset16Len=%d offset24Len=%d\n", (int)(*op-start), (int)(oend-start), flagsLen, literalsLen, lenLen, offset16Len, offset24Len);
     return 1;
 }
 
 
-FORCE_INLINE int LZ5_encodeSequence (
-    LZ5_stream_t* ctx,
+FORCE_INLINE int Lizard_encodeSequence (
+    Lizard_stream_t* ctx,
     const BYTE** ip,
     const BYTE** anchor,
     size_t matchLength,
     const BYTE* const match)
 {
 #ifdef USE_LZ4_ONLY
-    return LZ5_encodeSequence_LZ4(ctx, ip, anchor, matchLength, match);
+    return Lizard_encodeSequence_LZ4(ctx, ip, anchor, matchLength, match);
 #else
-    if (ctx->params.decompressType == LZ5_coderwords_LZ4)
-        return LZ5_encodeSequence_LZ4(ctx, ip, anchor, matchLength, match);
+    if (ctx->params.decompressType == Lizard_coderwords_LZ4)
+        return Lizard_encodeSequence_LZ4(ctx, ip, anchor, matchLength, match);
 
-    return LZ5_encodeSequence_LIZv1(ctx, ip, anchor, matchLength, match);
+    return Lizard_encodeSequence_LIZv1(ctx, ip, anchor, matchLength, match);
 #endif
 }
 
 
-FORCE_INLINE int LZ5_encodeLastLiterals (
-    LZ5_stream_t* ctx,
+FORCE_INLINE int Lizard_encodeLastLiterals (
+    Lizard_stream_t* ctx,
     const BYTE** ip,
     const BYTE** anchor)
 {
-    LIZARD_LOG_COMPRESS("LZ5_encodeLastLiterals LZ5_coderwords_LZ4=%d\n", ctx->params.decompressType == LZ5_coderwords_LZ4);    
+    LIZARD_LOG_COMPRESS("Lizard_encodeLastLiterals Lizard_coderwords_LZ4=%d\n", ctx->params.decompressType == Lizard_coderwords_LZ4);    
 #ifdef USE_LZ4_ONLY
-    return LZ5_encodeLastLiterals_LZ4(ctx, ip, anchor);
+    return Lizard_encodeLastLiterals_LZ4(ctx, ip, anchor);
 #else
-    if (ctx->params.decompressType == LZ5_coderwords_LZ4)
-        return LZ5_encodeLastLiterals_LZ4(ctx, ip, anchor);
+    if (ctx->params.decompressType == Lizard_coderwords_LZ4)
+        return Lizard_encodeLastLiterals_LZ4(ctx, ip, anchor);
 
-    return LZ5_encodeLastLiterals_LIZv1(ctx, ip, anchor);
+    return Lizard_encodeLastLiterals_LIZv1(ctx, ip, anchor);
 #endif
 }
 
@@ -300,7 +300,7 @@ FORCE_INLINE int LZ5_encodeLastLiterals (
 #endif
 
 
-int LZ5_verifyCompressionLevel(int compressionLevel)
+int Lizard_verifyCompressionLevel(int compressionLevel)
 {
     if (compressionLevel > LIZARD_MAX_CLEVEL) compressionLevel = LIZARD_MAX_CLEVEL;
     if (compressionLevel < LIZARD_MIN_CLEVEL) compressionLevel = LIZARD_DEFAULT_CLEVEL;
@@ -308,22 +308,22 @@ int LZ5_verifyCompressionLevel(int compressionLevel)
 }
 
 
-int LZ5_sizeofState(int compressionLevel) 
+int Lizard_sizeofState(int compressionLevel) 
 { 
-    LZ5_parameters params;
+    Lizard_parameters params;
     U32 hashTableSize, chainTableSize;
 
-    compressionLevel = LZ5_verifyCompressionLevel(compressionLevel);
-    params = LZ5_defaultParameters[compressionLevel - LIZARD_MIN_CLEVEL];
+    compressionLevel = Lizard_verifyCompressionLevel(compressionLevel);
+    params = Lizard_defaultParameters[compressionLevel - LIZARD_MIN_CLEVEL];
 //    hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog3)+((size_t)1 << params.hashLog)));
     hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog)));
     chainTableSize = (U32)(sizeof(U32)*((size_t)1 << params.contentLog));
 
-    return sizeof(LZ5_stream_t) + hashTableSize + chainTableSize + LIZARD_COMPRESS_ADD_BUF + (int)LIZARD_COMPRESS_ADD_HUF;
+    return sizeof(Lizard_stream_t) + hashTableSize + chainTableSize + LIZARD_COMPRESS_ADD_BUF + (int)LIZARD_COMPRESS_ADD_HUF;
 }
 
 
-static void LZ5_init(LZ5_stream_t* ctx, const BYTE* start)
+static void Lizard_init(Lizard_stream_t* ctx, const BYTE* start)
 {
  // No need to use memset() on tables as values are always bound checked
 #ifdef LIZARD_RESET_MEM
@@ -343,29 +343,29 @@ static void LZ5_init(LZ5_stream_t* ctx, const BYTE* start)
 
 
 /* if ctx==NULL memory is allocated and returned as value */
-LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel) 
+Lizard_stream_t* Lizard_initStream(Lizard_stream_t* ctx, int compressionLevel) 
 { 
-    LZ5_parameters params;
+    Lizard_parameters params;
     U32 hashTableSize, chainTableSize;
     void *tempPtr;
 
-    compressionLevel = LZ5_verifyCompressionLevel(compressionLevel);
-    params = LZ5_defaultParameters[compressionLevel - LIZARD_MIN_CLEVEL];
+    compressionLevel = Lizard_verifyCompressionLevel(compressionLevel);
+    params = Lizard_defaultParameters[compressionLevel - LIZARD_MIN_CLEVEL];
 //    hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog3)+((size_t)1 << params.hashLog)));
     hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog)));
     chainTableSize = (U32)(sizeof(U32)*((size_t)1 << params.contentLog));
     
     if (!ctx)
     {
-        ctx = (LZ5_stream_t*)malloc(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize + LIZARD_COMPRESS_ADD_BUF + LIZARD_COMPRESS_ADD_HUF);
-        if (!ctx) { printf("ERROR: Cannot allocate %d MB (compressionLevel=%d)\n", (int)(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize)>>20, compressionLevel); return 0; }
-        LIZARD_LOG_COMPRESS("Allocated %d MB (compressionLevel=%d)\n", (int)(sizeof(LZ5_stream_t) + hashTableSize + chainTableSize)>>20, compressionLevel); 
-        ctx->allocatedMemory = sizeof(LZ5_stream_t) + hashTableSize + chainTableSize + LIZARD_COMPRESS_ADD_BUF + (U32)LIZARD_COMPRESS_ADD_HUF;
-      //  printf("malloc from=%p to=%p hashTable=%p hashEnd=%p chainTable=%p chainEnd=%p\n", ctx, ((BYTE*)ctx)+sizeof(LZ5_stream_t) + hashTableSize + chainTableSize, ctx->hashTable, ((BYTE*)ctx->hashTable) + hashTableSize, ctx->chainTable, ((BYTE*)ctx->chainTable)+chainTableSize);
+        ctx = (Lizard_stream_t*)malloc(sizeof(Lizard_stream_t) + hashTableSize + chainTableSize + LIZARD_COMPRESS_ADD_BUF + LIZARD_COMPRESS_ADD_HUF);
+        if (!ctx) { printf("ERROR: Cannot allocate %d MB (compressionLevel=%d)\n", (int)(sizeof(Lizard_stream_t) + hashTableSize + chainTableSize)>>20, compressionLevel); return 0; }
+        LIZARD_LOG_COMPRESS("Allocated %d MB (compressionLevel=%d)\n", (int)(sizeof(Lizard_stream_t) + hashTableSize + chainTableSize)>>20, compressionLevel); 
+        ctx->allocatedMemory = sizeof(Lizard_stream_t) + hashTableSize + chainTableSize + LIZARD_COMPRESS_ADD_BUF + (U32)LIZARD_COMPRESS_ADD_HUF;
+      //  printf("malloc from=%p to=%p hashTable=%p hashEnd=%p chainTable=%p chainEnd=%p\n", ctx, ((BYTE*)ctx)+sizeof(Lizard_stream_t) + hashTableSize + chainTableSize, ctx->hashTable, ((BYTE*)ctx->hashTable) + hashTableSize, ctx->chainTable, ((BYTE*)ctx->chainTable)+chainTableSize);
     }
     
     tempPtr = ctx;
-    ctx->hashTable = (U32*)(tempPtr) + sizeof(LZ5_stream_t)/4;
+    ctx->hashTable = (U32*)(tempPtr) + sizeof(Lizard_stream_t)/4;
     ctx->hashTableSize = hashTableSize;
     ctx->chainTable = ctx->hashTable + hashTableSize/4;
     ctx->chainTableSize = chainTableSize;
@@ -389,23 +389,23 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel)
 
 
 
-LZ5_stream_t* LZ5_createStream(int compressionLevel) 
+Lizard_stream_t* Lizard_createStream(int compressionLevel) 
 { 
-    LZ5_stream_t* ctx = LZ5_initStream(NULL, compressionLevel);
+    Lizard_stream_t* ctx = Lizard_initStream(NULL, compressionLevel);
     return ctx; 
 }
 
 
 /* initialization */
-LZ5_stream_t* LZ5_resetStream(LZ5_stream_t* ctx, int compressionLevel)
+Lizard_stream_t* Lizard_resetStream(Lizard_stream_t* ctx, int compressionLevel)
 {
-    size_t wanted = LZ5_sizeofState(compressionLevel);
+    size_t wanted = Lizard_sizeofState(compressionLevel);
 
     if (ctx->allocatedMemory < wanted) {
-        LZ5_freeStream(ctx);
-        ctx = LZ5_createStream(compressionLevel);
+        Lizard_freeStream(ctx);
+        ctx = Lizard_createStream(compressionLevel);
     } else {
-        LZ5_initStream(ctx, compressionLevel);
+        Lizard_initStream(ctx, compressionLevel);
     }
 
     if (ctx) ctx->base = NULL;
@@ -413,7 +413,7 @@ LZ5_stream_t* LZ5_resetStream(LZ5_stream_t* ctx, int compressionLevel)
 }
 
 
-int LZ5_freeStream(LZ5_stream_t* ctx) 
+int Lizard_freeStream(Lizard_stream_t* ctx) 
 { 
     if (ctx) {
         free(ctx);
@@ -422,23 +422,23 @@ int LZ5_freeStream(LZ5_stream_t* ctx)
 }
 
 
-int LZ5_loadDict(LZ5_stream_t* LZ5_streamPtr, const char* dictionary, int dictSize)
+int Lizard_loadDict(Lizard_stream_t* Lizard_streamPtr, const char* dictionary, int dictSize)
 {
-    LZ5_stream_t* ctxPtr = (LZ5_stream_t*) LZ5_streamPtr;
+    Lizard_stream_t* ctxPtr = (Lizard_stream_t*) Lizard_streamPtr;
     if (dictSize > LIZARD_DICT_SIZE) {
         dictionary += dictSize - LIZARD_DICT_SIZE;
         dictSize = LIZARD_DICT_SIZE;
     }
-    LZ5_init (ctxPtr, (const BYTE*)dictionary);
-    if (dictSize >= HASH_UPDATE_LIMIT) LZ5_Insert (ctxPtr, (const BYTE*)dictionary + (dictSize - (HASH_UPDATE_LIMIT-1)));
+    Lizard_init (ctxPtr, (const BYTE*)dictionary);
+    if (dictSize >= HASH_UPDATE_LIMIT) Lizard_Insert (ctxPtr, (const BYTE*)dictionary + (dictSize - (HASH_UPDATE_LIMIT-1)));
     ctxPtr->end = (const BYTE*)dictionary + dictSize;
     return dictSize;
 }
 
 
-static void LZ5_setExternalDict(LZ5_stream_t* ctxPtr, const BYTE* newBlock)
+static void Lizard_setExternalDict(Lizard_stream_t* ctxPtr, const BYTE* newBlock)
 {
-    if (ctxPtr->end >= ctxPtr->base + HASH_UPDATE_LIMIT) LZ5_Insert (ctxPtr, ctxPtr->end - (HASH_UPDATE_LIMIT-1));   /* Referencing remaining dictionary content */
+    if (ctxPtr->end >= ctxPtr->base + HASH_UPDATE_LIMIT) Lizard_Insert (ctxPtr, ctxPtr->end - (HASH_UPDATE_LIMIT-1));   /* Referencing remaining dictionary content */
     /* Only one memory segment for extDict, so any previous extDict is lost at this stage */
     ctxPtr->lowLimit  = ctxPtr->dictLimit;
     ctxPtr->dictLimit = (U32)(ctxPtr->end - ctxPtr->base);
@@ -450,9 +450,9 @@ static void LZ5_setExternalDict(LZ5_stream_t* ctxPtr, const BYTE* newBlock)
 
 
 /* dictionary saving */
-int LZ5_saveDict (LZ5_stream_t* LZ5_streamPtr, char* safeBuffer, int dictSize)
+int Lizard_saveDict (Lizard_stream_t* Lizard_streamPtr, char* safeBuffer, int dictSize)
 {
-    LZ5_stream_t* const ctx = (LZ5_stream_t*)LZ5_streamPtr;
+    Lizard_stream_t* const ctx = (Lizard_stream_t*)Lizard_streamPtr;
     int const prefixSize = (int)(ctx->end - (ctx->base + ctx->dictLimit));
     if (dictSize > LIZARD_DICT_SIZE) dictSize = LIZARD_DICT_SIZE;
     if (dictSize < 4) dictSize = 0;
@@ -468,14 +468,14 @@ int LZ5_saveDict (LZ5_stream_t* LZ5_streamPtr, char* safeBuffer, int dictSize)
     return dictSize;
 }
 
-FORCE_INLINE int LZ5_compress_generic (
+FORCE_INLINE int Lizard_compress_generic (
     void* ctxvoid,
     const char* source,
     char* dest,
     int inputSize,
     int maxOutputSize)
 {
-    LZ5_stream_t* ctx = (LZ5_stream_t*) ctxvoid;
+    Lizard_stream_t* ctx = (Lizard_stream_t*) ctxvoid;
     size_t dictSize = (size_t)(ctx->end - ctx->base) - ctx->dictLimit;
     const BYTE* ip = (const BYTE*) source;
     BYTE* op = (BYTE*) dest;
@@ -483,7 +483,7 @@ FORCE_INLINE int LZ5_compress_generic (
     int res;
 
     (void)dictSize;
-    LIZARD_LOG_COMPRESS("LZ5_compress_generic source=%p inputSize=%d dest=%p maxOutputSize=%d cLevel=%d dictBase=%p dictSize=%d\n", source, inputSize, dest, maxOutputSize, ctx->compressionLevel, ctx->dictBase, (int)dictSize); 
+    LIZARD_LOG_COMPRESS("Lizard_compress_generic source=%p inputSize=%d dest=%p maxOutputSize=%d cLevel=%d dictBase=%p dictSize=%d\n", source, inputSize, dest, maxOutputSize, ctx->compressionLevel, ctx->dictBase, (int)dictSize); 
     *op++ = (BYTE)ctx->compressionLevel;
     maxOutputSize--; // can be lower than 0
     ctx->end += inputSize;
@@ -494,75 +494,75 @@ FORCE_INLINE int LZ5_compress_generic (
     {
         int inputPart = MIN(LIZARD_BLOCK_SIZE, inputSize);
 
-        if (ctx->huffType) LZ5_rescaleFreqs(ctx);
-        LZ5_initBlock(ctx);
+        if (ctx->huffType) Lizard_rescaleFreqs(ctx);
+        Lizard_initBlock(ctx);
         ctx->diffBase = ip;
 
         switch(ctx->params.parserType)
         {
         default:
-        case LZ5_parser_fastSmall:
-            res = LZ5_compress_fastSmall(ctx, ip, ip+inputPart); break;
-        case LZ5_parser_fast:
-            res = LZ5_compress_fast(ctx, ip, ip+inputPart); break;
-        case LZ5_parser_noChain:
-            res = LZ5_compress_noChain(ctx, ip, ip+inputPart); break;
-        case LZ5_parser_hashChain:
-            res = LZ5_compress_hashChain(ctx, ip, ip+inputPart); break;
+        case Lizard_parser_fastSmall:
+            res = Lizard_compress_fastSmall(ctx, ip, ip+inputPart); break;
+        case Lizard_parser_fast:
+            res = Lizard_compress_fast(ctx, ip, ip+inputPart); break;
+        case Lizard_parser_noChain:
+            res = Lizard_compress_noChain(ctx, ip, ip+inputPart); break;
+        case Lizard_parser_hashChain:
+            res = Lizard_compress_hashChain(ctx, ip, ip+inputPart); break;
 #ifndef USE_LZ4_ONLY
-        case LZ5_parser_fastBig:
-            res = LZ5_compress_fastBig(ctx, ip, ip+inputPart); break;
-        case LZ5_parser_priceFast:
-            res = LZ5_compress_priceFast(ctx, ip, ip+inputPart); break;
-        case LZ5_parser_lowestPrice:
-            res = LZ5_compress_lowestPrice(ctx, ip, ip+inputPart); break;
-        case LZ5_parser_optimalPrice:
-        case LZ5_parser_optimalPriceBT:
-            res = LZ5_compress_optimalPrice(ctx, ip, ip+inputPart); break;
+        case Lizard_parser_fastBig:
+            res = Lizard_compress_fastBig(ctx, ip, ip+inputPart); break;
+        case Lizard_parser_priceFast:
+            res = Lizard_compress_priceFast(ctx, ip, ip+inputPart); break;
+        case Lizard_parser_lowestPrice:
+            res = Lizard_compress_lowestPrice(ctx, ip, ip+inputPart); break;
+        case Lizard_parser_optimalPrice:
+        case Lizard_parser_optimalPriceBT:
+            res = Lizard_compress_optimalPrice(ctx, ip, ip+inputPart); break;
 #else
-        case LZ5_parser_priceFast:
-        case LZ5_parser_lowestPrice:
-        case LZ5_parser_optimalPrice:
-        case LZ5_parser_optimalPriceBT:
+        case Lizard_parser_priceFast:
+        case Lizard_parser_lowestPrice:
+        case Lizard_parser_optimalPrice:
+        case Lizard_parser_optimalPriceBT:
             res = 0;
 #endif
         }
 
-        LIZARD_LOG_COMPRESS("LZ5_compress_generic res=%d inputPart=%d \n", res, inputPart);
+        LIZARD_LOG_COMPRESS("Lizard_compress_generic res=%d inputPart=%d \n", res, inputPart);
         if (res <= 0) return res;
 
-        if (LZ5_writeBlock(ctx, ip, inputPart, &op, oend)) goto _output_error;
+        if (Lizard_writeBlock(ctx, ip, inputPart, &op, oend)) goto _output_error;
 
         ip += inputPart;
         inputSize -= inputPart;
-        LIZARD_LOG_COMPRESS("LZ5_compress_generic in=%d out=%d\n", (int)(ip-(const BYTE*)source), (int)(op-(BYTE*)dest));
+        LIZARD_LOG_COMPRESS("Lizard_compress_generic in=%d out=%d\n", (int)(ip-(const BYTE*)source), (int)(op-(BYTE*)dest));
     }
 
-    LIZARD_LOG_COMPRESS("LZ5_compress_generic total=%d\n", (int)(op-(BYTE*)dest));
+    LIZARD_LOG_COMPRESS("Lizard_compress_generic total=%d\n", (int)(op-(BYTE*)dest));
     return (int)(op-(BYTE*)dest);
 _output_error:
-    LIZARD_LOG_COMPRESS("LZ5_compress_generic ERROR\n");
+    LIZARD_LOG_COMPRESS("Lizard_compress_generic ERROR\n");
     return 0;
 }
 
 
-int LZ5_compress_continue (LZ5_stream_t* ctxPtr,
+int Lizard_compress_continue (Lizard_stream_t* ctxPtr,
                                             const char* source, char* dest,
                                             int inputSize, int maxOutputSize)
 {
     /* auto-init if forgotten */
-    if (ctxPtr->base == NULL) LZ5_init (ctxPtr, (const BYTE*) source);
+    if (ctxPtr->base == NULL) Lizard_init (ctxPtr, (const BYTE*) source);
 
     /* Check overflow */
     if ((size_t)(ctxPtr->end - ctxPtr->base) > 2 GB) {
         size_t dictSize = (size_t)(ctxPtr->end - ctxPtr->base) - ctxPtr->dictLimit;
         if (dictSize > LIZARD_DICT_SIZE) dictSize = LIZARD_DICT_SIZE;
-        LZ5_loadDict((LZ5_stream_t*)ctxPtr, (const char*)(ctxPtr->end) - dictSize, (int)dictSize);
+        Lizard_loadDict((Lizard_stream_t*)ctxPtr, (const char*)(ctxPtr->end) - dictSize, (int)dictSize);
     }
 
     /* Check if blocks follow each other */
     if ((const BYTE*)source != ctxPtr->end) 
-        LZ5_setExternalDict(ctxPtr, (const BYTE*)source);
+        Lizard_setExternalDict(ctxPtr, (const BYTE*)source);
 
     /* Check overlapping input/dictionary space */
     {   const BYTE* sourceEnd = (const BYTE*) source + inputSize;
@@ -575,32 +575,32 @@ int LZ5_compress_continue (LZ5_stream_t* ctxPtr,
         }
     }
 
-    return LZ5_compress_generic (ctxPtr, source, dest, inputSize, maxOutputSize);
+    return Lizard_compress_generic (ctxPtr, source, dest, inputSize, maxOutputSize);
 }
 
 
-int LZ5_compress_extState (void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel)
+int Lizard_compress_extState (void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel)
 {
-    LZ5_stream_t* ctx = (LZ5_stream_t*) state;
+    Lizard_stream_t* ctx = (Lizard_stream_t*) state;
     if (((size_t)(state)&(sizeof(void*)-1)) != 0) return 0;   /* Error : state is not aligned for pointers (32 or 64 bits) */
 
     /* initialize stream */
-    LZ5_initStream(ctx, compressionLevel);
-    LZ5_init ((LZ5_stream_t*)state, (const BYTE*)src);
+    Lizard_initStream(ctx, compressionLevel);
+    Lizard_init ((Lizard_stream_t*)state, (const BYTE*)src);
 
-    return LZ5_compress_generic (state, src, dst, srcSize, maxDstSize);
+    return Lizard_compress_generic (state, src, dst, srcSize, maxDstSize);
 }
 
 
-int LZ5_compress(const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel)
+int Lizard_compress(const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel)
 {
     int cSize;
-    LZ5_stream_t* statePtr = LZ5_createStream(compressionLevel);
+    Lizard_stream_t* statePtr = Lizard_createStream(compressionLevel);
 
     if (!statePtr) return 0;
-    cSize = LZ5_compress_extState(statePtr, src, dst, srcSize, maxDstSize, compressionLevel);
+    cSize = Lizard_compress_extState(statePtr, src, dst, srcSize, maxDstSize, compressionLevel);
 
-    LZ5_freeStream(statePtr);
+    Lizard_freeStream(statePtr);
     return cSize;
 }
 
@@ -608,22 +608,22 @@ int LZ5_compress(const char* src, char* dst, int srcSize, int maxDstSize, int co
 /**************************************
 *  Level1 functions
 **************************************/
-int LZ5_compress_extState_MinLevel(void* state, const char* source, char* dest, int inputSize, int maxOutputSize)
+int Lizard_compress_extState_MinLevel(void* state, const char* source, char* dest, int inputSize, int maxOutputSize)
 {
-    return LZ5_compress_extState(state, source, dest, inputSize, maxOutputSize, LIZARD_MIN_CLEVEL);
+    return Lizard_compress_extState(state, source, dest, inputSize, maxOutputSize, LIZARD_MIN_CLEVEL);
 }
 
-int LZ5_compress_MinLevel(const char* source, char* dest, int inputSize, int maxOutputSize)
+int Lizard_compress_MinLevel(const char* source, char* dest, int inputSize, int maxOutputSize)
 {
-    return LZ5_compress(source, dest, inputSize, maxOutputSize, LIZARD_MIN_CLEVEL);
+    return Lizard_compress(source, dest, inputSize, maxOutputSize, LIZARD_MIN_CLEVEL);
 }
 
-LZ5_stream_t* LZ5_createStream_MinLevel(void)
+Lizard_stream_t* Lizard_createStream_MinLevel(void)
 {
-    return LZ5_createStream(LIZARD_MIN_CLEVEL);
+    return Lizard_createStream(LIZARD_MIN_CLEVEL);
 }
 
-LZ5_stream_t* LZ5_resetStream_MinLevel(LZ5_stream_t* LZ5_stream)
+Lizard_stream_t* Lizard_resetStream_MinLevel(Lizard_stream_t* Lizard_stream)
 {
-    return LZ5_resetStream (LZ5_stream, LIZARD_MIN_CLEVEL);
+    return Lizard_resetStream (Lizard_stream, LIZARD_MIN_CLEVEL);
 }

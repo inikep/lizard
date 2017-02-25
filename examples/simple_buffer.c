@@ -3,7 +3,7 @@
  * Copyright  : Kyle Harper
  * License    : Follows same licensing as the lz5_compress.c/lz5_compress.h program at any given time.  Currently, BSD 2.
  * Description: Example program to demonstrate the basic usage of the compress/decompress functions within lz5_compress.c/lz5_compress.h.
- *              The functions you'll likely want are LZ5_compress_MinLevel and LZ5_decompress_safe.  Both of these are documented in
+ *              The functions you'll likely want are Lizard_compress_MinLevel and Lizard_decompress_safe.  Both of these are documented in
  *              the lz5_compress.h header file; I recommend reading them.
  */
 
@@ -30,8 +30,8 @@ void run_screaming(const char *message, const int code) {
 int main(void) {
   /* Introduction */
   // Below we will have a Compression and Decompression section to demonstrate.  There are a few important notes before we start:
-  //   1) The return codes of LZ5_ functions are important.  Read lz5_compress.h if you're unsure what a given code means.
-  //   2) LZ5 uses char* pointers in all LZ5_ functions.  This is baked into the API and probably not going to change.  If your
+  //   1) The return codes of Lizard_ functions are important.  Read lz5_compress.h if you're unsure what a given code means.
+  //   2) Lizard uses char* pointers in all Lizard_ functions.  This is baked into the API and probably not going to change.  If your
   //      program uses pointers that are unsigned char*, void*, or otherwise different you may need to do some casting or set the
   //      right -W compiler flags to ignore those warnings (e.g.: -Wno-pointer-sign).
 
@@ -40,19 +40,19 @@ int main(void) {
   const char *src = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
   // The compression function needs to know how many bytes of exist.  Since we're using a string, we can use strlen() + 1 (for \0).
   const size_t src_size = strlen(src) + 1;
-  // LZ5 provides a function that will tell you the maximum size of compressed output based on input data via LZ5_compressBound().
-  const size_t max_dst_size = LZ5_compressBound(src_size);
+  // Lizard provides a function that will tell you the maximum size of compressed output based on input data via Lizard_compressBound().
+  const size_t max_dst_size = Lizard_compressBound(src_size);
   // We will use that size for our destination boundary when allocating space.
   char *compressed_data = malloc(max_dst_size);
   if (compressed_data == NULL)
     run_screaming("Failed to allocate memory for *compressed_data.", 1);
-  // That's all the information and preparation LZ5 needs to compress *src into *compressed_data.  Invoke LZ5_compress_MinLevel now
+  // That's all the information and preparation Lizard needs to compress *src into *compressed_data.  Invoke Lizard_compress_MinLevel now
   // with our size values and pointers to our memory locations.  Save the return value for error checking.
   int return_value = 0;
-  return_value = LZ5_compress_MinLevel(src, compressed_data, src_size, max_dst_size);
+  return_value = Lizard_compress_MinLevel(src, compressed_data, src_size, max_dst_size);
   // Check return_value to determine what happened.
   if (return_value < 0)
-    run_screaming("A negative result from LZ5_compress_MinLevel indicates a failure trying to compress the data.  See exit code (echo $?) for value returned.", return_value);
+    run_screaming("A negative result from Lizard_compress_MinLevel indicates a failure trying to compress the data.  See exit code (echo $?) for value returned.", return_value);
   if (return_value == 0)
     run_screaming("A result of 0 means compression worked, but was stopped because the destination buffer couldn't hold all the information.", 1);
   if (return_value > 0)
@@ -70,11 +70,11 @@ int main(void) {
   char *new_src = malloc(src_size);
   if (new_src == NULL)
     run_screaming("Failed to allocate memory for *new_src.", 1);
-  // The LZ5_decompress_safe function needs to know where the compressed data is, how many bytes long it is, where the new_src
+  // The Lizard_decompress_safe function needs to know where the compressed data is, how many bytes long it is, where the new_src
   // memory location is, and how large the new_src (uncompressed) output will be.  Again, save the return_value.
-  return_value = LZ5_decompress_safe(compressed_data, new_src, compressed_data_size, src_size);
+  return_value = Lizard_decompress_safe(compressed_data, new_src, compressed_data_size, src_size);
   if (return_value < 0)
-    run_screaming("A negative result from LZ5_decompress_fast indicates a failure trying to decompress the data.  See exit code (echo $?) for value returned.", return_value);
+    run_screaming("A negative result from Lizard_decompress_fast indicates a failure trying to decompress the data.  See exit code (echo $?) for value returned.", return_value);
   if (return_value == 0)
     run_screaming("I'm not sure this function can ever return 0.  Documentation in lz5_compress.h doesn't indicate so.", 1);
   if (return_value > 0)

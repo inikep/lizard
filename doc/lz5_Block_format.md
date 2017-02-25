@@ -1,15 +1,15 @@
-LZ5 v2.x Block Format Description
+Lizard v1.x Block Format Description
 ============================
 Last revised: 2016-10-08
 Authors : Yann Collet, Przemyslaw Skibinski
 
 
 This specification is intended for developers
-willing to produce LZ5-compatible compressed data blocks
+willing to produce Lizard-compatible compressed data blocks
 using any programming language.
 
-LZ5 is an LZ77-type compressor with a fixed, byte-oriented encoding.
-There is no framing layer as it is assumed to be handled by other parts of the system (see [LZ5 Frame format]).
+Lizard is an LZ77-type compressor with a fixed, byte-oriented encoding.
+There is no framing layer as it is assumed to be handled by other parts of the system (see [Lizard Frame format]).
 This design is assumed to favor simplicity and speed.
 It helps later on for optimizations, compactness, and features.
 
@@ -18,14 +18,14 @@ not how the compressor nor decompressor actually work.
 The correctness of the decompressor should not depend
 on implementation details of the compressor, and vice versa.
 
-[LZ5 Frame format]: lz5_Frame_format.md
+[Lizard Frame format]: lz5_Frame_format.md
 
 
 Division into blocks
 --------------------
 
 The input data is divided into blocks of maximum size LIZARD_BLOCK_SIZE (which is 128 KB). The subsequent blocks use the same sliding window and are dependent on previous blocks.
-Our impementation of LZ5 compressor divides input data into blocks of size of LIZARD_BLOCK_SIZE except the last one which usually will be smaller.
+Our impementation of Lizard compressor divides input data into blocks of size of LIZARD_BLOCK_SIZE except the last one which usually will be smaller.
 The output data is a single byte 'Compression_Level' and one or more blocks in the format described below.
 
 
@@ -64,27 +64,27 @@ The single stream is either:
 - if LIZARD_FLAG_XXX is set: 3 byte `Original_Stream_Length`, 3 byte `Compressed_Stream_Length`, followed by a given number of Huffman compressed bytes
 
 
-LZ5 block decompression
+Lizard block decompression
 -----------------------
 At the beginning we have 5 streams and their sizes.
 Decompressor should iterate through `Tokens_Stream`. Each token is 1-byte long and describes how to get data from other streams. 
 If token points a stream that is already empty it means that data is corrupted.
 
 
-LZ5 token decompression
+Lizard token decompression
 -----------------------
 The token is a one byte. Token decribes:
 - how many literals should be copied from `Literals_Stream`
 - if offset should be read from `16-bit_Offsets_Stream` or `24-bit_Offsets_Stream`
 - how many bytes are part of a match and should be copied from a sliding window
 
-LZ5 uses 4 types of tokens:
+Lizard uses 4 types of tokens:
 - [0_MMMM_LLL] - 3-bit literal length (0-7+), use offset from `16-bit_Offsets_Stream`, 4-bit match length (4-15+)
 - [1_MMMM_LLL] - 3-bit literal length (0-7+), use last offset, 4-bit match length (0-15+)
 - token 31     - no literal length, use offset from `24-bit_Offsets_Stream`, match length (47+)
 - token 0-30   - no literal length, use offset from `24-bit_Offsets_Stream`, 31 match lengths (16-46)
 
-LZ5 uses different output codewords and is not compatible with LZ4. LZ4 output codewords are 3 byte long (24-bit) and look as follows:
+Lizard uses different output codewords and is not compatible with LZ4. LZ4 output codewords are 3 byte long (24-bit) and look as follows:
 - LLLL_MMMM OOOOOOOO OOOOOOOO - 16-bit offset, 4-bit match length, 4-bit literal length 
 
 
@@ -130,7 +130,7 @@ With the offset and the match length,
 the decoder can now proceed to copy the data from the already decoded buffer.
 
 
-LZ5 block epilogue
+Lizard block epilogue
 ------------------
 When all tokens are read from `Tokens_Stream` and interpreted all remaining streams should also be empty.
 Otherwise, it means that the data is corrupted. The only exception is `Literals_Stream` that should have at least 16 remaining literals what
@@ -178,4 +178,4 @@ or full optimal parsing.
 
 All these trade-off offer distinctive speed/memory/compression advantages.
 Whatever the method used by the compressor, its result will be decodable
-by any LZ5 decoder if it follows the format specification described above.
+by any Lizard decoder if it follows the format specification described above.

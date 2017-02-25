@@ -1,5 +1,5 @@
 # ################################################################
-# LZ5 - Makefile
+# Lizard - Makefile
 # Copyright (C) Yann Collet 2011-2015
 # All rights reserved.
 #
@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # You can contact the author at :
-#  - LZ5 source repository : https://github.com/inikep/lz5
+#  - Lizard source repository : https://github.com/inikep/lz5
 # ################################################################
 
 DESTDIR ?=

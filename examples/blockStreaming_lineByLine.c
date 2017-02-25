@@ -1,4 +1,4 @@
-// LZ5 streaming API example : line-by-line logfile compression
+// Lizard streaming API example : line-by-line logfile compression
 // Copyright : Takayuki Matsuoka
 
 
@@ -40,7 +40,7 @@ static void test_compress(
     size_t messageMaxBytes,
     size_t ringBufferBytes)
 {
-    LZ5_stream_t* const lz5Stream = LZ5_createStream_MinLevel();
+    Lizard_stream_t* const lz5Stream = Lizard_createStream_MinLevel();
     const size_t cmpBufBytes = LIZARD_COMPRESSBOUND(messageMaxBytes);
     char* const cmpBuf = (char*) malloc(cmpBufBytes);
     char* const inpBuf = (char*) malloc(ringBufferBytes);
@@ -64,7 +64,7 @@ static void test_compress(
 #endif
 
         {
-            const int cmpBytes = LZ5_compress_continue(lz5Stream, inpPtr, cmpBuf, inpBytes, cmpBufBytes);
+            const int cmpBytes = Lizard_compress_continue(lz5Stream, inpPtr, cmpBuf, inpBytes, cmpBufBytes);
             if (cmpBytes <= 0) break;
             write_uint16(outFp, (uint16_t) cmpBytes);
             write_bin(outFp, cmpBuf, cmpBytes);
@@ -78,7 +78,7 @@ static void test_compress(
 
     free(inpBuf);
     free(cmpBuf);
-    LZ5_freeStream(lz5Stream);
+    Lizard_freeStream(lz5Stream);
 }
 
 
@@ -88,7 +88,7 @@ static void test_decompress(
     size_t messageMaxBytes,
     size_t ringBufferBytes)
 {
-    LZ5_streamDecode_t* const lz5StreamDecode = LZ5_createStreamDecode();
+    Lizard_streamDecode_t* const lz5StreamDecode = Lizard_createStreamDecode();
     char* const cmpBuf = (char*) malloc(LIZARD_COMPRESSBOUND(messageMaxBytes));
     char* const decBuf = (char*) malloc(ringBufferBytes);
     int decOffset = 0;
@@ -103,7 +103,7 @@ static void test_decompress(
 
         {
             char* const decPtr = &decBuf[decOffset];
-            const int decBytes = LZ5_decompress_safe_continue(
+            const int decBytes = Lizard_decompress_safe_continue(
                 lz5StreamDecode, cmpBuf, decPtr, cmpBytes, (int) messageMaxBytes);
             if (decBytes <= 0) break;
             write_bin(outFp, decPtr, decBytes);
@@ -116,7 +116,7 @@ static void test_decompress(
 
     free(decBuf);
     free(cmpBuf);
-    LZ5_freeStreamDecode(lz5StreamDecode);
+    Lizard_freeStreamDecode(lz5StreamDecode);
 }
 
 

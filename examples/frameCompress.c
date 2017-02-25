@@ -1,4 +1,4 @@
-// LZ5frame API example : compress a file
+// Lizardframe API example : compress a file
 // Based on sample code from Zbigniew Jędrzejewski-Szmek
 
 #include <stdio.h>
@@ -12,21 +12,21 @@
 #define LIZARD_HEADER_SIZE 19
 #define LIZARD_FOOTER_SIZE 4
 
-static const LZ5F_preferences_t lz5_preferences = {
-	{ LZ5F_max256KB, LZ5F_blockLinked, LZ5F_noContentChecksum, LZ5F_frame, 0, { 0, 0 } },
+static const LizardF_preferences_t lz5_preferences = {
+	{ LizardF_max256KB, LizardF_blockLinked, LizardF_noContentChecksum, LizardF_frame, 0, { 0, 0 } },
 	0,   /* compression level */
 	0,   /* autoflush */
 	{ 0, 0, 0, 0 },  /* reserved, must be set to 0 */
 };
 
 static int compress_file(FILE *in, FILE *out, size_t *size_in, size_t *size_out) {
-	LZ5F_errorCode_t r;
-	LZ5F_compressionContext_t ctx;
+	LizardF_errorCode_t r;
+	LizardF_compressionContext_t ctx;
 	char *src, *buf = NULL;
 	size_t size, n, k, count_in = 0, count_out, offset = 0, frame_size;
 
-	r = LZ5F_createCompressionContext(&ctx, LIZARDF_VERSION);
-	if (LZ5F_isError(r)) {
+	r = LizardF_createCompressionContext(&ctx, LIZARDF_VERSION);
+	if (LizardF_isError(r)) {
 		printf("Failed to create context: error %zu", r);
 		return 1;
 	}
@@ -38,7 +38,7 @@ static int compress_file(FILE *in, FILE *out, size_t *size_in, size_t *size_out)
 		goto cleanup;
 	}
 
-	frame_size = LZ5F_compressBound(BUF_SIZE, &lz5_preferences);
+	frame_size = LizardF_compressBound(BUF_SIZE, &lz5_preferences);
 	size =  frame_size + LIZARD_HEADER_SIZE + LIZARD_FOOTER_SIZE;
 	buf = malloc(size);
 	if (!buf) {
@@ -46,8 +46,8 @@ static int compress_file(FILE *in, FILE *out, size_t *size_in, size_t *size_out)
 		goto cleanup;
 	}
 
-	n = offset = count_out = LZ5F_compressBegin(ctx, buf, size, &lz5_preferences);
-	if (LZ5F_isError(n)) {
+	n = offset = count_out = LizardF_compressBegin(ctx, buf, size, &lz5_preferences);
+	if (LizardF_isError(n)) {
 		printf("Failed to start compression: error %zu", n);
 		goto cleanup;
 	}
@@ -60,8 +60,8 @@ static int compress_file(FILE *in, FILE *out, size_t *size_in, size_t *size_out)
 			break;
 		count_in += k;
 
-		n = LZ5F_compressUpdate(ctx, buf + offset, size - offset, src, k, NULL);
-		if (LZ5F_isError(n)) {
+		n = LizardF_compressUpdate(ctx, buf + offset, size - offset, src, k, NULL);
+		if (LizardF_isError(n)) {
 			printf("Compression failed: error %zu", n);
 			goto cleanup;
 		}
@@ -84,8 +84,8 @@ static int compress_file(FILE *in, FILE *out, size_t *size_in, size_t *size_out)
 		}
 	}
 
-	n = LZ5F_compressEnd(ctx, buf + offset, size - offset, NULL);
-	if (LZ5F_isError(n)) {
+	n = LizardF_compressEnd(ctx, buf + offset, size - offset, NULL);
+	if (LizardF_isError(n)) {
 		printf("Failed to end compression: error %zu", n);
 		goto cleanup;
 	}
@@ -108,7 +108,7 @@ static int compress_file(FILE *in, FILE *out, size_t *size_in, size_t *size_out)
 	r = 0;
  cleanup:
 	if (ctx)
-		LZ5F_freeCompressionContext(ctx);
+		LizardF_freeCompressionContext(ctx);
 	free(src);
 	free(buf);
 	return r;

@@ -1,15 +1,15 @@
-# LZ5 Streaming API Basics
+# Lizard Streaming API Basics
 by *Takayuki Matsuoka*
-## LZ5 API sets
+## Lizard API sets
 
-LZ5 has the following API sets :
+Lizard has the following API sets :
 
  - "Auto Framing" API (lz5frame.h) :
    This is most recommended API for usual application.
-   It guarantees interoperability with other LZ5 framing format compliant tools/libraries
-   such as LZ5 command line utility, node-lz5, etc.
+   It guarantees interoperability with other Lizard framing format compliant tools/libraries
+   such as Lizard command line utility, node-lz5, etc.
  - "Block" API : This is recommended for simple purpose.
-   It compress single raw memory block to LZ5 memory block and vice versa.
+   It compress single raw memory block to Lizard memory block and vice versa.
  - "Streaming" API : This is designed for complex thing.
    For example, compress huge stream data in restricted memory environment.
 
@@ -20,9 +20,9 @@ But if you want to write advanced application, it's time to use Block or Streami
 ## What is difference between Block and Streaming API ?
 
 Block API (de)compresses single contiguous memory block.
-In other words, LZ5 library find redundancy from single contiguous memory block.
+In other words, Lizard library find redundancy from single contiguous memory block.
 Streaming API does same thing but (de)compress multiple adjacent contiguous memory block.
-So LZ5 library could find more redundancy than Block API.
+So Lizard library could find more redundancy than Block API.
 
 The following figure shows difference between API and block sizes.
 In these figures, original data is splitted to 4KiBytes contiguous chunks.
@@ -84,4 +84,4 @@ This dependency improves compression ratio.
 For the efficiency, Streaming API doesn't keep mirror copy of dependent (de)compressed memory.
 This means users should keep these dependent (de)compressed memory explicitly.
 Usually, "Dependent memory" is previous adjacent contiguous memory up to 64KiBytes.
-LZ5 will not access further memories.
+Lizard will not access further memories.

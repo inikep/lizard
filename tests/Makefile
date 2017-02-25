@@ -1,5 +1,5 @@
 # ##########################################################################
-# LZ5 programs - Makefile
+# Lizard programs - Makefile
 # Copyright (C) Yann Collet 2011-2016
 # Copyright (C) Przemyslaw Skibinski 2016
 #
@@ -20,13 +20,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # You can contact the author at :
-#  - LZ5 source repository : https://github.com/inikep/lz5
+#  - Lizard source repository : https://github.com/inikep/lz5
 # ##########################################################################
 # fuzzer  : Test tool, to check lz5 integrity on target platform
 # fuzzer32: Same as fuzzer, but forced to compile in 32-bits mode
 # frametest  : Test tool, to check lz5frame integrity on target platform
 # frametest32: Same as frametest, but forced to compile in 32-bits mode
-# fullbench  : Precisely measure speed for each LZ5 function variant
+# fullbench  : Precisely measure speed for each Lizard function variant
 # fullbench32: Same as fullbench, but forced to compile in 32-bits mode
 # datagen : generates synthetic data samples for tests & benchmarks
 # ##########################################################################
@@ -47,7 +47,7 @@ CFLAGS  += -Wall -Wextra -Wundef -Wcast-qual -Wcast-align -Wshadow -Wswitch-enum
            -Wdeclaration-after-statement -Wstrict-prototypes \
            -Wpointer-arith -Wstrict-aliasing=1
 CFLAGS  += $(MOREFLAGS)
-CPPFLAGS:= -I$(LIBDIR) -DXXH_NAMESPACE=LZ5_
+CPPFLAGS:= -I$(LIBDIR) -DXXH_NAMESPACE=Lizard_
 FLAGS   := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
 

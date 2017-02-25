@@ -1,5 +1,5 @@
 /*
-  LZ5io.h - LZ5 File/Stream Interface
+  Lizardio.h - Lizard File/Stream Interface
   Copyright (C) Yann Collet 2011-2015
   GPL v2 License
 
@@ -18,12 +18,12 @@
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
   You can contact the author at :
-  - LZ5 source repository : https://github.com/inikep/lz5
+  - Lizard source repository : https://github.com/inikep/lz5
 */
 /*
   Note : this is stand-alone program.
-  It is not part of LZ5 compression library, it is a user code of the LZ5 library.
-  - The license of LZ5 library is BSD.
+  It is not part of Lizard compression library, it is a user code of the Lizard library.
+  - The license of Lizard library is BSD.
   - The license of xxHash library is BSD.
   - The license of this source file is GPLv2.
 */
@@ -52,11 +52,11 @@ static const char nulmark[] = "/dev/null";
 /* ****************** Functions ********************* */
 /* ************************************************** */
 
-int LZ5IO_compressFilename  (const char* input_filename, const char* output_filename, int compressionlevel);
-int LZ5IO_decompressFilename(const char* input_filename, const char* output_filename);
+int LizardIO_compressFilename  (const char* input_filename, const char* output_filename, int compressionlevel);
+int LizardIO_decompressFilename(const char* input_filename, const char* output_filename);
 
-int LZ5IO_compressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix, int compressionlevel);
-int LZ5IO_decompressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix);
+int LizardIO_compressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix, int compressionlevel);
+int LizardIO_decompressMultipleFilenames(const char** inFileNamesTable, int ifntSize, const char* suffix);
 
 
 /* ************************************************** */
@@ -65,36 +65,36 @@ int LZ5IO_decompressMultipleFilenames(const char** inFileNamesTable, int ifntSiz
 
 /* Default setting : overwrite = 1;
    return : overwrite mode (0/1) */
-int LZ5IO_setOverwrite(int yes);
+int LizardIO_setOverwrite(int yes);
 
 /* Default setting : testMode = 0;
    return : testMode (0/1) */
-int LZ5IO_setTestMode(int yes);
+int LizardIO_setTestMode(int yes);
 
 /* blockSizeID : valid values : 4-5-6-7
    return : 0 if error, blockSize if OK */
-size_t LZ5IO_setBlockSizeID(unsigned blockSizeID);
+size_t LizardIO_setBlockSizeID(unsigned blockSizeID);
 
 /* Default setting : independent blocks */
-typedef enum { LZ5IO_blockLinked=0, LZ5IO_blockIndependent} LZ5IO_blockMode_t;
-int LZ5IO_setBlockMode(LZ5IO_blockMode_t blockMode);
+typedef enum { LizardIO_blockLinked=0, LizardIO_blockIndependent} LizardIO_blockMode_t;
+int LizardIO_setBlockMode(LizardIO_blockMode_t blockMode);
 
 /* Default setting : no block checksum */
-int LZ5IO_setBlockChecksumMode(int xxhash);
+int LizardIO_setBlockChecksumMode(int xxhash);
 
 /* Default setting : stream checksum enabled */
-int LZ5IO_setStreamChecksumMode(int xxhash);
+int LizardIO_setStreamChecksumMode(int xxhash);
 
 /* Default setting : 0 (no notification) */
-int LZ5IO_setNotificationLevel(int level);
+int LizardIO_setNotificationLevel(int level);
 
 /* Default setting : 0 (disabled) */
-int LZ5IO_setSparseFile(int enable);
+int LizardIO_setSparseFile(int enable);
 
 /* Default setting : 0 (disabled) */
-int LZ5IO_setContentSize(int enable);
+int LizardIO_setContentSize(int enable);
 
-void LZ5IO_setRemoveSrcFile(unsigned flag);
+void LizardIO_setRemoveSrcFile(unsigned flag);
 
 
 #endif  /* LIZARDIO_H_237902873 */

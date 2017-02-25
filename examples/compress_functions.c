@@ -2,48 +2,48 @@
  * compress_functions.c
  * Copyright  : Kyle Harper
  * License    : Follows same licensing as the lz5_compress.c/lz5_compress.h program at any given time.  Currently, BSD 2.
- * Description: A program to demonstrate the various compression functions involved in when using LZ5_compress_MinLevel().  The idea
+ * Description: A program to demonstrate the various compression functions involved in when using Lizard_compress_MinLevel().  The idea
  *              is to show how each step in the call stack can be used directly, if desired.  There is also some benchmarking for
  *              each function to demonstrate the (probably lack of) performance difference when jumping the stack.
  *              (If you're new to lz5, please read simple_buffer.c to understand the fundamentals)
  *
- *              The call stack (before theoretical compiler optimizations) for LZ5_compress_MinLevel is as follows:
- *                LZ5_compress_MinLevel
- *                  LZ5_compress_fast
- *                    LZ5_compress_extState_MinLevel
- *                      LZ5_compress_generic
+ *              The call stack (before theoretical compiler optimizations) for Lizard_compress_MinLevel is as follows:
+ *                Lizard_compress_MinLevel
+ *                  Lizard_compress_fast
+ *                    Lizard_compress_extState_MinLevel
+ *                      Lizard_compress_generic
  *
- *              LZ5_compress_MinLevel()
+ *              Lizard_compress_MinLevel()
  *                This is the recommended function for compressing data.  It will serve as the baseline for comparison.
- *              LZ5_compress_fast()
+ *              Lizard_compress_fast()
  *                Despite its name, it's not a "fast" version of compression.  It simply decides if HEAPMODE is set and either
  *                allocates memory on the heap for a struct or creates the struct directly on the stack.  Stack access is generally
  *                faster but this function itself isn't giving that advantage, it's just some logic for compile time.
- *              LZ5_compress_extState_MinLevel()
+ *              Lizard_compress_extState_MinLevel()
  *                This simply accepts all the pointers and values collected thus far and adds logic to determine how
- *                LZ5_compress_generic should be invoked; specifically: can the source fit into a single pass as determined by
- *                LZ5_64Klimit.
- *              LZ5_compress_generic()
+ *                Lizard_compress_generic should be invoked; specifically: can the source fit into a single pass as determined by
+ *                Lizard_64Klimit.
+ *              Lizard_compress_generic()
  *                As the name suggests, this is the generic function that ultimately does most of the heavy lifting.  Calling this
  *                directly can help avoid some test cases and branching which might be useful in some implementation-specific
  *                situations, but you really need to know what you're doing AND what you're asking lz5 to do!  You also need a
  *                wrapper function because this function isn't exposed with lz5_compress.h.
  *
  *              The call stack for decompression functions is shallow.  There are 2 options:
- *                LZ5_decompress_safe  ||  LZ5_decompress_fast
- *                  LZ5_decompress_generic
+ *                Lizard_decompress_safe  ||  Lizard_decompress_fast
+ *                  Lizard_decompress_generic
  *
- *               LZ5_decompress_safe
+ *               Lizard_decompress_safe
  *                 This is the recommended function for decompressing data.  It is considered safe because the caller specifies
  *                 both the size of the compresssed buffer to read as well as the maximum size of the output (decompressed) buffer
  *                 instead of just the latter.
- *               LZ5_decompress_generic
- *                 This is the generic function that both of the LZ5_decompress_* functions above end up calling.  Calling this
+ *               Lizard_decompress_generic
+ *                 This is the generic function that both of the Lizard_decompress_* functions above end up calling.  Calling this
  *                 directly is not advised, period.  Furthermore, it is a static inline function in lz5_compress.c, so there isn't a symbol
  *                 exposed for anyone using lz5_compress.h to utilize.
  *
  *               Special Note About Decompression:
- *               Using the LZ5_decompress_safe() function protects against malicious (user) input. 
+ *               Using the Lizard_decompress_safe() function protects against malicious (user) input. 
  */
 
 /* Since lz5 compiles with c99 and not gnu/std99 we need to enable POSIX linking for time.h structs and functions. */
@@ -97,7 +97,7 @@ void usage(const char *message) {
 
 
 /*
- * Runs the benchmark for LZ5_compress_* based on function_id.
+ * Runs the benchmark for Lizard_compress_* based on function_id.
  */
 uint64_t bench(
     const char *known_good_dst,
@@ -113,56 +113,56 @@ uint64_t bench(
   int rv = 0;
   const int warm_up = 5000;
   struct timespec start, end;
-  LZ5_stream_t* state = LZ5_createStream_MinLevel();
+  Lizard_stream_t* state = Lizard_createStream_MinLevel();
   if (!state) return;
 
   // Select the right function to perform the benchmark on.  We perform 5000 initial loops to warm the cache and ensure that dst
   // remains matching to known_good_dst between successive calls.
   switch(function_id) {
     case ID__LIZARD_COMPRESS_DEFAULT:
-      printf("Starting benchmark for function: LZ5_compress_MinLevel()\n");
+      printf("Starting benchmark for function: Lizard_compress_MinLevel()\n");
       for(int junk=0; junk<warm_up; junk++)
-        rv = LZ5_compress_MinLevel(src, dst, src_size, max_dst_size);
+        rv = Lizard_compress_MinLevel(src, dst, src_size, max_dst_size);
       if (rv < 1)
-        run_screaming("Couldn't run LZ5_compress_MinLevel()... error code received is in exit code.", rv);
+        run_screaming("Couldn't run Lizard_compress_MinLevel()... error code received is in exit code.", rv);
       if (memcmp(known_good_dst, dst, max_dst_size) != 0)
         run_screaming("According to memcmp(), the compressed dst we got doesn't match the known_good_dst... ruh roh.", 1);
       clock_gettime(CLOCK_MONOTONIC, &start);
       for (int i=1; i<=iterations; i++)
-        LZ5_compress_MinLevel(src, dst, src_size, max_dst_size);
+        Lizard_compress_MinLevel(src, dst, src_size, max_dst_size);
       break;
 
-//    Disabled until LZ5_compress_generic() is exposed in the header.
+//    Disabled until Lizard_compress_generic() is exposed in the header.
 //    case ID__LIZARD_COMPRESS_GENERIC:
-//      printf("Starting benchmark for function: LZ5_compress_generic()\n");
-//      LZ5_resetStream_MinLevel((LZ5_stream_t*)state);
+//      printf("Starting benchmark for function: Lizard_compress_generic()\n");
+//      Lizard_resetStream_MinLevel((Lizard_stream_t*)state);
 //      for(int junk=0; junk<warm_up; junk++) {
-//        LZ5_resetStream_MinLevel((LZ5_stream_t*)state);
-//        //rv = LZ5_compress_generic_wrapper(state, src, dst, src_size, max_dst_size, notLimited, byU16, noDict, noDictIssue);
-//        LZ5_compress_generic_wrapper(state, src, dst, src_size, max_dst_size);
+//        Lizard_resetStream_MinLevel((Lizard_stream_t*)state);
+//        //rv = Lizard_compress_generic_wrapper(state, src, dst, src_size, max_dst_size, notLimited, byU16, noDict, noDictIssue);
+//        Lizard_compress_generic_wrapper(state, src, dst, src_size, max_dst_size);
 //      }
 //      if (rv < 1)
-//        run_screaming("Couldn't run LZ5_compress_generic()... error code received is in exit code.", rv);
+//        run_screaming("Couldn't run Lizard_compress_generic()... error code received is in exit code.", rv);
 //      if (memcmp(known_good_dst, dst, max_dst_size) != 0)
 //        run_screaming("According to memcmp(), the compressed dst we got doesn't match the known_good_dst... ruh roh.", 1);
 //      for (int i=1; i<=iterations; i++) {
-//        LZ5_resetStream_MinLevel((LZ5_stream_t*)state);
-//        //LZ5_compress_generic_wrapper(state, src, dst, src_size, max_dst_size, notLimited, byU16, noDict, noDictIssue, acceleration);
-//        LZ5_compress_generic_wrapper(state, src, dst, src_size, max_dst_size, acceleration);
+//        Lizard_resetStream_MinLevel((Lizard_stream_t*)state);
+//        //Lizard_compress_generic_wrapper(state, src, dst, src_size, max_dst_size, notLimited, byU16, noDict, noDictIssue, acceleration);
+//        Lizard_compress_generic_wrapper(state, src, dst, src_size, max_dst_size, acceleration);
 //      }
 //      break;
 
     case ID__LIZARD_DECOMPRESS_SAFE:
-      printf("Starting benchmark for function: LZ5_decompress_safe()\n");
+      printf("Starting benchmark for function: Lizard_decompress_safe()\n");
       for(int junk=0; junk<warm_up; junk++)
-        rv = LZ5_decompress_safe(src, dst, comp_size, src_size);
+        rv = Lizard_decompress_safe(src, dst, comp_size, src_size);
       if (rv < 1)
-        run_screaming("Couldn't run LZ5_decompress_safe()... error code received is in exit code.", rv);
+        run_screaming("Couldn't run Lizard_decompress_safe()... error code received is in exit code.", rv);
       if (memcmp(known_good_dst, dst, src_size) != 0)
         run_screaming("According to memcmp(), the compressed dst we got doesn't match the known_good_dst... ruh roh.", 1);
       clock_gettime(CLOCK_MONOTONIC, &start);
       for (int i=1; i<=iterations; i++)
-        LZ5_decompress_safe(src, dst, comp_size, src_size);
+        Lizard_decompress_safe(src, dst, comp_size, src_size);
       break;
 
     default:
@@ -174,7 +174,7 @@ uint64_t bench(
   clock_gettime(CLOCK_MONOTONIC, &end);
   time_taken = BILLION *(end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
 
-  LZ5_freeStream(state);
+  Lizard_freeStream(state);
   return time_taken;
 }
 
@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
   const char *hc_src = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
   // Set and derive sizes.  Since we're using strings, use strlen() + 1 for \0.
   const size_t src_size = strlen(src) + 1;
-  const size_t max_dst_size = LZ5_compressBound(src_size);
+  const size_t max_dst_size = Lizard_compressBound(src_size);
   int bytes_returned = 0;
   // Now build allocations for the data we'll be playing with.
   char *dst               = calloc(1, max_dst_size);
@@ -211,56 +211,56 @@ int main(int argc, char **argv) {
     run_screaming("Couldn't allocate memory for the destination buffers.  Sad :(", 1);
 
   // Create known-good buffers to verify our tests with other functions will produce the same results.
-  bytes_returned = LZ5_compress_MinLevel(src, known_good_dst, src_size, max_dst_size);
+  bytes_returned = Lizard_compress_MinLevel(src, known_good_dst, src_size, max_dst_size);
   if (bytes_returned < 1)
     run_screaming("Couldn't create a known-good destination buffer for comparison... this is bad.", 1);
   const size_t src_comp_size = bytes_returned;
-  bytes_returned = LZ5_compress_MinLevel(hc_src, known_good_hc_dst, src_size, max_dst_size);
+  bytes_returned = Lizard_compress_MinLevel(hc_src, known_good_hc_dst, src_size, max_dst_size);
   if (bytes_returned < 1)
     run_screaming("Couldn't create a known-good (highly compressible) destination buffer for comparison... this is bad.", 1);
   const size_t hc_src_comp_size = bytes_returned;
 
 
-  /* LZ5_compress_MinLevel() */
+  /* Lizard_compress_MinLevel() */
   // This is the default function so we don't need to demonstrate how to use it.  See basics.c if you need more basal information.
 
-  /* LZ5_compress_extState_MinLevel() */
-  // Using this function directly requires that we build an LZ5_stream_t struct ourselves.  We do NOT have to reset it ourselves.
+  /* Lizard_compress_extState_MinLevel() */
+  // Using this function directly requires that we build an Lizard_stream_t struct ourselves.  We do NOT have to reset it ourselves.
   memset(dst, 0, max_dst_size);
-  LZ5_stream_t* state = LZ5_createStream_MinLevel();
+  Lizard_stream_t* state = Lizard_createStream_MinLevel();
   if (!state) return;
-  bytes_returned = LZ5_compress_extState_MinLevel(state, src, dst, src_size, max_dst_size, 1);
+  bytes_returned = Lizard_compress_extState_MinLevel(state, src, dst, src_size, max_dst_size, 1);
   if (bytes_returned < 1)
-    run_screaming("Failed to compress src using LZ5_compress_extState_MinLevel.  echo $? for return code.", bytes_returned);
+    run_screaming("Failed to compress src using Lizard_compress_extState_MinLevel.  echo $? for return code.", bytes_returned);
   if (memcmp(dst, known_good_dst, bytes_returned) != 0)
-    run_screaming("According to memcmp(), the value we got in dst from LZ5_compress_extState_MinLevel doesn't match the known-good value.  This is bad.", 1);
+    run_screaming("According to memcmp(), the value we got in dst from Lizard_compress_extState_MinLevel doesn't match the known-good value.  This is bad.", 1);
 
-  /* LZ5_compress_generic */
-  // When you can exactly control the inputs and options of your LZ5 needs, you can use LZ5_compress_generic and fixed (const)
+  /* Lizard_compress_generic */
+  // When you can exactly control the inputs and options of your Lizard needs, you can use Lizard_compress_generic and fixed (const)
   // values for the enum types such as dictionary and limitations.  Any other direct-use is probably a bad idea.
   //
-  // That said, the LZ5_compress_generic() function is 'static inline' and does not have a prototype in lz5_compress.h to expose a symbol
+  // That said, the Lizard_compress_generic() function is 'static inline' and does not have a prototype in lz5_compress.h to expose a symbol
   // for it.  In other words: we can't access it directly.  I don't want to submit a PR that modifies lz5_compress.c/h.  Yann and others can
   // do that if they feel it's worth expanding this example.
   //
   // I will, however, leave a skeleton of what would be required to use it directly:
   /*
     memset(dst, 0, max_dst_size);
-    // LZ5_stream_t state:  is already declared above.  We can reuse it BUT we have to reset the stream ourselves between each call.
-    LZ5_resetStream_MinLevel((LZ5_stream_t *)state);
+    // Lizard_stream_t state:  is already declared above.  We can reuse it BUT we have to reset the stream ourselves between each call.
+    Lizard_resetStream_MinLevel((Lizard_stream_t *)state);
     // Since src size is small we know the following enums will be used:  notLimited (0), byU16 (2), noDict (0), noDictIssue (0).
-    bytes_returned = LZ5_compress_generic(state, src, dst, src_size, max_dst_size, notLimited, byU16, noDict, noDictIssue, 1);
+    bytes_returned = Lizard_compress_generic(state, src, dst, src_size, max_dst_size, notLimited, byU16, noDict, noDictIssue, 1);
     if (bytes_returned < 1)
-      run_screaming("Failed to compress src using LZ5_compress_generic.  echo $? for return code.", bytes_returned);
+      run_screaming("Failed to compress src using Lizard_compress_generic.  echo $? for return code.", bytes_returned);
     if (memcmp(dst, known_good_dst, bytes_returned) != 0)
-      run_screaming("According to memcmp(), the value we got in dst from LZ5_compress_generic doesn't match the known-good value.  This is bad.", 1);
+      run_screaming("According to memcmp(), the value we got in dst from Lizard_compress_generic doesn't match the known-good value.  This is bad.", 1);
   */
-  LZ5_freeStream(state);
+  Lizard_freeStream(state);
 
 
   /* Benchmarking */
   /* Now we'll run a few rudimentary benchmarks with each function to demonstrate differences in speed based on the function used.
-   * Remember, we cannot call LZ5_compress_generic() directly (yet) so it's disabled.
+   * Remember, we cannot call Lizard_compress_generic() directly (yet) so it's disabled.
    */
   // Suite A - Normal Compressibility
   char *dst_d = calloc(1, src_size);
@@ -285,17 +285,17 @@ int main(int argc, char **argv) {
   printf("%s", separator);
   printf(header_format, "Source", "Function Benchmarked", "Total Seconds", "Iterations/sec", "ns/Iteration", "% of default");
   printf("%s", separator);
-  printf(format, "Normal Text", "LZ5_compress_MinLevel()",       (double)time_taken__default       / BILLION, (int)(iterations / ((double)time_taken__default       /BILLION)), time_taken__default       / iterations, (double)time_taken__default       * 100 / time_taken__default);
-  printf(format, "Normal Text", "LZ5_compress_fast()",          (double)time_taken__fast          / BILLION, (int)(iterations / ((double)time_taken__fast          /BILLION)), time_taken__fast          / iterations, (double)time_taken__fast          * 100 / time_taken__default);
-  printf(format, "Normal Text", "LZ5_compress_extState_MinLevel()", (double)time_taken__fast_extstate / BILLION, (int)(iterations / ((double)time_taken__fast_extstate /BILLION)), time_taken__fast_extstate / iterations, (double)time_taken__fast_extstate * 100 / time_taken__default);
-  //printf(format, "Normal Text", "LZ5_compress_generic()",       (double)time_taken__generic       / BILLION, (int)(iterations / ((double)time_taken__generic       /BILLION)), time_taken__generic       / iterations, (double)time_taken__generic       * 100 / time_taken__default);
-  printf(format, "Normal Text", "LZ5_decompress_safe()",        (double)time_taken__decomp_safe   / BILLION, (int)(iterations / ((double)time_taken__decomp_safe   /BILLION)), time_taken__decomp_safe   / iterations, (double)time_taken__decomp_safe   * 100 / time_taken__default);
+  printf(format, "Normal Text", "Lizard_compress_MinLevel()",       (double)time_taken__default       / BILLION, (int)(iterations / ((double)time_taken__default       /BILLION)), time_taken__default       / iterations, (double)time_taken__default       * 100 / time_taken__default);
+  printf(format, "Normal Text", "Lizard_compress_fast()",          (double)time_taken__fast          / BILLION, (int)(iterations / ((double)time_taken__fast          /BILLION)), time_taken__fast          / iterations, (double)time_taken__fast          * 100 / time_taken__default);
+  printf(format, "Normal Text", "Lizard_compress_extState_MinLevel()", (double)time_taken__fast_extstate / BILLION, (int)(iterations / ((double)time_taken__fast_extstate /BILLION)), time_taken__fast_extstate / iterations, (double)time_taken__fast_extstate * 100 / time_taken__default);
+  //printf(format, "Normal Text", "Lizard_compress_generic()",       (double)time_taken__generic       / BILLION, (int)(iterations / ((double)time_taken__generic       /BILLION)), time_taken__generic       / iterations, (double)time_taken__generic       * 100 / time_taken__default);
+  printf(format, "Normal Text", "Lizard_decompress_safe()",        (double)time_taken__decomp_safe   / BILLION, (int)(iterations / ((double)time_taken__decomp_safe   /BILLION)), time_taken__decomp_safe   / iterations, (double)time_taken__decomp_safe   * 100 / time_taken__default);
   printf(header_format, "", "", "", "", "", "");
-  printf(format, "Compressible", "LZ5_compress_MinLevel()",       (double)time_taken_hc__default       / BILLION, (int)(iterations / ((double)time_taken_hc__default       /BILLION)), time_taken_hc__default       / iterations, (double)time_taken_hc__default       * 100 / time_taken_hc__default);
-  printf(format, "Compressible", "LZ5_compress_fast()",          (double)time_taken_hc__fast          / BILLION, (int)(iterations / ((double)time_taken_hc__fast          /BILLION)), time_taken_hc__fast          / iterations, (double)time_taken_hc__fast          * 100 / time_taken_hc__default);
-  printf(format, "Compressible", "LZ5_compress_extState_MinLevel()", (double)time_taken_hc__fast_extstate / BILLION, (int)(iterations / ((double)time_taken_hc__fast_extstate /BILLION)), time_taken_hc__fast_extstate / iterations, (double)time_taken_hc__fast_extstate * 100 / time_taken_hc__default);
-  //printf(format, "Compressible", "LZ5_compress_generic()",       (double)time_taken_hc__generic       / BILLION, (int)(iterations / ((double)time_taken_hc__generic       /BILLION)), time_taken_hc__generic       / iterations, (double)time_taken_hc__generic       * 100 / time_taken_hc__default);
-  printf(format, "Compressible", "LZ5_decompress_safe()",        (double)time_taken_hc__decomp_safe   / BILLION, (int)(iterations / ((double)time_taken_hc__decomp_safe   /BILLION)), time_taken_hc__decomp_safe   / iterations, (double)time_taken_hc__decomp_safe   * 100 / time_taken_hc__default);
+  printf(format, "Compressible", "Lizard_compress_MinLevel()",       (double)time_taken_hc__default       / BILLION, (int)(iterations / ((double)time_taken_hc__default       /BILLION)), time_taken_hc__default       / iterations, (double)time_taken_hc__default       * 100 / time_taken_hc__default);
+  printf(format, "Compressible", "Lizard_compress_fast()",          (double)time_taken_hc__fast          / BILLION, (int)(iterations / ((double)time_taken_hc__fast          /BILLION)), time_taken_hc__fast          / iterations, (double)time_taken_hc__fast          * 100 / time_taken_hc__default);
+  printf(format, "Compressible", "Lizard_compress_extState_MinLevel()", (double)time_taken_hc__fast_extstate / BILLION, (int)(iterations / ((double)time_taken_hc__fast_extstate /BILLION)), time_taken_hc__fast_extstate / iterations, (double)time_taken_hc__fast_extstate * 100 / time_taken_hc__default);
+  //printf(format, "Compressible", "Lizard_compress_generic()",       (double)time_taken_hc__generic       / BILLION, (int)(iterations / ((double)time_taken_hc__generic       /BILLION)), time_taken_hc__generic       / iterations, (double)time_taken_hc__generic       * 100 / time_taken_hc__default);
+  printf(format, "Compressible", "Lizard_decompress_safe()",        (double)time_taken_hc__decomp_safe   / BILLION, (int)(iterations / ((double)time_taken_hc__decomp_safe   /BILLION)), time_taken_hc__decomp_safe   / iterations, (double)time_taken_hc__decomp_safe   * 100 / time_taken_hc__default);
   printf("%s", separator);
   printf("\n");
   printf("All done, ran %d iterations per test.\n", iterations);

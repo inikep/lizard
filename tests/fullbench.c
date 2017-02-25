@@ -19,7 +19,7 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     You can contact the author at :
-    - LZ5 source repository : https://github.com/inikep/lz5
+    - Lizard source repository : https://github.com/inikep/lz5
 */
 
 /**************************************
@@ -55,7 +55,7 @@
 
 #include "lz5_compress.h"
 #include "lz5_decompress.h"
-#include "lz5_common.h"  /* LZ5_compress_MinLevel, LZ5_createStream_MinLevel */
+#include "lz5_common.h"  /* Lizard_compress_MinLevel, Lizard_createStream_MinLevel */
 #include "lz5frame.h"
 
 #include "xxhash/xxhash.h"
@@ -74,7 +74,7 @@
 /**************************************
 *  Constants
 **************************************/
-#define PROGRAM_DESCRIPTION "LZ5 speed analyzer"
+#define PROGRAM_DESCRIPTION "Lizard speed analyzer"
 #define AUTHOR "Yann Collet"
 #define WELCOME_MESSAGE "*** %s v%s %i-bits, by %s ***\n", PROGRAM_DESCRIPTION, LIZARD_VERSION_STRING, (int)(sizeof(void*)*8), AUTHOR
 
@@ -190,130 +190,130 @@ static U64 BMK_GetFileSize(const char* infilename)
 /*********************************************************
 *  Benchmark function
 *********************************************************/
-LZ5_stream_t *LZ5_stream;
-static void local_LZ5_createStream(void)
+Lizard_stream_t *Lizard_stream;
+static void local_Lizard_createStream(void)
 {
-    LZ5_stream = LZ5_resetStream_MinLevel(LZ5_stream);
+    Lizard_stream = Lizard_resetStream_MinLevel(Lizard_stream);
 }
 
-static int local_LZ5_saveDict(const char* in, char* out, int inSize)
+static int local_Lizard_saveDict(const char* in, char* out, int inSize)
 {
     (void)in;
-    return LZ5_saveDict(LZ5_stream, out, inSize);
+    return Lizard_saveDict(Lizard_stream, out, inSize);
 }
 
-static int local_LZ5_compress_default_large(const char* in, char* out, int inSize)
+static int local_Lizard_compress_default_large(const char* in, char* out, int inSize)
 {
-    return LZ5_compress_MinLevel(in, out, inSize, LZ5_compressBound(inSize));
+    return Lizard_compress_MinLevel(in, out, inSize, Lizard_compressBound(inSize));
 }
 
-static int local_LZ5_compress_default_small(const char* in, char* out, int inSize)
+static int local_Lizard_compress_default_small(const char* in, char* out, int inSize)
 {
-    return LZ5_compress_MinLevel(in, out, inSize, LZ5_compressBound(inSize)-1);
+    return Lizard_compress_MinLevel(in, out, inSize, Lizard_compressBound(inSize)-1);
 }
 
-static int local_LZ5_compress_withState(const char* in, char* out, int inSize)
+static int local_Lizard_compress_withState(const char* in, char* out, int inSize)
 {
-    return LZ5_compress_extState_MinLevel(LZ5_stream, in, out, inSize, LZ5_compressBound(inSize));
+    return Lizard_compress_extState_MinLevel(Lizard_stream, in, out, inSize, Lizard_compressBound(inSize));
 }
 
-static int local_LZ5_compress_limitedOutput_withState(const char* in, char* out, int inSize)
+static int local_Lizard_compress_limitedOutput_withState(const char* in, char* out, int inSize)
 {
-    return LZ5_compress_extState_MinLevel(LZ5_stream, in, out, inSize, LZ5_compressBound(inSize)-1);
+    return Lizard_compress_extState_MinLevel(Lizard_stream, in, out, inSize, Lizard_compressBound(inSize)-1);
 }
 
-static int local_LZ5_compress_continue(const char* in, char* out, int inSize)
+static int local_Lizard_compress_continue(const char* in, char* out, int inSize)
 {
-    return LZ5_compress_continue(LZ5_stream, in, out, inSize, LZ5_compressBound(inSize));
+    return Lizard_compress_continue(Lizard_stream, in, out, inSize, Lizard_compressBound(inSize));
 }
 
-static int local_LZ5_compress_limitedOutput_continue(const char* in, char* out, int inSize)
+static int local_Lizard_compress_limitedOutput_continue(const char* in, char* out, int inSize)
 {
-    return LZ5_compress_continue(LZ5_stream, in, out, inSize, LZ5_compressBound(inSize)-1);
+    return Lizard_compress_continue(Lizard_stream, in, out, inSize, Lizard_compressBound(inSize)-1);
 }
 
 
 /* HC compression functions */
-LZ5_stream_t* LZ5_streamPtr;
-static void local_LZ5_resetStream(void)
+Lizard_stream_t* Lizard_streamPtr;
+static void local_Lizard_resetStream(void)
 {
-    LZ5_streamPtr = LZ5_resetStream(LZ5_streamPtr, 0);
+    Lizard_streamPtr = Lizard_resetStream(Lizard_streamPtr, 0);
 }
 
-static int local_LZ5_saveDictHC(const char* in, char* out, int inSize)
+static int local_Lizard_saveDictHC(const char* in, char* out, int inSize)
 {
     (void)in;
-    return LZ5_saveDict(LZ5_streamPtr, out, inSize);
+    return Lizard_saveDict(Lizard_streamPtr, out, inSize);
 }
 
-static int local_LZ5_compress_extState(const char* in, char* out, int inSize)
+static int local_Lizard_compress_extState(const char* in, char* out, int inSize)
 {
-    return LZ5_compress_extState(LZ5_streamPtr, in, out, inSize, LZ5_compressBound(inSize), 0);
+    return Lizard_compress_extState(Lizard_streamPtr, in, out, inSize, Lizard_compressBound(inSize), 0);
 }
 
-static int local_LZ5_compress_extState_limitedOutput(const char* in, char* out, int inSize)
+static int local_Lizard_compress_extState_limitedOutput(const char* in, char* out, int inSize)
 {
-    return LZ5_compress_extState(LZ5_streamPtr, in, out, inSize, LZ5_compressBound(inSize)-1, 0);
+    return Lizard_compress_extState(Lizard_streamPtr, in, out, inSize, Lizard_compressBound(inSize)-1, 0);
 }
 
-static int local_LZ5_compress(const char* in, char* out, int inSize)
+static int local_Lizard_compress(const char* in, char* out, int inSize)
 {
-    return LZ5_compress(in, out, inSize, LZ5_compressBound(inSize), 0);
+    return Lizard_compress(in, out, inSize, Lizard_compressBound(inSize), 0);
 }
 
-static int local_LZ5_compress_limitedOutput(const char* in, char* out, int inSize)
+static int local_Lizard_compress_limitedOutput(const char* in, char* out, int inSize)
 {
-    return LZ5_compress(in, out, inSize, LZ5_compressBound(inSize)-1, 0);
+    return Lizard_compress(in, out, inSize, Lizard_compressBound(inSize)-1, 0);
 }
 
-static int local_LZ5_compressHC_continue(const char* in, char* out, int inSize)
+static int local_Lizard_compressHC_continue(const char* in, char* out, int inSize)
 {
-    return LZ5_compress_continue(LZ5_streamPtr, in, out, inSize, LZ5_compressBound(inSize));
+    return Lizard_compress_continue(Lizard_streamPtr, in, out, inSize, Lizard_compressBound(inSize));
 }
 
-static int local_LZ5_compress_continue_limitedOutput(const char* in, char* out, int inSize)
+static int local_Lizard_compress_continue_limitedOutput(const char* in, char* out, int inSize)
 {
-    return LZ5_compress_continue(LZ5_streamPtr, in, out, inSize, LZ5_compressBound(inSize)-1);
+    return Lizard_compress_continue(Lizard_streamPtr, in, out, inSize, Lizard_compressBound(inSize)-1);
 }
 
 
 /* decompression functions */
-static int local_LZ5_decompress_safe_usingDict(const char* in, char* out, int inSize, int outSize)
+static int local_Lizard_decompress_safe_usingDict(const char* in, char* out, int inSize, int outSize)
 {
     (void)inSize;
-    LZ5_decompress_safe_usingDict(in, out, inSize, outSize, out - 65536, 65536);
+    Lizard_decompress_safe_usingDict(in, out, inSize, outSize, out - 65536, 65536);
     return outSize;
 }
 
-extern int LZ5_decompress_safe_forceExtDict(const char* in, char* out, int inSize, int outSize, const char* dict, int dictSize);
+extern int Lizard_decompress_safe_forceExtDict(const char* in, char* out, int inSize, int outSize, const char* dict, int dictSize);
 
-static int local_LZ5_decompress_safe_forceExtDict(const char* in, char* out, int inSize, int outSize)
+static int local_Lizard_decompress_safe_forceExtDict(const char* in, char* out, int inSize, int outSize)
 {
     (void)inSize;
-    LZ5_decompress_safe_forceExtDict(in, out, inSize, outSize, out - 65536, 65536);
+    Lizard_decompress_safe_forceExtDict(in, out, inSize, outSize, out - 65536, 65536);
     return outSize;
 }
 
-static int local_LZ5_decompress_safe_partial(const char* in, char* out, int inSize, int outSize)
+static int local_Lizard_decompress_safe_partial(const char* in, char* out, int inSize, int outSize)
 {
-    return LZ5_decompress_safe_partial(in, out, inSize, outSize - 5, outSize);
+    return Lizard_decompress_safe_partial(in, out, inSize, outSize - 5, outSize);
 }
 
 
 /* frame functions */
-static int local_LZ5F_compressFrame(const char* in, char* out, int inSize)
+static int local_LizardF_compressFrame(const char* in, char* out, int inSize)
 {
-    return (int)LZ5F_compressFrame(out, 2*inSize + 16, in, inSize, NULL);
+    return (int)LizardF_compressFrame(out, 2*inSize + 16, in, inSize, NULL);
 }
 
-static LZ5F_decompressionContext_t g_dCtx;
+static LizardF_decompressionContext_t g_dCtx;
 
-static int local_LZ5F_decompress(const char* in, char* out, int inSize, int outSize)
+static int local_LizardF_decompress(const char* in, char* out, int inSize, int outSize)
 {
     size_t srcSize = inSize;
     size_t dstSize = outSize;
     size_t result;
-    result = LZ5F_decompress(g_dCtx, out, &dstSize, in, &srcSize, NULL);
+    result = LizardF_decompress(g_dCtx, out, &dstSize, in, &srcSize, NULL);
     if (result!=0) { DISPLAY("Error decompressing frame : unfinished frame (%d)\n", (int)result); exit(8); }
     if (srcSize != (size_t)inSize) { DISPLAY("Error decompressing frame : read size incorrect\n"); exit(9); }
     return (int)dstSize;
@@ -327,14 +327,14 @@ int fullSpeedBench(const char** fileNamesTable, int nbFiles)
     int fileIdx=0;
 
     /* Init */
-    { size_t const errorCode = LZ5F_createDecompressionContext(&g_dCtx, LIZARDF_VERSION);
-      if (LZ5F_isError(errorCode)) { DISPLAY("dctx allocation issue \n"); return 10; } }
+    { size_t const errorCode = LizardF_createDecompressionContext(&g_dCtx, LIZARDF_VERSION);
+      if (LizardF_isError(errorCode)) { DISPLAY("dctx allocation issue \n"); return 10; } }
 
-  LZ5_streamPtr = LZ5_createStream(0);
-  if (!LZ5_streamPtr) { DISPLAY("LZ5_streamPtr allocation issue \n"); return 10; }
+  Lizard_streamPtr = Lizard_createStream(0);
+  if (!Lizard_streamPtr) { DISPLAY("Lizard_streamPtr allocation issue \n"); return 10; }
 
-  LZ5_stream = LZ5_createStream_MinLevel();
-  if (!LZ5_stream) { DISPLAY("LZ5_stream allocation issue \n"); return 10; }
+  Lizard_stream = Lizard_createStream_MinLevel();
+  if (!Lizard_stream) { DISPLAY("Lizard_stream allocation issue \n"); return 10; }
 
     /* Loop for each fileName */
     while (fileIdx<nbFiles) {
@@ -368,7 +368,7 @@ int fullSpeedBench(const char** fileNamesTable, int nbFiles)
       chunkP = (struct chunkParameters*) malloc(((benchedSize / (size_t)g_chunkSize)+1) * sizeof(struct chunkParameters));
       orig_buff = (char*) malloc(benchedSize);
       nbChunks = (int) ((benchedSize + (g_chunkSize-1)) / g_chunkSize);
-      maxCompressedChunkSize = LZ5_compressBound(g_chunkSize);
+      maxCompressedChunkSize = Lizard_compressBound(g_chunkSize);
       compressedBuffSize = nbChunks * maxCompressedChunkSize;
       compressed_buff = (char*)malloc((size_t)compressedBuffSize);
       if(!chunkP || !orig_buff || !compressed_buff) {
@@ -433,28 +433,28 @@ int fullSpeedBench(const char** fileNamesTable, int nbFiles)
             switch(cAlgNb)
             {
             case 0 : DISPLAY("Compression functions : \n"); continue;
-            case 1 : compressionFunction = local_LZ5_compress_default_large; compressorName = "LZ5_compress_MinLevel"; break;
-            case 2 : compressionFunction = local_LZ5_compress_default_small; compressorName = "LZ5_compress_MinLevel(small dst)"; break;
+            case 1 : compressionFunction = local_Lizard_compress_default_large; compressorName = "Lizard_compress_MinLevel"; break;
+            case 2 : compressionFunction = local_Lizard_compress_default_small; compressorName = "Lizard_compress_MinLevel(small dst)"; break;
 
-            case 10: compressionFunction = local_LZ5_compress; compressorName = "LZ5_compress"; break;
-            case 11: compressionFunction = local_LZ5_compress_limitedOutput; compressorName = "LZ5_compress limitedOutput"; break;
-            case 12 : compressionFunction = local_LZ5_compress_extState; compressorName = "LZ5_compress_extState"; break;
-            case 13: compressionFunction = local_LZ5_compress_extState_limitedOutput; compressorName = "LZ5_compress_extState limitedOutput"; break;
-            case 14: compressionFunction = local_LZ5_compressHC_continue; initFunction = local_LZ5_resetStream; compressorName = "LZ5_compress_continue"; break;
-            case 15: compressionFunction = local_LZ5_compress_continue_limitedOutput; initFunction = local_LZ5_resetStream; compressorName = "LZ5_compress_continue limitedOutput"; break;
-            case 30: compressionFunction = local_LZ5F_compressFrame; compressorName = "LZ5F_compressFrame";
+            case 10: compressionFunction = local_Lizard_compress; compressorName = "Lizard_compress"; break;
+            case 11: compressionFunction = local_Lizard_compress_limitedOutput; compressorName = "Lizard_compress limitedOutput"; break;
+            case 12 : compressionFunction = local_Lizard_compress_extState; compressorName = "Lizard_compress_extState"; break;
+            case 13: compressionFunction = local_Lizard_compress_extState_limitedOutput; compressorName = "Lizard_compress_extState limitedOutput"; break;
+            case 14: compressionFunction = local_Lizard_compressHC_continue; initFunction = local_Lizard_resetStream; compressorName = "Lizard_compress_continue"; break;
+            case 15: compressionFunction = local_Lizard_compress_continue_limitedOutput; initFunction = local_Lizard_resetStream; compressorName = "Lizard_compress_continue limitedOutput"; break;
+            case 30: compressionFunction = local_LizardF_compressFrame; compressorName = "LizardF_compressFrame";
                         chunkP[0].origSize = (int)benchedSize; nbChunks=1;
                         break;
-            case 40: compressionFunction = local_LZ5_saveDict; compressorName = "LZ5_saveDict";
-                        LZ5_loadDict(LZ5_stream, chunkP[0].origBuffer, chunkP[0].origSize);
+            case 40: compressionFunction = local_Lizard_saveDict; compressorName = "Lizard_saveDict";
+                        Lizard_loadDict(Lizard_stream, chunkP[0].origBuffer, chunkP[0].origSize);
                         break;
-            case 41: compressionFunction = local_LZ5_saveDictHC; compressorName = "LZ5_saveDict";
-                        LZ5_loadDict(LZ5_streamPtr, chunkP[0].origBuffer, chunkP[0].origSize);
+            case 41: compressionFunction = local_Lizard_saveDictHC; compressorName = "Lizard_saveDict";
+                        Lizard_loadDict(Lizard_streamPtr, chunkP[0].origBuffer, chunkP[0].origSize);
                         break;
-            case 16: compressionFunction = local_LZ5_compress_withState; compressorName = "LZ5_compress_extState_MinLevel(1)"; break;
-            case 17: compressionFunction = local_LZ5_compress_limitedOutput_withState; compressorName = "LZ5_compress_extState_MinLevel(1) limitedOutput"; break;
-            case 18: compressionFunction = local_LZ5_compress_continue; initFunction = local_LZ5_createStream; compressorName = "LZ5_compress_continue(1)"; break;
-            case 19: compressionFunction = local_LZ5_compress_limitedOutput_continue; initFunction = local_LZ5_createStream; compressorName = "LZ5_compress_continue(1) limitedOutput"; break;
+            case 16: compressionFunction = local_Lizard_compress_withState; compressorName = "Lizard_compress_extState_MinLevel(1)"; break;
+            case 17: compressionFunction = local_Lizard_compress_limitedOutput_withState; compressorName = "Lizard_compress_extState_MinLevel(1) limitedOutput"; break;
+            case 18: compressionFunction = local_Lizard_compress_continue; initFunction = local_Lizard_createStream; compressorName = "Lizard_compress_continue(1)"; break;
+            case 19: compressionFunction = local_Lizard_compress_limitedOutput_continue; initFunction = local_Lizard_createStream; compressorName = "Lizard_compress_continue(1) limitedOutput"; break;
             case 60: DISPLAY("Obsolete compression functions : \n"); continue;
             default :
                 continue;   /* unknown ID : just skip */
@@ -512,8 +512,8 @@ int fullSpeedBench(const char** fileNamesTable, int nbFiles)
           }
         }
         for (chunkNb=0; chunkNb<nbChunks; chunkNb++) {
-            chunkP[chunkNb].compressedSize = LZ5_compress_MinLevel(chunkP[chunkNb].origBuffer, chunkP[chunkNb].compressedBuffer, chunkP[chunkNb].origSize, LZ5_compressBound(chunkP[chunkNb].origSize));
-            if (chunkP[chunkNb].compressedSize==0) DISPLAY("ERROR ! %s() = 0 !! \n", "LZ5_compress_MinLevel"), exit(1);
+            chunkP[chunkNb].compressedSize = Lizard_compress_MinLevel(chunkP[chunkNb].origBuffer, chunkP[chunkNb].compressedBuffer, chunkP[chunkNb].origSize, Lizard_compressBound(chunkP[chunkNb].origSize));
+            if (chunkP[chunkNb].compressedSize==0) DISPLAY("ERROR ! %s() = 0 !! \n", "Lizard_compress_MinLevel"), exit(1);
         }
 
         /* Decompression Algorithms */
@@ -527,13 +527,13 @@ int fullSpeedBench(const char** fileNamesTable, int nbFiles)
             switch(dAlgNb)
             {
             case 0: DISPLAY("Decompression functions : \n"); continue;
-            case 4: decompressionFunction = LZ5_decompress_safe; dName = "LZ5_decompress_safe"; break;
-            case 6: decompressionFunction = local_LZ5_decompress_safe_usingDict; dName = "LZ5_decompress_safe_usingDict"; break;
-            case 7: decompressionFunction = local_LZ5_decompress_safe_partial; dName = "LZ5_decompress_safe_partial"; break;
-            case 8: decompressionFunction = local_LZ5_decompress_safe_forceExtDict; dName = "LZ5_decompress_safe_forceExtDict"; break;
-            case 9: decompressionFunction = local_LZ5F_decompress; dName = "LZ5F_decompress";
-                    errorCode = LZ5F_compressFrame(compressed_buff, compressedBuffSize, orig_buff, benchedSize, NULL);
-                    if (LZ5F_isError(errorCode)) {
+            case 4: decompressionFunction = Lizard_decompress_safe; dName = "Lizard_decompress_safe"; break;
+            case 6: decompressionFunction = local_Lizard_decompress_safe_usingDict; dName = "Lizard_decompress_safe_usingDict"; break;
+            case 7: decompressionFunction = local_Lizard_decompress_safe_partial; dName = "Lizard_decompress_safe_partial"; break;
+            case 8: decompressionFunction = local_Lizard_decompress_safe_forceExtDict; dName = "Lizard_decompress_safe_forceExtDict"; break;
+            case 9: decompressionFunction = local_LizardF_decompress; dName = "LizardF_decompress";
+                    errorCode = LizardF_compressFrame(compressed_buff, compressedBuffSize, orig_buff, benchedSize, NULL);
+                    if (LizardF_isError(errorCode)) {
                         DISPLAY("Error while preparing compressed frame\n");
                         free(orig_buff);
                         free(compressed_buff);
@@ -589,9 +589,9 @@ int fullSpeedBench(const char** fileNamesTable, int nbFiles)
       free(chunkP);
     }
 
-    LZ5_freeStream(LZ5_stream);
-    LZ5_freeStream(LZ5_streamPtr);
-    LZ5F_freeDecompressionContext(g_dCtx);
+    Lizard_freeStream(Lizard_stream);
+    Lizard_freeStream(Lizard_streamPtr);
+    LizardF_freeDecompressionContext(g_dCtx);
     if (g_pause) { printf("press enter...\n"); (void)getchar(); }
 
     return 0;

@@ -1,5 +1,5 @@
 /*
-    LZ5 - Fast LZ compression algorithm 
+    Lizard - Fast LZ compression algorithm 
     Copyright (C) 2011-2015, Yann Collet.
     Copyright (C) 2015-2016, Przemyslaw Skibinski <inikep@gmail.com>
 
@@ -29,7 +29,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     You can contact the author at :
-       - LZ5 source repository : https://github.com/inikep/lz5
+       - Lizard source repository : https://github.com/inikep/lz5
 */
 
 #ifndef LIZARD_COMMON_H_2983
@@ -125,8 +125,8 @@ extern "C" {
 
 
 
-typedef enum { LZ5_parser_fastSmall, LZ5_parser_fast, LZ5_parser_fastBig, LZ5_parser_noChain, LZ5_parser_hashChain, LZ5_parser_priceFast, LZ5_parser_lowestPrice, LZ5_parser_optimalPrice, LZ5_parser_optimalPriceBT } LZ5_parser_type;   /* from faster to stronger */ 
-typedef enum { LZ5_coderwords_LZ4, LZ5_coderwords_LIZv1 } LZ5_decompress_type;
+typedef enum { Lizard_parser_fastSmall, Lizard_parser_fast, Lizard_parser_fastBig, Lizard_parser_noChain, Lizard_parser_hashChain, Lizard_parser_priceFast, Lizard_parser_lowestPrice, Lizard_parser_optimalPrice, Lizard_parser_optimalPriceBT } Lizard_parser_type;   /* from faster to stronger */ 
+typedef enum { Lizard_coderwords_LZ4, Lizard_coderwords_LIZv1 } Lizard_decompress_type;
 typedef struct
 {
     U32 windowLog;     /* largest match distance : impact decompression buffer size */
@@ -138,12 +138,12 @@ typedef struct
     U32 minMatchLongOff;  /* min match size with offsets >= 1<<16 */ 
     U32 sufficientLength;  /* used only by optimal parser: size of matches which is acceptable: larger == more compression, slower */
     U32 fullSearch;    /* used only by optimal parser: perform full search of matches: 1 == more compression, slower */
-    LZ5_parser_type parserType;
-    LZ5_decompress_type decompressType;
-} LZ5_parameters; 
+    Lizard_parser_type parserType;
+    Lizard_decompress_type decompressType;
+} Lizard_parameters; 
 
 
-struct LZ5_stream_s
+struct Lizard_stream_s
 {
     const BYTE* end;        /* next block here to continue on current prefix */
     const BYTE* base;       /* All index relative to this position */
@@ -153,7 +153,7 @@ struct LZ5_stream_s
     U32   nextToUpdate;     /* index from which to continue dictionary update */
     U32   allocatedMemory;
     int   compressionLevel;
-    LZ5_parameters params;
+    Lizard_parameters params;
     U32   hashTableSize;
     U32   chainTableSize;
     U32*  chainTable;
@@ -192,7 +192,7 @@ struct LZ5_stream_s
     const BYTE* destBase;
 };
 
-struct LZ5_dstream_s
+struct Lizard_dstream_s
 {
     const BYTE*  offset16Ptr;
     const BYTE*  offset24Ptr;
@@ -208,7 +208,7 @@ struct LZ5_dstream_s
     intptr_t last_off;
 };
 
-typedef struct LZ5_dstream_s LZ5_dstream_t;
+typedef struct Lizard_dstream_s Lizard_dstream_t;
 
 /* *************************************
 *  HC Pre-defined compression levels
@@ -224,56 +224,56 @@ typedef struct LZ5_dstream_s LZ5_dstream_t;
 
 
 
-static const LZ5_parameters LZ5_defaultParameters[LIZARD_MAX_CLEVEL+1-LIZARD_MIN_CLEVEL] =
+static const Lizard_parameters Lizard_defaultParameters[LIZARD_MAX_CLEVEL+1-LIZARD_MIN_CLEVEL] =
 {
     /*               windLog,              contentLog,               HashLog,  H3,  Snum, SL,   MMLongOff, SuffL, FS, Parser function,           Decompressor type  */
-    {   LIZARD_WINDOWLOG_LZ4,                       0,  LIZARD_HASHLOG_LZ4SM,   0,     0,  0,           0,     0,  0, LZ5_parser_fastSmall,      LZ5_coderwords_LZ4   }, // level 10
-    {   LIZARD_WINDOWLOG_LZ4,                       0,    LIZARD_HASHLOG_LZ4,   0,     0,  0,           0,     0,  0, LZ5_parser_fast,           LZ5_coderwords_LZ4   }, // level 11
-    {   LIZARD_WINDOWLOG_LZ4,                       0,    LIZARD_HASHLOG_LZ4,   0,     0,  0,           0,     0,  0, LZ5_parser_noChain,        LZ5_coderwords_LZ4   }, // level 12
-    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,     2,  5,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 13
-    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,     4,  5,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 14
-    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,     8,  5,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 15
-    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,    16,  4,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 16
-    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,   256,  4,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 17
-    {   LIZARD_WINDOWLOG_LZ4,   LIZARD_WINDOWLOG_LZ4+1,   LIZARD_HASHLOG_LZ4,  16,    16,  4,           0, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ4   }, // level 18
-    {   LIZARD_WINDOWLOG_LZ4,   LIZARD_WINDOWLOG_LZ4+1,                   23,  16,   256,  4,           0, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ4   }, // level 19
+    {   LIZARD_WINDOWLOG_LZ4,                       0,  LIZARD_HASHLOG_LZ4SM,   0,     0,  0,           0,     0,  0, Lizard_parser_fastSmall,      Lizard_coderwords_LZ4   }, // level 10
+    {   LIZARD_WINDOWLOG_LZ4,                       0,    LIZARD_HASHLOG_LZ4,   0,     0,  0,           0,     0,  0, Lizard_parser_fast,           Lizard_coderwords_LZ4   }, // level 11
+    {   LIZARD_WINDOWLOG_LZ4,                       0,    LIZARD_HASHLOG_LZ4,   0,     0,  0,           0,     0,  0, Lizard_parser_noChain,        Lizard_coderwords_LZ4   }, // level 12
+    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,     2,  5,           0,     0,  0, Lizard_parser_hashChain,      Lizard_coderwords_LZ4   }, // level 13
+    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,     4,  5,           0,     0,  0, Lizard_parser_hashChain,      Lizard_coderwords_LZ4   }, // level 14
+    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,     8,  5,           0,     0,  0, Lizard_parser_hashChain,      Lizard_coderwords_LZ4   }, // level 15
+    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,    16,  4,           0,     0,  0, Lizard_parser_hashChain,      Lizard_coderwords_LZ4   }, // level 16
+    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,   256,  4,           0,     0,  0, Lizard_parser_hashChain,      Lizard_coderwords_LZ4   }, // level 17
+    {   LIZARD_WINDOWLOG_LZ4,   LIZARD_WINDOWLOG_LZ4+1,   LIZARD_HASHLOG_LZ4,  16,    16,  4,           0, 1<<10,  1, Lizard_parser_optimalPriceBT, Lizard_coderwords_LZ4   }, // level 18
+    {   LIZARD_WINDOWLOG_LZ4,   LIZARD_WINDOWLOG_LZ4+1,                   23,  16,   256,  4,           0, 1<<10,  1, Lizard_parser_optimalPriceBT, Lizard_coderwords_LZ4   }, // level 19
     /*              windLog,                contentLog,              HashLog,  H3,  Snum, SL,   MMLongOff, SuffL, FS, Parser function,           Decompressor type  */
-    { LIZARD_WINDOWLOG_LIZv1,                        0,                   14,   0,     1,  5,  MM_LONGOFF,     0,  0, LZ5_parser_fastBig,        LZ5_coderwords_LIZv1 }, // level 20
-    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1,                   14,  13,     1,  5,  MM_LONGOFF,     0,  0, LZ5_parser_priceFast,      LZ5_coderwords_LIZv1 }, // level 21
-    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1, LIZARD_HASHLOG_LIZv1,  13,     1,  5,  MM_LONGOFF,     0,  0, LZ5_parser_priceFast,      LZ5_coderwords_LIZv1 }, // level 22
-    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1, LIZARD_HASHLOG_LIZv1,  13,     1,  5,  MM_LONGOFF,    64,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LIZv1 }, // level 23
-    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1,                   23,  16,     2,  5,  MM_LONGOFF,    64,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LIZv1 }, // level 24
-    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1,                   23,  16,     8,  4,  MM_LONGOFF,    64,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LIZv1 }, // level 25
-    { LIZARD_WINDOWLOG_LIZv1,  LIZARD_CHAINLOG_LIZv1+1,                   23,  16,     8,  4,  MM_LONGOFF,    64,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LIZv1 }, // level 26
-    { LIZARD_WINDOWLOG_LIZv1,  LIZARD_CHAINLOG_LIZv1+1,                   23,  16,   128,  4,  MM_LONGOFF,    64,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LIZv1 }, // level 27
-    { LIZARD_WINDOWLOG_LIZv1,  LIZARD_CHAINLOG_LIZv1+1,                   23,  24, 1<<10,  4,  MM_LONGOFF, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LIZv1 }, // level 28
-    {                     24,                       25,                   23,  24, 1<<10,  4,  MM_LONGOFF, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LIZv1 }, // level 29
+    { LIZARD_WINDOWLOG_LIZv1,                        0,                   14,   0,     1,  5,  MM_LONGOFF,     0,  0, Lizard_parser_fastBig,        Lizard_coderwords_LIZv1 }, // level 20
+    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1,                   14,  13,     1,  5,  MM_LONGOFF,     0,  0, Lizard_parser_priceFast,      Lizard_coderwords_LIZv1 }, // level 21
+    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1, LIZARD_HASHLOG_LIZv1,  13,     1,  5,  MM_LONGOFF,     0,  0, Lizard_parser_priceFast,      Lizard_coderwords_LIZv1 }, // level 22
+    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1, LIZARD_HASHLOG_LIZv1,  13,     1,  5,  MM_LONGOFF,    64,  0, Lizard_parser_lowestPrice,    Lizard_coderwords_LIZv1 }, // level 23
+    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1,                   23,  16,     2,  5,  MM_LONGOFF,    64,  0, Lizard_parser_lowestPrice,    Lizard_coderwords_LIZv1 }, // level 24
+    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1,                   23,  16,     8,  4,  MM_LONGOFF,    64,  0, Lizard_parser_lowestPrice,    Lizard_coderwords_LIZv1 }, // level 25
+    { LIZARD_WINDOWLOG_LIZv1,  LIZARD_CHAINLOG_LIZv1+1,                   23,  16,     8,  4,  MM_LONGOFF,    64,  1, Lizard_parser_optimalPriceBT, Lizard_coderwords_LIZv1 }, // level 26
+    { LIZARD_WINDOWLOG_LIZv1,  LIZARD_CHAINLOG_LIZv1+1,                   23,  16,   128,  4,  MM_LONGOFF,    64,  1, Lizard_parser_optimalPriceBT, Lizard_coderwords_LIZv1 }, // level 27
+    { LIZARD_WINDOWLOG_LIZv1,  LIZARD_CHAINLOG_LIZv1+1,                   23,  24, 1<<10,  4,  MM_LONGOFF, 1<<10,  1, Lizard_parser_optimalPriceBT, Lizard_coderwords_LIZv1 }, // level 28
+    {                     24,                       25,                   23,  24, 1<<10,  4,  MM_LONGOFF, 1<<10,  1, Lizard_parser_optimalPriceBT, Lizard_coderwords_LIZv1 }, // level 29
 #ifndef LIZARD_NO_HUFFMAN
     /*               windLog,               contentLog,              HashLog,  H3,  Snum, SL,   MMLongOff, SuffL, FS, Parser function,           Decompressor type  */
-    {   LIZARD_WINDOWLOG_LZ4,                        0, LIZARD_HASHLOG_LZ4SM,   0,     0,  0,           0,     0,  0, LZ5_parser_fastSmall,      LZ5_coderwords_LZ4   }, // level 30
-    {   LIZARD_WINDOWLOG_LZ4,                        0,   LIZARD_HASHLOG_LZ4,   0,     0,  0,           0,     0,  0, LZ5_parser_fast,           LZ5_coderwords_LZ4   }, // level 31
-    {   LIZARD_WINDOWLOG_LZ4,                        0,                   14,   0,     0,  0,           0,     0,  0, LZ5_parser_noChain,        LZ5_coderwords_LZ4   }, // level 32
-    {   LIZARD_WINDOWLOG_LZ4,                        0,   LIZARD_HASHLOG_LZ4,   0,     0,  0,           0,     0,  0, LZ5_parser_noChain,        LZ5_coderwords_LZ4   }, // level 33
-    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,     2,  5,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 34
-    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,     4,  5,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 35
-    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,     8,  5,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 36
-    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,    16,  4,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 37
-    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,   256,  4,           0,     0,  0, LZ5_parser_hashChain,      LZ5_coderwords_LZ4   }, // level 38
-    {   LIZARD_WINDOWLOG_LZ4,   LIZARD_WINDOWLOG_LZ4+1,                   23,  16,   256,  4,           0, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LZ4   }, // level 39
+    {   LIZARD_WINDOWLOG_LZ4,                        0, LIZARD_HASHLOG_LZ4SM,   0,     0,  0,           0,     0,  0, Lizard_parser_fastSmall,      Lizard_coderwords_LZ4   }, // level 30
+    {   LIZARD_WINDOWLOG_LZ4,                        0,   LIZARD_HASHLOG_LZ4,   0,     0,  0,           0,     0,  0, Lizard_parser_fast,           Lizard_coderwords_LZ4   }, // level 31
+    {   LIZARD_WINDOWLOG_LZ4,                        0,                   14,   0,     0,  0,           0,     0,  0, Lizard_parser_noChain,        Lizard_coderwords_LZ4   }, // level 32
+    {   LIZARD_WINDOWLOG_LZ4,                        0,   LIZARD_HASHLOG_LZ4,   0,     0,  0,           0,     0,  0, Lizard_parser_noChain,        Lizard_coderwords_LZ4   }, // level 33
+    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,     2,  5,           0,     0,  0, Lizard_parser_hashChain,      Lizard_coderwords_LZ4   }, // level 34
+    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,     4,  5,           0,     0,  0, Lizard_parser_hashChain,      Lizard_coderwords_LZ4   }, // level 35
+    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,     8,  5,           0,     0,  0, Lizard_parser_hashChain,      Lizard_coderwords_LZ4   }, // level 36
+    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,    16,  4,           0,     0,  0, Lizard_parser_hashChain,      Lizard_coderwords_LZ4   }, // level 37
+    {   LIZARD_WINDOWLOG_LZ4,      LIZARD_CHAINLOG_LZ4,   LIZARD_HASHLOG_LZ4,   0,   256,  4,           0,     0,  0, Lizard_parser_hashChain,      Lizard_coderwords_LZ4   }, // level 38
+    {   LIZARD_WINDOWLOG_LZ4,   LIZARD_WINDOWLOG_LZ4+1,                   23,  16,   256,  4,           0, 1<<10,  1, Lizard_parser_optimalPriceBT, Lizard_coderwords_LZ4   }, // level 39
     /*               windLog,               contentLog,              HashLog,  H3,  Snum, SL,   MMLongOff, SuffL, FS, Parser function,           Decompressor type  */
-    { LIZARD_WINDOWLOG_LIZv1,                        0,                   14,   0,     1,  5,  MM_LONGOFF,     0,  0, LZ5_parser_fastBig,        LZ5_coderwords_LIZv1 }, // level 40
-    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1,                   14,  13,     1,  5,  MM_LONGOFF,     0,  0, LZ5_parser_priceFast,      LZ5_coderwords_LIZv1 }, // level 41
-    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1, LIZARD_HASHLOG_LIZv1,  13,     1,  5,  MM_LONGOFF,     0,  0, LZ5_parser_priceFast,      LZ5_coderwords_LIZv1 }, // level 42
-    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1, LIZARD_HASHLOG_LIZv1,  13,     1,  5,  MM_LONGOFF,    64,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LIZv1 }, // level 43
-    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1,                   23,  16,     2,  5,  MM_LONGOFF,    64,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LIZv1 }, // level 44
-    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1,                   23,  16,     8,  4,  MM_LONGOFF,    64,  0, LZ5_parser_lowestPrice,    LZ5_coderwords_LIZv1 }, // level 45
-    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1,                   23,  16,     8,  4,  MM_LONGOFF,    64,  0, LZ5_parser_optimalPrice,   LZ5_coderwords_LIZv1 }, // level 46
-    { LIZARD_WINDOWLOG_LIZv1,  LIZARD_CHAINLOG_LIZv1+1,                   23,  16,     8,  4,  MM_LONGOFF,    64,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LIZv1 }, // level 47
-    { LIZARD_WINDOWLOG_LIZv1,  LIZARD_CHAINLOG_LIZv1+1,                   23,  16,   128,  4,  MM_LONGOFF,    64,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LIZv1 }, // level 48
-    {                     24,                       25,                   23,  24, 1<<10,  4,  MM_LONGOFF, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LIZv1 }, // level 49
+    { LIZARD_WINDOWLOG_LIZv1,                        0,                   14,   0,     1,  5,  MM_LONGOFF,     0,  0, Lizard_parser_fastBig,        Lizard_coderwords_LIZv1 }, // level 40
+    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1,                   14,  13,     1,  5,  MM_LONGOFF,     0,  0, Lizard_parser_priceFast,      Lizard_coderwords_LIZv1 }, // level 41
+    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1, LIZARD_HASHLOG_LIZv1,  13,     1,  5,  MM_LONGOFF,     0,  0, Lizard_parser_priceFast,      Lizard_coderwords_LIZv1 }, // level 42
+    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1, LIZARD_HASHLOG_LIZv1,  13,     1,  5,  MM_LONGOFF,    64,  0, Lizard_parser_lowestPrice,    Lizard_coderwords_LIZv1 }, // level 43
+    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1,                   23,  16,     2,  5,  MM_LONGOFF,    64,  0, Lizard_parser_lowestPrice,    Lizard_coderwords_LIZv1 }, // level 44
+    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1,                   23,  16,     8,  4,  MM_LONGOFF,    64,  0, Lizard_parser_lowestPrice,    Lizard_coderwords_LIZv1 }, // level 45
+    { LIZARD_WINDOWLOG_LIZv1,    LIZARD_CHAINLOG_LIZv1,                   23,  16,     8,  4,  MM_LONGOFF,    64,  0, Lizard_parser_optimalPrice,   Lizard_coderwords_LIZv1 }, // level 46
+    { LIZARD_WINDOWLOG_LIZv1,  LIZARD_CHAINLOG_LIZv1+1,                   23,  16,     8,  4,  MM_LONGOFF,    64,  1, Lizard_parser_optimalPriceBT, Lizard_coderwords_LIZv1 }, // level 47
+    { LIZARD_WINDOWLOG_LIZv1,  LIZARD_CHAINLOG_LIZv1+1,                   23,  16,   128,  4,  MM_LONGOFF,    64,  1, Lizard_parser_optimalPriceBT, Lizard_coderwords_LIZv1 }, // level 48
+    {                     24,                       25,                   23,  24, 1<<10,  4,  MM_LONGOFF, 1<<10,  1, Lizard_parser_optimalPriceBT, Lizard_coderwords_LIZv1 }, // level 49
 #endif
-//  {                     10,                       10,                   10,   0,     0,  4,           0,     0,  0, LZ5_fast          }, // min values
-//  {                     24,                       24,                   28,  24, 1<<24,  7,           0, 1<<24,  2, LZ5_optimal_price }, // max values
+//  {                     10,                       10,                   10,   0,     0,  4,           0,     0,  0, Lizard_fast          }, // min values
+//  {                     24,                       24,                   28,  24, 1<<24,  7,           0, 1<<24,  2, Lizard_optimal_price }, // max values
 };
 
 
@@ -337,13 +337,13 @@ static const LZ5_parameters LZ5_defaultParameters[LIZARD_MAX_CLEVEL+1-LIZARD_MIN
 #define STEPSIZE sizeof(size_t)
 
 
-MEM_STATIC void LZ5_copy8(void* dst, const void* src)
+MEM_STATIC void Lizard_copy8(void* dst, const void* src)
 {
     memcpy(dst,src,8);
 }
 
 /* customized variant of memcpy, which can overwrite up to 7 bytes beyond dstEnd */
-MEM_STATIC void LZ5_wildCopy(void* dstPtr, const void* srcPtr, void* dstEnd)
+MEM_STATIC void Lizard_wildCopy(void* dstPtr, const void* srcPtr, void* dstEnd)
 {
     BYTE* d = (BYTE*)dstPtr;
     const BYTE* s = (const BYTE*)srcPtr;
@@ -351,18 +351,18 @@ MEM_STATIC void LZ5_wildCopy(void* dstPtr, const void* srcPtr, void* dstEnd)
 
 #if 0
     const size_t l2 = 8 - (((size_t)d) & (sizeof(void*)-1));
-    LZ5_copy8(d,s); if (d>e-9) return;
+    Lizard_copy8(d,s); if (d>e-9) return;
     d+=l2; s+=l2;
 #endif /* join to align */
 
-    do { LZ5_copy8(d,s); d+=8; s+=8; } while (d<e);
+    do { Lizard_copy8(d,s); d+=8; s+=8; } while (d<e);
 }
 
-MEM_STATIC void LZ5_wildCopy16(BYTE* dstPtr, const BYTE* srcPtr, BYTE* dstEnd)
+MEM_STATIC void Lizard_wildCopy16(BYTE* dstPtr, const BYTE* srcPtr, BYTE* dstEnd)
 {
     do {
-        LZ5_copy8(dstPtr, srcPtr);
-        LZ5_copy8(dstPtr+8, srcPtr+8);
+        Lizard_copy8(dstPtr, srcPtr);
+        Lizard_copy8(dstPtr+8, srcPtr+8);
         dstPtr += 16;
         srcPtr += 16;
     }
@@ -370,18 +370,18 @@ MEM_STATIC void LZ5_wildCopy16(BYTE* dstPtr, const BYTE* srcPtr, BYTE* dstEnd)
 }
 
 /*
- * LZ5_FORCE_SW_BITCOUNT
+ * Lizard_FORCE_SW_BITCOUNT
  * Define this parameter if your target system or compiler does not support hardware bit count
  */
 #if defined(_MSC_VER) && defined(_WIN32_WCE)   /* Visual Studio for Windows CE does not support Hardware bit count */
-#  define LZ5_FORCE_SW_BITCOUNT
+#  define Lizard_FORCE_SW_BITCOUNT
 #endif
 
 
 /* **************************************
 *  Function body to include for inlining
 ****************************************/
-MEM_STATIC U32 LZ5_highbit32(U32 val)
+MEM_STATIC U32 Lizard_highbit32(U32 val)
 {
 #   if defined(_MSC_VER)   /* Visual */
     unsigned long r=0;
@@ -407,26 +407,26 @@ MEM_STATIC U32 LZ5_highbit32(U32 val)
 /*-************************************
 *  Common functions
 **************************************/
-MEM_STATIC unsigned LZ5_NbCommonBytes (register size_t val)
+MEM_STATIC unsigned Lizard_NbCommonBytes (register size_t val)
 {
     if (MEM_isLittleEndian()) {
         if (MEM_64bits()) {
-#       if defined(_MSC_VER) && defined(_WIN64) && !defined(LZ5_FORCE_SW_BITCOUNT)
+#       if defined(_MSC_VER) && defined(_WIN64) && !defined(Lizard_FORCE_SW_BITCOUNT)
             unsigned long r = 0;
             _BitScanForward64( &r, (U64)val );
             return (int)(r>>3);
-#       elif (defined(__clang__) || (LIZARD_GCC_VERSION >= 304)) && !defined(LZ5_FORCE_SW_BITCOUNT)
+#       elif (defined(__clang__) || (LIZARD_GCC_VERSION >= 304)) && !defined(Lizard_FORCE_SW_BITCOUNT)
             return (__builtin_ctzll((U64)val) >> 3);
 #       else
             static const int DeBruijnBytePos[64] = { 0, 0, 0, 0, 0, 1, 1, 2, 0, 3, 1, 3, 1, 4, 2, 7, 0, 2, 3, 6, 1, 5, 3, 5, 1, 3, 4, 4, 2, 5, 6, 7, 7, 0, 1, 2, 3, 3, 4, 6, 2, 6, 5, 5, 3, 4, 5, 6, 7, 1, 2, 4, 6, 4, 4, 5, 7, 2, 6, 5, 7, 6, 7, 7 };
             return DeBruijnBytePos[((U64)((val & -(long long)val) * 0x0218A392CDABBD3FULL)) >> 58];
 #       endif
         } else /* 32 bits */ {
-#       if defined(_MSC_VER) && !defined(LZ5_FORCE_SW_BITCOUNT)
+#       if defined(_MSC_VER) && !defined(Lizard_FORCE_SW_BITCOUNT)
             unsigned long r;
             _BitScanForward( &r, (U32)val );
             return (int)(r>>3);
-#       elif (defined(__clang__) || (LIZARD_GCC_VERSION >= 304)) && !defined(LZ5_FORCE_SW_BITCOUNT)
+#       elif (defined(__clang__) || (LIZARD_GCC_VERSION >= 304)) && !defined(Lizard_FORCE_SW_BITCOUNT)
             return (__builtin_ctz((U32)val) >> 3);
 #       else
             static const int DeBruijnBytePos[32] = { 0, 0, 3, 0, 3, 1, 3, 0, 3, 2, 2, 1, 3, 2, 0, 1, 3, 3, 1, 2, 2, 2, 2, 0, 3, 1, 2, 0, 1, 0, 1, 1 };
@@ -435,11 +435,11 @@ MEM_STATIC unsigned LZ5_NbCommonBytes (register size_t val)
         }
     } else   /* Big Endian CPU */ {
         if (MEM_64bits()) {
-#       if defined(_MSC_VER) && defined(_WIN64) && !defined(LZ5_FORCE_SW_BITCOUNT)
+#       if defined(_MSC_VER) && defined(_WIN64) && !defined(Lizard_FORCE_SW_BITCOUNT)
             unsigned long r = 0;
             _BitScanReverse64( &r, val );
             return (unsigned)(r>>3);
-#       elif (defined(__clang__) || (LIZARD_GCC_VERSION >= 304)) && !defined(LZ5_FORCE_SW_BITCOUNT)
+#       elif (defined(__clang__) || (LIZARD_GCC_VERSION >= 304)) && !defined(Lizard_FORCE_SW_BITCOUNT)
             return (__builtin_clzll((U64)val) >> 3);
 #       else
             unsigned r;
@@ -449,11 +449,11 @@ MEM_STATIC unsigned LZ5_NbCommonBytes (register size_t val)
             return r;
 #       endif
         } else /* 32 bits */ {
-#       if defined(_MSC_VER) && !defined(LZ5_FORCE_SW_BITCOUNT)
+#       if defined(_MSC_VER) && !defined(Lizard_FORCE_SW_BITCOUNT)
             unsigned long r = 0;
             _BitScanReverse( &r, (unsigned long)val );
             return (unsigned)(r>>3);
-#       elif (defined(__clang__) || (LIZARD_GCC_VERSION >= 304)) && !defined(LZ5_FORCE_SW_BITCOUNT)
+#       elif (defined(__clang__) || (LIZARD_GCC_VERSION >= 304)) && !defined(Lizard_FORCE_SW_BITCOUNT)
             return (__builtin_clz((U32)val) >> 3);
 #       else
             unsigned r;
@@ -465,14 +465,14 @@ MEM_STATIC unsigned LZ5_NbCommonBytes (register size_t val)
     }
 }
 
-MEM_STATIC unsigned LZ5_count(const BYTE* pIn, const BYTE* pMatch, const BYTE* pInLimit)
+MEM_STATIC unsigned Lizard_count(const BYTE* pIn, const BYTE* pMatch, const BYTE* pInLimit)
 {
     const BYTE* const pStart = pIn;
 
     while (likely(pIn<pInLimit-(STEPSIZE-1))) {
         size_t diff = MEM_readST(pMatch) ^ MEM_readST(pIn);
         if (!diff) { pIn+=STEPSIZE; pMatch+=STEPSIZE; continue; }
-        pIn += LZ5_NbCommonBytes(diff);
+        pIn += Lizard_NbCommonBytes(diff);
         return (unsigned)(pIn - pStart);
     }
 
@@ -483,11 +483,11 @@ MEM_STATIC unsigned LZ5_count(const BYTE* pIn, const BYTE* pMatch, const BYTE* p
 }
 
 /* alias to functions with compressionLevel=1 */
-int LZ5_sizeofState_MinLevel(void);
-int LZ5_compress_MinLevel(const char* source, char* dest, int sourceSize, int maxDestSize);
-int LZ5_compress_extState_MinLevel (void* state, const char* source, char* dest, int inputSize, int maxDestSize);
-LZ5_stream_t* LZ5_resetStream_MinLevel (LZ5_stream_t* streamPtr);
-LZ5_stream_t* LZ5_createStream_MinLevel(void);
+int Lizard_sizeofState_MinLevel(void);
+int Lizard_compress_MinLevel(const char* source, char* dest, int sourceSize, int maxDestSize);
+int Lizard_compress_extState_MinLevel (void* state, const char* source, char* dest, int inputSize, int maxDestSize);
+Lizard_stream_t* Lizard_resetStream_MinLevel (Lizard_stream_t* streamPtr);
+Lizard_stream_t* Lizard_createStream_MinLevel(void);
 
 
 #if defined (__cplusplus)

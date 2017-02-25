@@ -1,4 +1,4 @@
-# LZ5 examples
+# Lizard examples
 
 ## Documents
 

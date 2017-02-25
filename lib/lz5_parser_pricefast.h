@@ -1,6 +1,6 @@
 #define LIZARD_PRICEFAST_MIN_OFFSET 8
 
-FORCE_INLINE int LZ5_FindMatchFast(LZ5_stream_t* ctx, intptr_t matchIndex, intptr_t matchIndex3, /* Index table will be updated */
+FORCE_INLINE int Lizard_FindMatchFast(Lizard_stream_t* ctx, intptr_t matchIndex, intptr_t matchIndex3, /* Index table will be updated */
                                                const BYTE* ip, const BYTE* const iLimit,
                                                const BYTE** matchpos)
 {
@@ -22,7 +22,7 @@ FORCE_INLINE int LZ5_FindMatchFast(LZ5_stream_t* ctx, intptr_t matchIndex, intpt
             if (matchIndexLO >= dictLimit) {
                 match = base + matchIndexLO;
                 if (MEM_readMINMATCH(match) == MEM_readMINMATCH(ip)) {
-                    mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
+                    mlt = Lizard_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
                  //   if ((mlt >= minMatchLongOff) || (ctx->last_off < LIZARD_MAX_16BIT_OFFSET)) 
                     {
                         *matchpos = match;
@@ -33,7 +33,7 @@ FORCE_INLINE int LZ5_FindMatchFast(LZ5_stream_t* ctx, intptr_t matchIndex, intpt
                 match = dictBase + matchIndexLO;
                 if ((U32)((dictLimit-1) - matchIndexLO) >= 3)  /* intentional overflow */
                 if (MEM_readMINMATCH(match) == MEM_readMINMATCH(ip)) {
-                    mlt = LZ5_count_2segments(ip+MINMATCH, match+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
+                    mlt = Lizard_count_2segments(ip+MINMATCH, match+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
                  //   if ((mlt >= minMatchLongOff) || (ctx->last_off < LIZARD_MAX_16BIT_OFFSET)) 
                     {
                         *matchpos = base + matchIndexLO;  /* virtual matchpos */
@@ -51,7 +51,7 @@ FORCE_INLINE int LZ5_FindMatchFast(LZ5_stream_t* ctx, intptr_t matchIndex, intpt
         if (offset < LIZARD_MAX_8BIT_OFFSET) {
             match = ip - offset;
             if (match > base && MEM_readMINMATCH(ip) == MEM_readMINMATCH(match)) {
-                ml = 3;//LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
+                ml = 3;//Lizard_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
                 *matchpos = match;
             }
         }
@@ -65,18 +65,18 @@ FORCE_INLINE int LZ5_FindMatchFast(LZ5_stream_t* ctx, intptr_t matchIndex, intpt
         if ((U32)(ip - match) >= LIZARD_PRICEFAST_MIN_OFFSET) {
             if (matchIndex >= dictLimit) {
                 if (*(match+ml) == *(ip+ml) && (MEM_read32(match) == MEM_read32(ip))) {
-                    mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
+                    mlt = Lizard_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
                     if ((mlt >= minMatchLongOff) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
-                    if (!ml || (mlt > ml)) // && LZ5_better_price((ip - *matchpos), ml, (ip - match), mlt, ctx->last_off)))
+                    if (!ml || (mlt > ml)) // && Lizard_better_price((ip - *matchpos), ml, (ip - match), mlt, ctx->last_off)))
                     { ml = mlt; *matchpos = match; }
                 }
             } else {
                 matchDict = dictBase + matchIndex;
                 if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
                 if (MEM_read32(matchDict) == MEM_read32(ip)) {
-                    mlt = LZ5_count_2segments(ip+MINMATCH, matchDict+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
+                    mlt = Lizard_count_2segments(ip+MINMATCH, matchDict+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
                     if ((mlt >= minMatchLongOff) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
-                    if (!ml || (mlt > ml)) // && LZ5_better_price((ip - *matchpos), ml, (U32)(ip - match), mlt, ctx->last_off)))
+                    if (!ml || (mlt > ml)) // && Lizard_better_price((ip - *matchpos), ml, (U32)(ip - match), mlt, ctx->last_off)))
                     { ml = mlt; *matchpos = match; }   /* virtual matchpos */
                 }
             }
@@ -87,7 +87,7 @@ FORCE_INLINE int LZ5_FindMatchFast(LZ5_stream_t* ctx, intptr_t matchIndex, intpt
 }
 
 
-FORCE_INLINE int LZ5_FindMatchFaster (LZ5_stream_t* ctx, U32 matchIndex,  /* Index table will be updated */
+FORCE_INLINE int Lizard_FindMatchFaster (Lizard_stream_t* ctx, U32 matchIndex,  /* Index table will be updated */
                                                const BYTE* ip, const BYTE* const iLimit,
                                                const BYTE** matchpos)
 {
@@ -108,7 +108,7 @@ FORCE_INLINE int LZ5_FindMatchFaster (LZ5_stream_t* ctx, U32 matchIndex,  /* Ind
         if ((U32)(ip - match) >= LIZARD_PRICEFAST_MIN_OFFSET) {
             if (matchIndex >= dictLimit) {
                 if (MEM_read32(match) == MEM_read32(ip)) {
-                    mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
+                    mlt = Lizard_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
                     if ((mlt >= minMatchLongOff) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
                     { ml = mlt; *matchpos = match; }
                 }
@@ -116,7 +116,7 @@ FORCE_INLINE int LZ5_FindMatchFaster (LZ5_stream_t* ctx, U32 matchIndex,  /* Ind
                 matchDict = dictBase + matchIndex;
                 if ((U32)((dictLimit-1) - matchIndex) >= 3)  /* intentional overflow */
                 if (MEM_read32(matchDict) == MEM_read32(ip)) {
-                    mlt = LZ5_count_2segments(ip+MINMATCH, matchDict+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
+                    mlt = Lizard_count_2segments(ip+MINMATCH, matchDict+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
                     if ((mlt >= minMatchLongOff) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
                     { ml = mlt; *matchpos = match; }   /* virtual matchpos */
                 }
@@ -129,8 +129,8 @@ FORCE_INLINE int LZ5_FindMatchFaster (LZ5_stream_t* ctx, U32 matchIndex,  /* Ind
 
 
 
-FORCE_INLINE int LZ5_compress_priceFast(
-        LZ5_stream_t* const ctx,
+FORCE_INLINE int Lizard_compress_priceFast(
+        Lizard_stream_t* const ctx,
         const BYTE* ip,
         const BYTE* const iend)
 {
@@ -157,15 +157,15 @@ FORCE_INLINE int LZ5_compress_priceFast(
     /* Main Loop */
     while (ip < mflimit)
     {
-        HashPos = &HashTable[LZ5_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength)];
+        HashPos = &HashTable[Lizard_hashPtr(ip, ctx->params.hashLog, ctx->params.searchLength)];
 #if MINMATCH == 3
         {
-        U32* HashPos3 = &HashTable3[LZ5_hash3Ptr(ip, ctx->params.hashLog3)];
-        ml = LZ5_FindMatchFast (ctx, *HashPos, *HashPos3, ip, matchlimit, (&ref));
+        U32* HashPos3 = &HashTable3[Lizard_hash3Ptr(ip, ctx->params.hashLog3)];
+        ml = Lizard_FindMatchFast (ctx, *HashPos, *HashPos3, ip, matchlimit, (&ref));
         *HashPos3 = (U32)(ip - base);
         }
 #else
-        ml = LZ5_FindMatchFast (ctx, *HashPos, 0, ip, matchlimit, (&ref));
+        ml = Lizard_FindMatchFast (ctx, *HashPos, 0, ip, matchlimit, (&ref));
 #endif 
         if ((*HashPos >= (U32)(ip - base)) || ((U32)(ip - base) >= *HashPos + LIZARD_PRICEFAST_MIN_OFFSET))
             *HashPos = (U32)(ip - base);
@@ -185,8 +185,8 @@ _Search:
         if (ip+ml >= mflimit) goto _Encode;
 
         start2 = ip + ml - 2;
-        HashPos = &HashTable[LZ5_hashPtr(start2, ctx->params.hashLog, ctx->params.searchLength)];
-        ml2 = LZ5_FindMatchFaster(ctx, *HashPos, start2, matchlimit, (&ref2));      
+        HashPos = &HashTable[Lizard_hashPtr(start2, ctx->params.hashLog, ctx->params.searchLength)];
+        ml2 = Lizard_FindMatchFaster(ctx, *HashPos, start2, matchlimit, (&ref2));      
         if ((*HashPos >= (U32)(start2 - base)) || ((U32)(start2 - base) >= *HashPos + LIZARD_PRICEFAST_MIN_OFFSET))
             *HashPos = (U32)(start2 - base);
 
@@ -228,7 +228,7 @@ _Search:
         }
 
 _Encode:
-        if (LZ5_encodeSequence_LIZv1(ctx, &ip, &anchor, ml, ref)) goto _output_error;
+        if (Lizard_encodeSequence_LIZv1(ctx, &ip, &anchor, ml, ref)) goto _output_error;
 
         if (ml2)
         {
@@ -240,7 +240,7 @@ _Encode:
 
     /* Encode Last Literals */
     ip = iend;
-    if (LZ5_encodeLastLiterals_LIZv1(ctx, &ip, &anchor)) goto _output_error;
+    if (Lizard_encodeLastLiterals_LIZv1(ctx, &ip, &anchor)) goto _output_error;
 
     /* End */
     return 1;

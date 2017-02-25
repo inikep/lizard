@@ -1,4 +1,4 @@
-// LZ5 streaming API example : double buffer
+// Lizard streaming API example : double buffer
 // Copyright : Takayuki Matsuoka
 
 
@@ -39,12 +39,12 @@ size_t read_bin(FILE* fp, void* array, size_t arrayBytes) {
 
 void test_compress(FILE* outFp, FILE* inpFp)
 {
-    LZ5_stream_t* lz5Stream = LZ5_createStream_MinLevel();
+    Lizard_stream_t* lz5Stream = Lizard_createStream_MinLevel();
     char inpBuf[2][BLOCK_BYTES];
     int  inpBufIndex = 0;
 
     if (!lz5Stream) return;
-    lz5Stream = LZ5_resetStream_MinLevel(lz5Stream);
+    lz5Stream = Lizard_resetStream_MinLevel(lz5Stream);
     if (!lz5Stream) return;
 
     for(;;) {
@@ -56,7 +56,7 @@ void test_compress(FILE* outFp, FILE* inpFp)
 
         {
             char cmpBuf[LIZARD_COMPRESSBOUND(BLOCK_BYTES)];
-            const int cmpBytes = LZ5_compress_continue(lz5Stream, inpPtr, cmpBuf, inpBytes, sizeof(cmpBuf));
+            const int cmpBytes = Lizard_compress_continue(lz5Stream, inpPtr, cmpBuf, inpBytes, sizeof(cmpBuf));
             if(cmpBytes <= 0) {
                 break;
             }
@@ -68,19 +68,19 @@ void test_compress(FILE* outFp, FILE* inpFp)
     }
 
     write_int(outFp, 0);
-    LZ5_freeStream(lz5Stream);
+    Lizard_freeStream(lz5Stream);
 }
 
 
 void test_decompress(FILE* outFp, FILE* inpFp)
 {
-    LZ5_streamDecode_t lz5StreamDecode_body;
-    LZ5_streamDecode_t* lz5StreamDecode = &lz5StreamDecode_body;
+    Lizard_streamDecode_t lz5StreamDecode_body;
+    Lizard_streamDecode_t* lz5StreamDecode = &lz5StreamDecode_body;
 
     char decBuf[2][BLOCK_BYTES];
     int  decBufIndex = 0;
 
-    LZ5_setStreamDecode(lz5StreamDecode, NULL, 0);
+    Lizard_setStreamDecode(lz5StreamDecode, NULL, 0);
 
     for(;;) {
         char cmpBuf[LIZARD_COMPRESSBOUND(BLOCK_BYTES)];
@@ -100,7 +100,7 @@ void test_decompress(FILE* outFp, FILE* inpFp)
 
         {
             char* const decPtr = decBuf[decBufIndex];
-            const int decBytes = LZ5_decompress_safe_continue(
+            const int decBytes = Lizard_decompress_safe_continue(
                 lz5StreamDecode, cmpBuf, decPtr, cmpBytes, BLOCK_BYTES);
             if(decBytes <= 0) {
                 break;
