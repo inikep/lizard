@@ -30,7 +30,7 @@
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    You can contact the author at :
-    - Lizard source repository : https://github.com/inikep/lz5
+    - Lizard source repository : https://github.com/inikep/lizard
 */
 #ifndef LIZARD_DECOMPRESS_H_2983
 #define LIZARD_DECOMPRESS_H_2983
@@ -107,7 +107,7 @@ typedef struct {
  * information structure to track an Lizard stream.
  * init this structure content using Lizard_setStreamDecode or memset() before first use !
  *
- * In the context of a DLL (liblz5) please prefer usage of construction methods below.
+ * In the context of a DLL (liblizard) please prefer usage of construction methods below.
  * They are more future proof, in case of a change of Lizard_streamDecode_t size in the future.
  * Lizard_createStreamDecode will allocate and initialize an Lizard_streamDecode_t structure
  * Lizard_freeStreamDecode releases its memory.

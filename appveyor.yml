@@ -47,9 +47,9 @@ build_script:
       make -v &&
       echo ----- &&
       if not [%PLATFORM%]==[clang] (
-        make -C programs lz5 && make -C tests fullbench && make -C lib lib
+        make -C programs lizard && make -C tests fullbench && make -C lib lib
       ) ELSE (
-        make -C programs lz5 CC=clang MOREFLAGS="--target=x86_64-w64-mingw32 -Werror -Wconversion -Wno-sign-conversion" &&
+        make -C programs lizard CC=clang MOREFLAGS="--target=x86_64-w64-mingw32 -Werror -Wconversion -Wno-sign-conversion" &&
         make -C tests fullbench CC=clang MOREFLAGS="--target=x86_64-w64-mingw32 -Werror -Wconversion -Wno-sign-conversion" &&
         make -C lib lib CC=clang MOREFLAGS="--target=x86_64-w64-mingw32 -Werror -Wconversion -Wno-sign-conversion"
       )
@@ -59,42 +59,42 @@ build_script:
       COPY tests\fullbench.c bin\example\ &&
       COPY lib\xxhash.c bin\example\ &&
       COPY lib\xxhash.h bin\example\ &&
-      COPY lib\lz5.h bin\include\ &&
-      COPY lib\lz5hc.h bin\include\ &&
-      COPY lib\lz5frame.h bin\include\ &&
-      COPY lib\liblz5.a bin\static\liblz5_static.lib &&
-      COPY lib\dll\liblz5.* bin\dll\ &&
+      COPY lib\lizard.h bin\include\ &&
+      COPY lib\lizardhc.h bin\include\ &&
+      COPY lib\lizardframe.h bin\include\ &&
+      COPY lib\liblizard.a bin\static\liblizard_static.lib &&
+      COPY lib\dll\liblizard.* bin\dll\ &&
       COPY lib\dll\example\Makefile bin\example\ &&
       COPY lib\dll\example\fullbench-dll.* bin\example\ &&
       COPY lib\dll\example\README.md bin\ &&
-      COPY programs\lz5.exe bin\lz5.exe
+      COPY programs\lizard.exe bin\lizard.exe
     )
   - if [%COMPILER%]==[gccX] if [%PLATFORM%]==[mingw64] (
-      7z.exe a bin\lz5_x64.zip NEWS .\bin\lz5.exe .\bin\README.md .\bin\example .\bin\dll .\bin\static .\bin\include &&
-      appveyor PushArtifact bin\lz5_x64.zip
+      7z.exe a bin\lizard_x64.zip NEWS .\bin\lizard.exe .\bin\README.md .\bin\example .\bin\dll .\bin\static .\bin\include &&
+      appveyor PushArtifact bin\lizard_x64.zip
     )
   - if [%COMPILER%]==[gccX] if [%PLATFORM%]==[mingw32] (
-      7z.exe a bin\lz5_x86.zip NEWS .\bin\lz5.exe .\bin\README.md .\bin\example .\bin\dll .\bin\static .\bin\include &&
-      appveyor PushArtifact bin\lz5_x86.zip
+      7z.exe a bin\lizard_x86.zip NEWS .\bin\lizard.exe .\bin\README.md .\bin\example .\bin\dll .\bin\static .\bin\include &&
+      appveyor PushArtifact bin\lizard_x86.zip
     )
   - if [%COMPILER%]==[gcc] (COPY tests\fullbench.exe programs\)
   - if [%COMPILER%]==[visual] (
       ECHO *** &&
       ECHO *** Building Visual Studio 2010 %PLATFORM%\%CONFIGURATION% &&
       ECHO *** &&
-      msbuild "visual\VS2010\lz5.sln" %ADDITIONALPARAM% /m /verbosity:minimal /property:PlatformToolset=v100 /t:Clean,Build /p:Platform=%PLATFORM% /p:Configuration=%CONFIGURATION% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" &&
+      msbuild "visual\VS2010\lizard.sln" %ADDITIONALPARAM% /m /verbosity:minimal /property:PlatformToolset=v100 /t:Clean,Build /p:Platform=%PLATFORM% /p:Configuration=%CONFIGURATION% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" &&
       ECHO *** &&
       ECHO *** Building Visual Studio 2012 %PLATFORM%\%CONFIGURATION% &&
       ECHO *** &&
-      msbuild "visual\VS2010\lz5.sln" /m /verbosity:minimal /property:PlatformToolset=v110 /t:Clean,Build /p:Platform=%PLATFORM% /p:Configuration=%CONFIGURATION% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" &&
+      msbuild "visual\VS2010\lizard.sln" /m /verbosity:minimal /property:PlatformToolset=v110 /t:Clean,Build /p:Platform=%PLATFORM% /p:Configuration=%CONFIGURATION% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" &&
       ECHO *** &&
       ECHO *** Building Visual Studio 2013 %PLATFORM%\%CONFIGURATION% &&
       ECHO *** &&
-      msbuild "visual\VS2010\lz5.sln" /m /verbosity:minimal /property:PlatformToolset=v120 /t:Clean,Build /p:Platform=%PLATFORM% /p:Configuration=%CONFIGURATION% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" &&
+      msbuild "visual\VS2010\lizard.sln" /m /verbosity:minimal /property:PlatformToolset=v120 /t:Clean,Build /p:Platform=%PLATFORM% /p:Configuration=%CONFIGURATION% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" &&
       ECHO *** &&
       ECHO *** Building Visual Studio 2015 %PLATFORM%\%CONFIGURATION% &&
       ECHO *** &&
-      msbuild "visual\VS2010\lz5.sln" /m /verbosity:minimal /property:PlatformToolset=v140 /t:Clean,Build /p:Platform=%PLATFORM% /p:Configuration=%CONFIGURATION% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" &&
+      msbuild "visual\VS2010\lizard.sln" /m /verbosity:minimal /property:PlatformToolset=v140 /t:Clean,Build /p:Platform=%PLATFORM% /p:Configuration=%CONFIGURATION% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" &&
       COPY visual\VS2010\bin\%PLATFORM%_%CONFIGURATION%\*.exe programs\
     )
 
@@ -104,22 +104,22 @@ test_script:
       ECHO ***
   - if not [%COMPILER%]==[unknown] (
       CD programs &&
-      lz5 -h &&
-      lz5 -i1b lz5.exe &&
-      lz5 -i1b5 lz5.exe &&
-      lz5 -i1b10 lz5.exe &&
-      lz5 -i1b15 lz5.exe &&
-      echo ------- lz5 tested ------- &&
+      lizard -h &&
+      lizard -i1b lizard.exe &&
+      lizard -i1b5 lizard.exe &&
+      lizard -i1b10 lizard.exe &&
+      lizard -i1b15 lizard.exe &&
+      echo ------- lizard tested ------- &&
       fullbench.exe -i1 fullbench.exe
     )
 
 artifacts:
-  - path: bin\lz5_x64.zip
-  - path: bin\lz5_x86.zip
+  - path: bin\lizard_x64.zip
+  - path: bin\lizard_x86.zip
 
 deploy:
 - provider: GitHub
-  artifact: bin\lz5_x64.zip
+  artifact: bin\lizard_x64.zip
   auth_token:
     secure: LgJo8emYc3sFnlNWkGl4/VYK3nk/8+RagcsqDlAi3xeqNGNutnKjcftjg84uJoT4
   force_update: true
@@ -131,7 +131,7 @@ deploy:
     branch: autobuild
 
 - provider: GitHub
-  artifact: bin\lz5_x86.zip
+  artifact: bin\lizard_x86.zip
   auth_token:
     secure: LgJo8emYc3sFnlNWkGl4/VYK3nk/8+RagcsqDlAi3xeqNGNutnKjcftjg84uJoT4
   force_update: true

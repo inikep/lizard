@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9092C5CC-3E71-41B3-BF68-4A7BDD8A5476}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>liblz5</RootNamespace>
+    <RootNamespace>liblizard</RootNamespace>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin\obj\$(RootNamespace)_$(Platform)_$(Configuration)\</IntDir>
   </PropertyGroup>
@@ -66,23 +66,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <TargetName>liblz5_static</TargetName>
+    <TargetName>liblizard_static</TargetName>
     <IncludePath>$(IncludePath);$(UniversalCRT_IncludePath);$(SolutionDir)..\..\lib;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <TargetName>liblz5_static</TargetName>
+    <TargetName>liblizard_static</TargetName>
     <IncludePath>$(IncludePath);$(UniversalCRT_IncludePath);$(SolutionDir)..\..\lib;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
     <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <TargetName>liblz5_static</TargetName>
+    <TargetName>liblizard_static</TargetName>
     <IncludePath>$(IncludePath);$(UniversalCRT_IncludePath);$(SolutionDir)..\..\lib;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <TargetName>liblz5_static</TargetName>
+    <TargetName>liblizard_static</TargetName>
     <IncludePath>$(IncludePath);$(UniversalCRT_IncludePath);$(SolutionDir)..\..\lib;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
     <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
@@ -153,10 +153,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\lib\lz5_compress.h" />
-    <ClInclude Include="..\..\..\lib\lz5frame.h" />
-    <ClInclude Include="..\..\..\lib\lz5frame_static.h" />
-    <ClInclude Include="..\..\..\lib\lz5_common.h" />
+    <ClInclude Include="..\..\..\lib\lizard_compress.h" />
+    <ClInclude Include="..\..\..\lib\lizardframe.h" />
+    <ClInclude Include="..\..\..\lib\lizardframe_static.h" />
+    <ClInclude Include="..\..\..\lib\lizard_common.h" />
     <ClInclude Include="..\..\..\lib\xxhash\xxhash.h" />
   </ItemGroup>
   <ItemGroup>
@@ -165,9 +165,9 @@
     <ClCompile Include="..\..\..\lib\entropy\fse_decompress.c" />
     <ClCompile Include="..\..\..\lib\entropy\huf_compress.c" />
     <ClCompile Include="..\..\..\lib\entropy\huf_decompress.c" />
-    <ClCompile Include="..\..\..\lib\lz5_compress.c" />
-    <ClCompile Include="..\..\..\lib\lz5_decompress.c" />
-    <ClCompile Include="..\..\..\lib\lz5frame.c" />
+    <ClCompile Include="..\..\..\lib\lizard_compress.c" />
+    <ClCompile Include="..\..\..\lib\lizard_decompress.c" />
+    <ClCompile Include="..\..\..\lib\lizardframe.c" />
     <ClCompile Include="..\..\..\lib\xxhash\xxhash.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -7,9 +7,9 @@ DESTDIR ?= /opt/local
 # Version numbers
 VERSION ?= 129
 RELEASE ?= r$(VERSION)
-LIBVER_MAJOR=$(shell sed -n '/define LIZARD_VERSION_MAJOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5_compress.h)
-LIBVER_MINOR=$(shell sed -n '/define LIZARD_VERSION_MINOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5_compress.h)
-LIBVER_PATCH=$(shell sed -n '/define LIZARD_VERSION_RELEASE/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5_compress.h)
+LIBVER_MAJOR=$(shell sed -n '/define LIZARD_VERSION_MAJOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lizard_compress.h)
+LIBVER_MINOR=$(shell sed -n '/define LIZARD_VERSION_MINOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lizard_compress.h)
+LIBVER_PATCH=$(shell sed -n '/define LIZARD_VERSION_RELEASE/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lizard_compress.h)
 LIBVER=$(LIBVER_MAJOR).$(LIBVER_MINOR).$(LIBVER_PATCH)
 
 ######################################################################
@@ -21,15 +21,15 @@ LD = $(CROSS)-gcc
 
 CFLAGS ?= -O3 -std=gnu99 -Wall -Wextra -Wundef -Wshadow -Wcast-qual -Wcast-align -Wstrict-prototypes -pedantic -DLIZARD_VERSION=\"$(RELEASE)\"
 LDFLAGS ?= -s
-SRC = programs/bench.c programs/lz5io.c programs/lz5cli.c
+SRC = programs/bench.c programs/lizardio.c programs/lizardcli.c
 OBJ = $(SRC:.c=.o)
 SDEPS = $(SRC:.c=.d)
 IDIR = lib
 EDIR = .
-EXE = lz5.exe
-LNK = lz5
+EXE = lizard.exe
+LNK = lizard
 LDIR = lib
-LSRC = lib/lz5_compress.c lib/lz5frame.c lib/xxhash/xxhash.c
+LSRC = lib/lizard_compress.c lib/lizardframe.c lib/xxhash/xxhash.c
 INC = $(LSRC:.c=.h)
 LOBJ = $(LSRC:.c=.o)
 LSDEPS = $(LSRC:.c=.d)

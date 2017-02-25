@@ -7,56 +7,56 @@ Depending on target use case, it's enough to include only files from relevant di
 
 #### API
 
-Lizard stable API is exposed within [lz5_compress.h](lz5_compress.h) and [lz5_decompress.h](lz5_decompress.h),
+Lizard stable API is exposed within [lizard_compress.h](lizard_compress.h) and [lizard_decompress.h](lizard_decompress.h),
 at the root of `lib` directory.
 
 
 #### Compatibility issues
 
-The raw Lizard block compression format is detailed within [lz5_Block_format].
+The raw Lizard block compression format is detailed within [lizard_Block_format].
 To compress an arbitrarily long file or data stream, multiple blocks are required.
 Organizing these blocks and providing a common header format to handle their content
-is the purpose of the Frame format, defined in [lz5_Frame_format].
-`lz5` command line utility produces files or streams compatible with the Frame format.
+is the purpose of the Frame format, defined in [lizard_Frame_format].
+`lizard` command line utility produces files or streams compatible with the Frame format.
 (_Advanced stuff_ : It's possible to hide xxhash symbols into a local namespace.
-This is what `liblz5` does, to avoid symbol duplication
+This is what `liblizard` does, to avoid symbol duplication
 in case a user program would link to several libraries containing xxhash symbols.)
 
-[lz5_Block_format]: ../doc/lz5_Block_format.md
-[lz5_Frame_format]: ../doc/lz5_Frame_format.md
+[lizard_Block_format]: ../doc/lizard_Block_format.md
+[lizard_Frame_format]: ../doc/lizard_Frame_format.md
 
 
 #### Various Lizard builds
 
-Files `lz5_common.h`, `lz5_compress*`, `lz5_parser_*.h`, `lz5_decompress*`, and `entropy\mem.h` are required in all circumstances.
+Files `lizard_common.h`, `lizard_compress*`, `lizard_parser_*.h`, `lizard_decompress*`, and `entropy\mem.h` are required in all circumstances.
 
 To compile:
 - Lizard_raw only with levels 10...29 : use the `-DLIZARD_NO_HUFFMAN` compiler flag
 - Lizard_raw with levels 10...49 : include also all files from `entropy` directory
-- Lizard_frame with levels 10...49 : `lz5frame*` and all files from `entropy` and `xxhash` directories
+- Lizard_frame with levels 10...49 : `lizardframe*` and all files from `entropy` and `xxhash` directories
 
 
 #### Advanced API 
 
-A more complex `lz5frame_static.h` is also provided.
+A more complex `lizardframe_static.h` is also provided.
 It contains definitions which are not guaranteed to remain stable within future versions.
 It must be used with static linking ***only***.
 
 
 #### Using MinGW+MSYS to create DLL
 
-DLL can be created using MinGW+MSYS with the `make liblz5` command.
-This command creates `dll\liblz5.dll` and the import library `dll\liblz5.lib`.
+DLL can be created using MinGW+MSYS with the `make liblizard` command.
+This command creates `dll\liblizard.dll` and the import library `dll\liblizard.lib`.
 The import library is only required with Visual C++.
-The header files `lz5.h`, `lz5hc.h`, `lz5frame.h` and the dynamic library
-`dll\liblz5.dll` are required to compile a project using gcc/MinGW.
+The header files `lizard.h`, `lizardhc.h`, `lizardframe.h` and the dynamic library
+`dll\liblizard.dll` are required to compile a project using gcc/MinGW.
 The dynamic library has to be added to linking options.
 It means that if a project that uses Lizard consists of a single `test-dll.c`
-file it should be compiled with `liblz5.lib`. For example:
+file it should be compiled with `liblizard.lib`. For example:
 ```
-    gcc $(CFLAGS) -Iinclude/ test-dll.c -o test-dll dll\liblz5.dll
+    gcc $(CFLAGS) -Iinclude/ test-dll.c -o test-dll dll\liblizard.dll
 ```
-The compiled executable will require Lizard DLL which is available at `dll\liblz5.dll`. 
+The compiled executable will require Lizard DLL which is available at `dll\liblizard.dll`. 
 
 
 #### Miscellaneous 
@@ -64,8 +64,8 @@ The compiled executable will require Lizard DLL which is available at `dll\liblz
 Other files present in the directory are not source code. There are :
 
  - LICENSE : contains the BSD license text
- - Makefile : script to compile or install lz5 library (static or dynamic)
- - liblz5.pc.in : for pkg-config (make install)
+ - Makefile : script to compile or install lizard library (static or dynamic)
+ - liblizard.pc.in : for pkg-config (make install)
  - README.md : this file
 
 

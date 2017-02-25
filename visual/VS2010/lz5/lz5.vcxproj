@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E30329AC-0057-4FE0-8FDA-7F650D398C4C}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>lz5</RootNamespace>
+    <RootNamespace>lizard</RootNamespace>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin\obj\$(RootNamespace)_$(Platform)_$(Configuration)\</IntDir>
   </PropertyGroup>
@@ -157,14 +157,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\lib\lz5_compress.h" />
-    <ClInclude Include="..\..\..\lib\lz5frame.h" />
-    <ClInclude Include="..\..\..\lib\lz5frame_static.h" />
-    <ClInclude Include="..\..\..\lib\lz5_common.h" />
+    <ClInclude Include="..\..\..\lib\lizard_compress.h" />
+    <ClInclude Include="..\..\..\lib\lizardframe.h" />
+    <ClInclude Include="..\..\..\lib\lizardframe_static.h" />
+    <ClInclude Include="..\..\..\lib\lizard_common.h" />
     <ClInclude Include="..\..\..\lib\xxhash\xxhash.h" />
     <ClInclude Include="..\..\..\programs\bench.h" />
     <ClInclude Include="..\..\..\programs\datagen.h" />
-    <ClInclude Include="..\..\..\programs\lz5io.h" />
+    <ClInclude Include="..\..\..\programs\lizardio.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\lib\entropy\entropy_common.c" />
@@ -172,17 +172,17 @@
     <ClCompile Include="..\..\..\lib\entropy\fse_decompress.c" />
     <ClCompile Include="..\..\..\lib\entropy\huf_compress.c" />
     <ClCompile Include="..\..\..\lib\entropy\huf_decompress.c" />
-    <ClCompile Include="..\..\..\lib\lz5_compress.c" />
-    <ClCompile Include="..\..\..\lib\lz5_decompress.c" />
-    <ClCompile Include="..\..\..\lib\lz5frame.c" />
+    <ClCompile Include="..\..\..\lib\lizard_compress.c" />
+    <ClCompile Include="..\..\..\lib\lizard_decompress.c" />
+    <ClCompile Include="..\..\..\lib\lizardframe.c" />
     <ClCompile Include="..\..\..\lib\xxhash\xxhash.c" />
     <ClCompile Include="..\..\..\programs\bench.c" />
     <ClCompile Include="..\..\..\programs\datagen.c" />
-    <ClCompile Include="..\..\..\programs\lz5cli.c" />
-    <ClCompile Include="..\..\..\programs\lz5io.c" />
+    <ClCompile Include="..\..\..\programs\lizardcli.c" />
+    <ClCompile Include="..\..\..\programs\lizardio.c" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="lz5.rc" />
+    <ResourceCompile Include="lizard.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

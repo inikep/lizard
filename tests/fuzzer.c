@@ -19,7 +19,7 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     You can contact the author at :
-    - Lizard source repo : https://github.com/inikep/lz5
+    - Lizard source repo : https://github.com/inikep/lizard
 */
 
 /*-************************************
@@ -45,9 +45,9 @@
 #include <stdio.h>      /* fgets, sscanf */
 #include <string.h>     /* strcmp */
 #include <time.h>       /* clock_t, clock, CLOCKS_PER_SEC */
-#include "lz5_compress.h"        /* LIZARD_VERSION_STRING */
-#include "lz5_decompress.h"
-#include "lz5_common.h"
+#include "lizard_compress.h"        /* LIZARD_VERSION_STRING */
+#include "lizard_decompress.h"
+#include "lizard_common.h"
 #define XXH_STATIC_LINKING_ONLY
 #include "xxhash/xxhash.h"
 

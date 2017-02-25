@@ -356,7 +356,7 @@ FORCE_INLINE int Lizard_compress_optimalPrice(
     const size_t sufficient_len = ctx->params.sufficientLength;
     const int faster_get_matches = (ctx->params.fullSearch == 0); 
     const size_t minMatchLongOff = ctx->params.minMatchLongOff;
-    const int lz5OptimalMinOffset = (ctx->params.decompressType == Lizard_coderwords_LZ4) ? (1<<30) : LIZARD_OPTIMAL_MIN_OFFSET;
+    const int lizardOptimalMinOffset = (ctx->params.decompressType == Lizard_coderwords_LZ4) ? (1<<30) : LIZARD_OPTIMAL_MIN_OFFSET;
     const size_t repMinMatch = (ctx->params.decompressType == Lizard_coderwords_LZ4) ? MINMATCH : REPMINMATCH;
 
     /* Main Loop */
@@ -367,7 +367,7 @@ FORCE_INLINE int Lizard_compress_optimalPrice(
 
         /* check rep code */
 
-        if (ctx->last_off >= lz5OptimalMinOffset) {
+        if (ctx->last_off >= lizardOptimalMinOffset) {
             intptr_t matchIndexLO = (ip - ctx->last_off) - base;
             mlen = 0;
             if ((matchIndexLO >= lowLimit) && (base + matchIndexLO + maxDistance >= ip)) {
@@ -499,7 +499,7 @@ FORCE_INLINE int Lizard_compress_optimalPrice(
 
 
             /* check rep code */
-            if (opt[cur].rep >= lz5OptimalMinOffset) {
+            if (opt[cur].rep >= lizardOptimalMinOffset) {
                 intptr_t matchIndexLO = (inr - opt[cur].rep) - base;
                 mlen = 0;
                 if ((matchIndexLO >= lowLimit) && (base + matchIndexLO + maxDistance >= inr)) {

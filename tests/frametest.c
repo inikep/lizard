@@ -1,5 +1,5 @@
 /*
-    frameTest - test tool for lz5frame
+    frameTest - test tool for lizardframe
     Copyright (C) Yann Collet 2014-2016
 
     GPL v2 License
@@ -19,7 +19,7 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     You can contact the author at :
-    - Lizard source repository : https://github.com/inikep/lz5
+    - Lizard source repository : https://github.com/inikep/lizard
 */
 
 /*-************************************
@@ -38,8 +38,8 @@
 #include <stdio.h>      /* fprintf */
 #include <string.h>     /* strcmp */
 #include <time.h>       /* clock_t, clock(), CLOCKS_PER_SEC */
-#include "lz5frame_static.h"
-#include "lz5_compress.h"        /* LIZARD_VERSION_STRING */
+#include "lizardframe_static.h"
+#include "lizard_compress.h"        /* LIZARD_VERSION_STRING */
 #define XXH_STATIC_LINKING_ONLY
 #include "xxhash/xxhash.h"     /* XXH64 */
 
@@ -847,7 +847,7 @@ int main(int argc, char** argv)
     }
 
     /* Get Seed */
-    printf("Starting lz5frame tester (%i-bits, %s)\n", (int)(sizeof(size_t)*8), LIZARD_VERSION_STRING);
+    printf("Starting lizardframe tester (%i-bits, %s)\n", (int)(sizeof(size_t)*8), LIZARD_VERSION_STRING);
 
     if (!seedset) {
         time_t const t = time(NULL);

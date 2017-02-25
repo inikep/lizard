@@ -20,7 +20,7 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
     You can contact the author at :
-   - Lizard source repository : https://github.com/inikep/lz5
+   - Lizard source repository : https://github.com/inikep/lizard
 */
 
 /**************************************

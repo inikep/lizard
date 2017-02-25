@@ -27,8 +27,8 @@ ENDIF()
 set(LIB_DIR ../lib/)
 set(PRG_DIR ../programs/)
 set(ENTROPY_DIR ../lib/entropy/)
-set(LIZARD_SRCS_LIB ${LIB_DIR}lz5_decompress.c ${LIB_DIR}lz5_compress.c ${LIB_DIR}lz5_compress.h ${LIB_DIR}lz5_common.h ${LIB_DIR}lz5frame.c ${LIB_DIR}lz5frame.h ${LIB_DIR}xxhash/xxhash.c)
-set(LIZARD_SRCS ${LIB_DIR}lz5frame.c ${LIB_DIR}xxhash/xxhash.c ${PRG_DIR}bench.c ${PRG_DIR}datagen.c ${PRG_DIR}lz5cli.c ${PRG_DIR}lz5io.c)
+set(LIZARD_SRCS_LIB ${LIB_DIR}lizard_decompress.c ${LIB_DIR}lizard_compress.c ${LIB_DIR}lizard_compress.h ${LIB_DIR}lizard_common.h ${LIB_DIR}lizardframe.c ${LIB_DIR}lizardframe.h ${LIB_DIR}xxhash/xxhash.c)
+set(LIZARD_SRCS ${LIB_DIR}lizardframe.c ${LIB_DIR}xxhash/xxhash.c ${PRG_DIR}bench.c ${PRG_DIR}datagen.c ${PRG_DIR}lizardcli.c ${PRG_DIR}lizardio.c)
 #set(ENTROPY_LIB_SRCS ${ENTROPY_DIR}entropy_common.c ${ENTROPY_DIR}fse_compress.c ${ENTROPY_DIR}fse_decompress.c ${ENTROPY_DIR}huf_compress.c ${ENTROPY_DIR}huf_decompress.c)
 
 if(BUILD_TOOLS AND NOT (LINK_TOOLS_WITH_LIB AND BUILD_LIBS))
@@ -36,8 +36,8 @@ if(BUILD_TOOLS AND NOT (LINK_TOOLS_WITH_LIB AND BUILD_LIBS))
 endif()
 
 if(BUILD_TOOLS)
-    add_executable(lz5 ${LIZARD_SRCS})
-    install(TARGETS lz5 RUNTIME DESTINATION "bin/")
+    add_executable(lizard ${LIZARD_SRCS})
+    install(TARGETS lizard RUNTIME DESTINATION "bin/")
 endif()
 
 if(BUILD_LIBS)
@@ -45,17 +45,17 @@ if(BUILD_LIBS)
 
     SET(LIBS_TARGETS "")
     IF(WIN32)
-        add_library(liblz5 STATIC ${LIZARD_SRCS_LIB} ${ENTROPY_LIB_SRCS})
-        SET(LIBS_TARGETS liblz5)
+        add_library(liblizard STATIC ${LIZARD_SRCS_LIB} ${ENTROPY_LIB_SRCS})
+        SET(LIBS_TARGETS liblizard)
     ELSE(WIN32)
-        add_library(liblz5 SHARED ${LIZARD_SRCS_LIB} ${ENTROPY_LIB_SRCS})
-        add_library(liblz5_static STATIC ${LIZARD_SRCS_LIB} ${ENTROPY_LIB_SRCS})
-        SET_TARGET_PROPERTIES(liblz5_static PROPERTIES OUTPUT_NAME lz5)
-        SET(LIBS_TARGETS liblz5 liblz5_static)
+        add_library(liblizard SHARED ${LIZARD_SRCS_LIB} ${ENTROPY_LIB_SRCS})
+        add_library(liblizard_static STATIC ${LIZARD_SRCS_LIB} ${ENTROPY_LIB_SRCS})
+        SET_TARGET_PROPERTIES(liblizard_static PROPERTIES OUTPUT_NAME lizard)
+        SET(LIBS_TARGETS liblizard liblizard_static)
     ENDIF(WIN32)
 
-    set_target_properties(liblz5 PROPERTIES
-    OUTPUT_NAME lz5
+    set_target_properties(liblizard PROPERTIES
+    OUTPUT_NAME lizard
     SOVERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}"
     )
 
@@ -66,9 +66,9 @@ if(BUILD_LIBS)
     )
 
     install(FILES
-    ${LIB_DIR}/lz5_compress.h
-    ${LIB_DIR}/lz5_common.h
-    ${LIB_DIR}/lz5frame.h
+    ${LIB_DIR}/lizard_compress.h
+    ${LIB_DIR}/lizard_common.h
+    ${LIB_DIR}/lizardframe.h
     DESTINATION include
     )
 
@@ -76,13 +76,13 @@ if(BUILD_LIBS)
     set(LIBDIR ${CMAKE_INSTALL_PREFIX}/lib)
     set(INCLUDEDIR ${CMAKE_INSTALL_PREFIX}/include)
     string(SUBSTRING ${CPACK_PACKAGE_VERSION_PATCH} 1 -1 VERSION)
-    configure_file(${LIB_DIR}/liblz5.pc.in liblz5.pc @ONLY)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/liblz5.pc
+    configure_file(${LIB_DIR}/liblizard.pc.in liblizard.pc @ONLY)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/liblizard.pc
     DESTINATION "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/pkgconfig"
     )
 
   if(BUILD_TOOLS AND LINK_TOOLS_WITH_LIB)
-        target_link_libraries(lz5 liblz5)
+        target_link_libraries(lizard liblizard)
     endif()
 endif()
 

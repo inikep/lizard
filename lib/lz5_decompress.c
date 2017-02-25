@@ -29,7 +29,7 @@
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    You can contact the author at :
-    - Lizard source repository : https://github.com/inikep/lz5
+    - Lizard source repository : https://github.com/inikep/lizard
 */
 
 
@@ -38,11 +38,11 @@
 **************************************/
 //#define LIZARD_STATS 1 // 0=simple stats, 1=more, 2=full
 #ifdef LIZARD_STATS
-    #include "test/lz5_stats.h"
+    #include "test/lizard_stats.h"
 #endif
-#include "lz5_compress.h"
-#include "lz5_decompress.h"
-#include "lz5_common.h"
+#include "lizard_compress.h"
+#include "lizard_decompress.h"
+#include "lizard_common.h"
 #include <stdio.h> // printf
 #include <stdint.h> // intptr_t
 
@@ -53,13 +53,13 @@
 typedef enum { noDict = 0, withPrefix64k, usingExtDict } dict_directive;
 typedef enum { full = 0, partial = 1 } earlyEnd_directive;
 
-#include "lz5_decompress_lz4.h"
+#include "lizard_decompress_lz4.h"
 #ifndef USE_LZ4_ONLY
     #ifdef LIZARD_USE_TEST
-        #include "test/lz5_common_test.h"
-        #include "test/lz5_decompress_test.h"
+        #include "test/lizard_common_test.h"
+        #include "test/lizard_decompress_test.h"
     #else
-        #include "lz5_decompress_liz.h"
+        #include "lizard_decompress_liz.h"
     #endif
 #endif
 #include "entropy/huf.h"
@@ -285,8 +285,8 @@ int Lizard_decompress_safe_partial(const char* source, char* dest, int compresse
  */
 Lizard_streamDecode_t* Lizard_createStreamDecode(void)
 {
-    Lizard_streamDecode_t* lz5s = (Lizard_streamDecode_t*) ALLOCATOR(1, sizeof(Lizard_streamDecode_t));
-    return lz5s;
+    Lizard_streamDecode_t* lizards = (Lizard_streamDecode_t*) ALLOCATOR(1, sizeof(Lizard_streamDecode_t));
+    return lizards;
 }
 
 int Lizard_freeStreamDecode (Lizard_streamDecode_t* Lizard_stream)
@@ -304,11 +304,11 @@ int Lizard_freeStreamDecode (Lizard_streamDecode_t* Lizard_stream)
  */
 int Lizard_setStreamDecode (Lizard_streamDecode_t* Lizard_streamDecode, const char* dictionary, int dictSize)
 {
-    Lizard_streamDecode_t* lz5sd = (Lizard_streamDecode_t*) Lizard_streamDecode;
-    lz5sd->prefixSize = (size_t) dictSize;
-    lz5sd->prefixEnd = (const BYTE*) dictionary + dictSize;
-    lz5sd->externalDict = NULL;
-    lz5sd->extDictSize  = 0;
+    Lizard_streamDecode_t* lizardsd = (Lizard_streamDecode_t*) Lizard_streamDecode;
+    lizardsd->prefixSize = (size_t) dictSize;
+    lizardsd->prefixEnd = (const BYTE*) dictionary + dictSize;
+    lizardsd->externalDict = NULL;
+    lizardsd->extDictSize  = 0;
     return 1;
 }
 
@@ -321,23 +321,23 @@ int Lizard_setStreamDecode (Lizard_streamDecode_t* Lizard_streamDecode, const ch
 */
 int Lizard_decompress_safe_continue (Lizard_streamDecode_t* Lizard_streamDecode, const char* source, char* dest, int compressedSize, int maxOutputSize)
 {
-    Lizard_streamDecode_t* lz5sd = (Lizard_streamDecode_t*) Lizard_streamDecode;
+    Lizard_streamDecode_t* lizardsd = (Lizard_streamDecode_t*) Lizard_streamDecode;
     int result;
 
-    if (lz5sd->prefixEnd == (BYTE*)dest) {
+    if (lizardsd->prefixEnd == (BYTE*)dest) {
         result = Lizard_decompress_generic(source, dest, compressedSize, maxOutputSize,
-                                        full, 0, usingExtDict, lz5sd->prefixEnd - lz5sd->prefixSize, lz5sd->externalDict, lz5sd->extDictSize);
+                                        full, 0, usingExtDict, lizardsd->prefixEnd - lizardsd->prefixSize, lizardsd->externalDict, lizardsd->extDictSize);
         if (result <= 0) return result;
-        lz5sd->prefixSize += result;
-        lz5sd->prefixEnd  += result;
+        lizardsd->prefixSize += result;
+        lizardsd->prefixEnd  += result;
     } else {
-        lz5sd->extDictSize = lz5sd->prefixSize;
-        lz5sd->externalDict = lz5sd->prefixEnd - lz5sd->extDictSize;
+        lizardsd->extDictSize = lizardsd->prefixSize;
+        lizardsd->externalDict = lizardsd->prefixEnd - lizardsd->extDictSize;
         result = Lizard_decompress_generic(source, dest, compressedSize, maxOutputSize,
-                                        full, 0, usingExtDict, (BYTE*)dest, lz5sd->externalDict, lz5sd->extDictSize);
+                                        full, 0, usingExtDict, (BYTE*)dest, lizardsd->externalDict, lizardsd->extDictSize);
         if (result <= 0) return result;
-        lz5sd->prefixSize = result;
-        lz5sd->prefixEnd  = (BYTE*)dest + result;
+        lizardsd->prefixSize = result;
+        lizardsd->prefixEnd  = (BYTE*)dest + result;
     }
 
     return result;

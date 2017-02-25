@@ -29,26 +29,26 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     You can contact the author at :
-       - Lizard source repository : https://github.com/inikep/lz5
+       - Lizard source repository : https://github.com/inikep/lizard
 */
 
 
 /* *************************************
 *  Includes
 ***************************************/
-#include "lz5_compress.h"
-#include "lz5_common.h"
+#include "lizard_compress.h"
+#include "lizard_common.h"
 #include <stdio.h>
 #include <stdint.h> // intptr_t
 #ifndef USE_LZ4_ONLY
     #ifdef LIZARD_USE_TEST
-        #include "test/lz5_common_test.h"
-        #include "test/lz5_compress_test.h"
+        #include "test/lizard_common_test.h"
+        #include "test/lizard_compress_test.h"
     #else
-        #include "lz5_compress_liz.h"
+        #include "lizard_compress_liz.h"
     #endif
 #endif
-#include "lz5_compress_lz4.h"
+#include "lizard_compress_lz4.h"
 #include "entropy/huf.h"
 
 
@@ -288,15 +288,15 @@ FORCE_INLINE int Lizard_encodeLastLiterals (
 /**************************************
 *  Include parsers
 **************************************/
-#include "lz5_parser_hashchain.h"
-#include "lz5_parser_nochain.h"
-#include "lz5_parser_fast.h"
-#include "lz5_parser_fastsmall.h"
-#include "lz5_parser_fastbig.h"
+#include "lizard_parser_hashchain.h"
+#include "lizard_parser_nochain.h"
+#include "lizard_parser_fast.h"
+#include "lizard_parser_fastsmall.h"
+#include "lizard_parser_fastbig.h"
 #ifndef USE_LZ4_ONLY
-    #include "lz5_parser_optimal.h"
-    #include "lz5_parser_lowestprice.h"
-    #include "lz5_parser_pricefast.h"
+    #include "lizard_parser_optimal.h"
+    #include "lizard_parser_lowestprice.h"
+    #include "lizard_parser_pricefast.h"
 #endif
 
 

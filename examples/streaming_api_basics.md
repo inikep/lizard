@@ -4,10 +4,10 @@ by *Takayuki Matsuoka*
 
 Lizard has the following API sets :
 
- - "Auto Framing" API (lz5frame.h) :
+ - "Auto Framing" API (lizardframe.h) :
    This is most recommended API for usual application.
    It guarantees interoperability with other Lizard framing format compliant tools/libraries
-   such as Lizard command line utility, node-lz5, etc.
+   such as Lizard command line utility, node-lizard, etc.
  - "Block" API : This is recommended for simple purpose.
    It compress single raw memory block to Lizard memory block and vice versa.
  - "Streaming" API : This is designed for complex thing.

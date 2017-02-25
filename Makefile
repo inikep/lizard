@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # You can contact the author at :
-#  - Lizard source repository : https://github.com/inikep/lz5
+#  - Lizard source repository : https://github.com/inikep/lizard
 # ################################################################
 
 DESTDIR ?=
@@ -48,25 +48,25 @@ EXT =
 endif
 
 
-.PHONY: default all lib lz5 clean test versionsTest examples
+.PHONY: default all lib lizard clean test versionsTest examples
 
-default: lz5
+default: lizard
 
-all: lib lz5
+all: lib lizard
 
 lib:
 	@$(MAKE) -C $(LIBDIR) all
 
-lz5:
+lizard:
 	@$(MAKE) -C $(PRGDIR)
-	@cp $(PRGDIR)/lz5$(EXT) .
+	@cp $(PRGDIR)/lizard$(EXT) .
 
 clean:
 	@$(MAKE) -C $(PRGDIR) $@ > $(VOID)
 	@$(MAKE) -C $(TESTDIR) $@ > $(VOID)
 	@$(MAKE) -C $(LIBDIR) $@ > $(VOID)
 	@$(MAKE) -C examples $@ > $(VOID)
-	@$(RM) lz5$(EXT)
+	@$(RM) lizard$(EXT)
 	@echo Cleaning completed
 
 
@@ -109,7 +109,7 @@ staticAnalyze: clean
 	CFLAGS=-g scan-build --status-bugs -v $(MAKE) all
 
 platformTest: clean
-	@echo "\n ---- test lz5 with $(CC) compiler ----"
+	@echo "\n ---- test lizard with $(CC) compiler ----"
 	@$(CC) -v
 	CFLAGS="-O3 -Werror"         $(MAKE) -C $(LIBDIR) all
 	CFLAGS="-O3 -Werror -static" $(MAKE) -C $(PRGDIR) native
@@ -121,7 +121,7 @@ versionsTest: clean
 
 examples:
 	$(MAKE) -C $(LIBDIR)
-	$(MAKE) -C $(PRGDIR) lz5
+	$(MAKE) -C $(PRGDIR) lizard
 	$(MAKE) -C examples test
 
 endif

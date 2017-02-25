@@ -113,7 +113,7 @@ The only relation between frames is their sequential order.
 The ability to decode multiple concatenated frames 
 within a single stream or file
 is left outside of this specification. 
-As an example, the reference lz5 command line utility behavior is
+As an example, the reference lizard command line utility behavior is
 to decode all concatenated frames in their sequential order.
 
  

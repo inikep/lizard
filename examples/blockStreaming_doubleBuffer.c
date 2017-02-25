@@ -6,8 +6,8 @@
 #  define _CRT_SECURE_NO_WARNINGS
 #  define snprintf sprintf_s
 #endif
-#include "lz5_common.h"
-#include "lz5_decompress.h"
+#include "lizard_common.h"
+#include "lizard_decompress.h"
 
 #include <stdio.h>
 #include <stdint.h>
@@ -39,13 +39,13 @@ size_t read_bin(FILE* fp, void* array, size_t arrayBytes) {
 
 void test_compress(FILE* outFp, FILE* inpFp)
 {
-    Lizard_stream_t* lz5Stream = Lizard_createStream_MinLevel();
+    Lizard_stream_t* lizardStream = Lizard_createStream_MinLevel();
     char inpBuf[2][BLOCK_BYTES];
     int  inpBufIndex = 0;
 
-    if (!lz5Stream) return;
-    lz5Stream = Lizard_resetStream_MinLevel(lz5Stream);
-    if (!lz5Stream) return;
+    if (!lizardStream) return;
+    lizardStream = Lizard_resetStream_MinLevel(lizardStream);
+    if (!lizardStream) return;
 
     for(;;) {
         char* const inpPtr = inpBuf[inpBufIndex];
@@ -56,7 +56,7 @@ void test_compress(FILE* outFp, FILE* inpFp)
 
         {
             char cmpBuf[LIZARD_COMPRESSBOUND(BLOCK_BYTES)];
-            const int cmpBytes = Lizard_compress_continue(lz5Stream, inpPtr, cmpBuf, inpBytes, sizeof(cmpBuf));
+            const int cmpBytes = Lizard_compress_continue(lizardStream, inpPtr, cmpBuf, inpBytes, sizeof(cmpBuf));
             if(cmpBytes <= 0) {
                 break;
             }
@@ -68,19 +68,19 @@ void test_compress(FILE* outFp, FILE* inpFp)
     }
 
     write_int(outFp, 0);
-    Lizard_freeStream(lz5Stream);
+    Lizard_freeStream(lizardStream);
 }
 
 
 void test_decompress(FILE* outFp, FILE* inpFp)
 {
-    Lizard_streamDecode_t lz5StreamDecode_body;
-    Lizard_streamDecode_t* lz5StreamDecode = &lz5StreamDecode_body;
+    Lizard_streamDecode_t lizardStreamDecode_body;
+    Lizard_streamDecode_t* lizardStreamDecode = &lizardStreamDecode_body;
 
     char decBuf[2][BLOCK_BYTES];
     int  decBufIndex = 0;
 
-    Lizard_setStreamDecode(lz5StreamDecode, NULL, 0);
+    Lizard_setStreamDecode(lizardStreamDecode, NULL, 0);
 
     for(;;) {
         char cmpBuf[LIZARD_COMPRESSBOUND(BLOCK_BYTES)];
@@ -101,7 +101,7 @@ void test_decompress(FILE* outFp, FILE* inpFp)
         {
             char* const decPtr = decBuf[decBufIndex];
             const int decBytes = Lizard_decompress_safe_continue(
-                lz5StreamDecode, cmpBuf, decPtr, cmpBytes, BLOCK_BYTES);
+                lizardStreamDecode, cmpBuf, decPtr, cmpBytes, BLOCK_BYTES);
             if(decBytes <= 0) {
                 break;
             }
@@ -140,7 +140,7 @@ int compare(FILE* fp0, FILE* fp1)
 int main(int argc, char* argv[])
 {
     char inpFilename[256] = { 0 };
-    char lz5Filename[256] = { 0 };
+    char lizardFilename[256] = { 0 };
     char decFilename[256] = { 0 };
 
     if(argc < 2) {
@@ -149,19 +149,19 @@ int main(int argc, char* argv[])
     }
 
     snprintf(inpFilename, 256, "%s", argv[1]);
-    snprintf(lz5Filename, 256, "%s.lz5s-%d", argv[1], BLOCK_BYTES);
-    snprintf(decFilename, 256, "%s.lz5s-%d.dec", argv[1], BLOCK_BYTES);
+    snprintf(lizardFilename, 256, "%s.lizs-%d", argv[1], BLOCK_BYTES);
+    snprintf(decFilename, 256, "%s.lizs-%d.dec", argv[1], BLOCK_BYTES);
 
     printf("inp = [%s]\n", inpFilename);
-    printf("lz5 = [%s]\n", lz5Filename);
+    printf("lizard = [%s]\n", lizardFilename);
     printf("dec = [%s]\n", decFilename);
 
     // compress
     {
         FILE* inpFp = fopen(inpFilename, "rb");
-        FILE* outFp = fopen(lz5Filename, "wb");
+        FILE* outFp = fopen(lizardFilename, "wb");
 
-        printf("compress : %s -> %s\n", inpFilename, lz5Filename);
+        printf("compress : %s -> %s\n", inpFilename, lizardFilename);
         test_compress(outFp, inpFp);
         printf("compress : done\n");
 
@@ -171,10 +171,10 @@ int main(int argc, char* argv[])
 
     // decompress
     {
-        FILE* inpFp = fopen(lz5Filename, "rb");
+        FILE* inpFp = fopen(lizardFilename, "rb");
         FILE* outFp = fopen(decFilename, "wb");
 
-        printf("decompress : %s -> %s\n", lz5Filename, decFilename);
+        printf("decompress : %s -> %s\n", lizardFilename, decFilename);
         test_decompress(outFp, inpFp);
         printf("decompress : done\n");
 

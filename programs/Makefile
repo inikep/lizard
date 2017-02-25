@@ -22,10 +22,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # You can contact the author at :
-#  - Lizard source repository : https://github.com/inikep/lz5
+#  - Lizard source repository : https://github.com/inikep/lizard
 # ##########################################################################
-# lz5 : Command Line Utility, supporting gzip-like arguments
-# lz5c32: Same as lz5, but forced to compile in 32-bits mode
+# lizard : Command Line Utility, supporting gzip-like arguments
+# lizardc32: Same as lizard, but forced to compile in 32-bits mode
 # ##########################################################################
 
 VOID = /dev/null
@@ -55,43 +55,43 @@ ifeq ($(shell $(CC) -v 2>&1 | grep -c "gcc version "), 1)
 endif
 
 
-default: lz5
+default: lizard
 
-m32: lz5c32
+m32: lizardc32
 
-native: lz5
+native: lizard
 
 all: native m32
 
 # dependencies
-$(LIBDIR)/lz5_compress.o: $(LIBDIR)/lz5_compress.c $(LIBDIR)/lz5_common.h $(LIBDIR)/lz5_compress*.h $(LIBDIR)/lz5_parser_*.h $(TEST_CODEWORDS)
+$(LIBDIR)/lizard_compress.o: $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizard_common.h $(LIBDIR)/lizard_compress*.h $(LIBDIR)/lizard_parser_*.h $(TEST_CODEWORDS)
 	$(CC) $(FLAGS) $< -c -o $@
 
-$(LIBDIR)/lz5_compress32.o: $(LIBDIR)/lz5_compress.c $(LIBDIR)/lz5_common.h $(LIBDIR)/lz5_compress*.h $(LIBDIR)/lz5_parser_*.h $(TEST_CODEWORDS)
+$(LIBDIR)/lizard_compress32.o: $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizard_common.h $(LIBDIR)/lizard_compress*.h $(LIBDIR)/lizard_parser_*.h $(TEST_CODEWORDS)
 	$(CC) -m32 $(FLAGS) $< -c -o $@
 
-$(LIBDIR)/lz5_decompress.o: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.h $(LIBDIR)/lz5_common.h $(LIBDIR)/lz5_decompress*.h $(TEST_CODEWORDS)
+$(LIBDIR)/lizard_decompress.o: $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizard_compress.h $(LIBDIR)/lizard_common.h $(LIBDIR)/lizard_decompress*.h $(TEST_CODEWORDS)
 	$(CC) $(FLAGS) $(ALIGN_LOOP) $< -c -o $@
 
-$(LIBDIR)/lz5_decompress32.o: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.h $(LIBDIR)/lz5_common.h $(LIBDIR)/lz5_decompress*.h $(TEST_CODEWORDS)
+$(LIBDIR)/lizard_decompress32.o: $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizard_compress.h $(LIBDIR)/lizard_common.h $(LIBDIR)/lizard_decompress*.h $(TEST_CODEWORDS)
 	$(CC) -m32 $(FLAGS) $< -c -o $@
 
 
 
-lz5: $(LIBDIR)/lz5_decompress.o $(LIBDIR)/lz5_compress.o $(LIBDIR)/lz5frame.o $(LIBDIR)/xxhash/xxhash.o bench.o lz5io.o lz5cli.o datagen.o $(ENTROPY_FILES)
+lizard: $(LIBDIR)/lizard_decompress.o $(LIBDIR)/lizard_compress.o $(LIBDIR)/lizardframe.o $(LIBDIR)/xxhash/xxhash.o bench.o lizardio.o lizardcli.o datagen.o $(ENTROPY_FILES)
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-lz5nohuf: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.c $(LIBDIR)/lz5frame.o $(LIBDIR)/xxhash/xxhash.o bench.c lz5io.o lz5cli.c datagen.o
+lizardnohuf: $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizardframe.o $(LIBDIR)/xxhash/xxhash.o bench.c lizardio.o lizardcli.c datagen.o
 	$(CC) -DLIZARD_NO_HUFFMAN $(FLAGS) $^ -o $@$(EXT)
 
-lz5c32: $(LIBDIR)/lz5_decompress32.o $(LIBDIR)/lz5_compress32.o $(LIBDIR)/lz5frame.c $(LIBDIR)/xxhash/xxhash.c bench.c lz5io.c lz5cli.c datagen.c $(ENTROPY_FILES)
+lizardc32: $(LIBDIR)/lizard_decompress32.o $(LIBDIR)/lizard_compress32.o $(LIBDIR)/lizardframe.c $(LIBDIR)/xxhash/xxhash.c bench.c lizardio.c lizardcli.c datagen.c $(ENTROPY_FILES)
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
 
 clean:
 	@$(MAKE) -C $(LIBDIR) $@ > $(VOID)
 	@rm -f core *.o *.test tmp* \
-        lz5$(EXT) lz5c32$(EXT) \
+        lizard$(EXT) lizardc32$(EXT) \
 	@echo Cleaning completed
 
 
@@ -100,11 +100,11 @@ clean:
 #-----------------------------------------------------------------------------
 ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU OpenBSD FreeBSD NetBSD DragonFly SunOS Haiku))
 
-unlz5: lz5
-	ln -s lz5 unlz5
+unlizard: lizard
+	ln -s lizard unlizard
 
-lz5cat: lz5
-	ln -s lz5 lz5cat
+lizardcat: lizard
+	ln -s lizard lizardcat
 
 
 ifneq (,$(filter $(shell uname),SunOS))
@@ -128,25 +128,25 @@ INSTALL_SCRIPT  ?= $(INSTALL) -m 755
 INSTALL_MAN     ?= $(INSTALL) -m 644
 
 
-install: lz5$(EXT)
+install: lizard$(EXT)
 	@echo Installing binaries
 	@$(INSTALL) -d -m 755 $(DESTDIR)$(BINDIR)/ $(DESTDIR)$(MANDIR)/
-	@$(INSTALL_PROGRAM) lz5$(EXT) $(DESTDIR)$(BINDIR)/lz5$(EXT)
-	@ln -sf lz5$(EXT) $(DESTDIR)$(BINDIR)/lz5cat$(EXT)
-	@ln -sf lz5$(EXT) $(DESTDIR)$(BINDIR)/unlz5$(EXT)
+	@$(INSTALL_PROGRAM) lizard$(EXT) $(DESTDIR)$(BINDIR)/lizard$(EXT)
+	@ln -sf lizard$(EXT) $(DESTDIR)$(BINDIR)/lizardcat$(EXT)
+	@ln -sf lizard$(EXT) $(DESTDIR)$(BINDIR)/unlizard$(EXT)
 	@echo Installing man pages
-	@$(INSTALL_MAN) -m 644 lz5.1 $(DESTDIR)$(MANDIR)/lz5.1
-	@ln -sf lz5.1 $(DESTDIR)$(MANDIR)/lz5cat.1
-	@ln -sf lz5.1 $(DESTDIR)$(MANDIR)/unlz5.1
-	@echo lz5 installation completed
+	@$(INSTALL_MAN) -m 644 lizard.1 $(DESTDIR)$(MANDIR)/lizard.1
+	@ln -sf lizard.1 $(DESTDIR)$(MANDIR)/lizardcat.1
+	@ln -sf lizard.1 $(DESTDIR)$(MANDIR)/unlizard.1
+	@echo lizard installation completed
 
 uninstall:
-	@$(RM) $(DESTDIR)$(BINDIR)/lz5cat$(EXT)
-	@$(RM) $(DESTDIR)$(BINDIR)/unlz5$(EXT)
-	@$(RM) $(DESTDIR)$(BINDIR)/lz5$(EXT)
-	@$(RM) $(DESTDIR)$(MANDIR)/lz5.1
-	@$(RM) $(DESTDIR)$(MANDIR)/lz5cat.1
-	@$(RM) $(DESTDIR)$(MANDIR)/unlz5.1
-	@echo lz5 programs successfully uninstalled
+	@$(RM) $(DESTDIR)$(BINDIR)/lizardcat$(EXT)
+	@$(RM) $(DESTDIR)$(BINDIR)/unlizard$(EXT)
+	@$(RM) $(DESTDIR)$(BINDIR)/lizard$(EXT)
+	@$(RM) $(DESTDIR)$(MANDIR)/lizard.1
+	@$(RM) $(DESTDIR)$(MANDIR)/lizardcat.1
+	@$(RM) $(DESTDIR)$(MANDIR)/unlizard.1
+	@echo lizard programs successfully uninstalled
 
 endif

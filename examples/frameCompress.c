@@ -6,13 +6,13 @@
 #include <string.h>
 #include <errno.h>
 
-#include <lz5frame.h>
+#include <lizardframe.h>
 
 #define BUF_SIZE (16*1024)
 #define LIZARD_HEADER_SIZE 19
 #define LIZARD_FOOTER_SIZE 4
 
-static const LizardF_preferences_t lz5_preferences = {
+static const LizardF_preferences_t lizard_preferences = {
 	{ LizardF_max256KB, LizardF_blockLinked, LizardF_noContentChecksum, LizardF_frame, 0, { 0, 0 } },
 	0,   /* compression level */
 	0,   /* autoflush */
@@ -38,7 +38,7 @@ static int compress_file(FILE *in, FILE *out, size_t *size_in, size_t *size_out)
 		goto cleanup;
 	}
 
-	frame_size = LizardF_compressBound(BUF_SIZE, &lz5_preferences);
+	frame_size = LizardF_compressBound(BUF_SIZE, &lizard_preferences);
 	size =  frame_size + LIZARD_HEADER_SIZE + LIZARD_FOOTER_SIZE;
 	buf = malloc(size);
 	if (!buf) {
@@ -46,7 +46,7 @@ static int compress_file(FILE *in, FILE *out, size_t *size_in, size_t *size_out)
 		goto cleanup;
 	}
 
-	n = offset = count_out = LizardF_compressBegin(ctx, buf, size, &lz5_preferences);
+	n = offset = count_out = LizardF_compressBegin(ctx, buf, size, &lizard_preferences);
 	if (LizardF_isError(n)) {
 		printf("Failed to start compression: error %zu", n);
 		goto cleanup;
@@ -129,7 +129,7 @@ static int compress(const char *input, const char *output) {
 			return 1;
 		}
 		strcpy(tmp, input);
-		strcpy(tmp + len, ".lz5");
+		strcpy(tmp + len, ".liz");
 	}
 
 	in = fopen(input, "rb");

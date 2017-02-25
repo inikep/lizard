@@ -29,7 +29,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     You can contact the author at :
-       - Lizard source repository : https://github.com/inikep/lz5
+       - Lizard source repository : https://github.com/inikep/lizard
 */
 
 #ifndef LIZARD_COMMON_H_2983
@@ -47,7 +47,7 @@ extern "C" {
 #include <string.h>   /* memset, memcpy */
 #include <stdint.h>   /* intptr_t */
 #include "entropy/mem.h"
-#include "lz5_compress.h"      /* LIZARD_GCC_VERSION */
+#include "lizard_compress.h"      /* LIZARD_GCC_VERSION */
 
 //#define LIZARD_USE_LOGS
 #define LIZARD_LOG_COMPRESS(...) //printf(__VA_ARGS__)

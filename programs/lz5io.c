@@ -19,7 +19,7 @@
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
   You can contact the author at :
-  - Lizard source repository : https://github.com/inikep/lz5
+  - Lizard source repository : https://github.com/inikep/lizard
 */
 /*
   Note : this is stand-alone program.
@@ -51,8 +51,8 @@
 #include <time.h>      /* clock */
 #include <sys/types.h> /* stat64 */
 #include <sys/stat.h>  /* stat64 */
-#include "lz5io.h"
-#include "lz5frame.h"
+#include "lizardio.h"
+#include "lizardframe.h"
 
 
 

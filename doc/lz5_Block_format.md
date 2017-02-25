@@ -18,7 +18,7 @@ not how the compressor nor decompressor actually work.
 The correctness of the decompressor should not depend
 on implementation details of the compressor, and vice versa.
 
-[Lizard Frame format]: lz5_Frame_format.md
+[Lizard Frame format]: lizard_Frame_format.md
 
 
 Division into blocks

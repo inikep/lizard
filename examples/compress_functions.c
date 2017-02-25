@@ -1,11 +1,11 @@
 /*
  * compress_functions.c
  * Copyright  : Kyle Harper
- * License    : Follows same licensing as the lz5_compress.c/lz5_compress.h program at any given time.  Currently, BSD 2.
+ * License    : Follows same licensing as the lizard_compress.c/lizard_compress.h program at any given time.  Currently, BSD 2.
  * Description: A program to demonstrate the various compression functions involved in when using Lizard_compress_MinLevel().  The idea
  *              is to show how each step in the call stack can be used directly, if desired.  There is also some benchmarking for
  *              each function to demonstrate the (probably lack of) performance difference when jumping the stack.
- *              (If you're new to lz5, please read simple_buffer.c to understand the fundamentals)
+ *              (If you're new to lizard, please read simple_buffer.c to understand the fundamentals)
  *
  *              The call stack (before theoretical compiler optimizations) for Lizard_compress_MinLevel is as follows:
  *                Lizard_compress_MinLevel
@@ -26,8 +26,8 @@
  *              Lizard_compress_generic()
  *                As the name suggests, this is the generic function that ultimately does most of the heavy lifting.  Calling this
  *                directly can help avoid some test cases and branching which might be useful in some implementation-specific
- *                situations, but you really need to know what you're doing AND what you're asking lz5 to do!  You also need a
- *                wrapper function because this function isn't exposed with lz5_compress.h.
+ *                situations, but you really need to know what you're doing AND what you're asking lizard to do!  You also need a
+ *                wrapper function because this function isn't exposed with lizard_compress.h.
  *
  *              The call stack for decompression functions is shallow.  There are 2 options:
  *                Lizard_decompress_safe  ||  Lizard_decompress_fast
@@ -39,14 +39,14 @@
  *                 instead of just the latter.
  *               Lizard_decompress_generic
  *                 This is the generic function that both of the Lizard_decompress_* functions above end up calling.  Calling this
- *                 directly is not advised, period.  Furthermore, it is a static inline function in lz5_compress.c, so there isn't a symbol
- *                 exposed for anyone using lz5_compress.h to utilize.
+ *                 directly is not advised, period.  Furthermore, it is a static inline function in lizard_compress.c, so there isn't a symbol
+ *                 exposed for anyone using lizard_compress.h to utilize.
  *
  *               Special Note About Decompression:
  *               Using the Lizard_decompress_safe() function protects against malicious (user) input. 
  */
 
-/* Since lz5 compiles with c99 and not gnu/std99 we need to enable POSIX linking for time.h structs and functions. */
+/* Since lizard compiles with c99 and not gnu/std99 we need to enable POSIX linking for time.h structs and functions. */
 #if __STDC_VERSION__ >= 199901L
 #define _XOPEN_SOURCE 600
 #else
@@ -55,8 +55,8 @@
 #define _POSIX_C_SOURCE 199309L
 
 /* Includes, for Power! */
-#include "lz5_compress.h"
-#include "lz5_decompress.h"
+#include "lizard_compress.h"
+#include "lizard_decompress.h"
 #include <stdio.h>    /* for printf() */
 #include <stdlib.h>   /* for exit() */
 #include <string.h>   /* for atoi() memcmp() */
@@ -239,8 +239,8 @@ int main(int argc, char **argv) {
   // When you can exactly control the inputs and options of your Lizard needs, you can use Lizard_compress_generic and fixed (const)
   // values for the enum types such as dictionary and limitations.  Any other direct-use is probably a bad idea.
   //
-  // That said, the Lizard_compress_generic() function is 'static inline' and does not have a prototype in lz5_compress.h to expose a symbol
-  // for it.  In other words: we can't access it directly.  I don't want to submit a PR that modifies lz5_compress.c/h.  Yann and others can
+  // That said, the Lizard_compress_generic() function is 'static inline' and does not have a prototype in lizard_compress.h to expose a symbol
+  // for it.  In other words: we can't access it directly.  I don't want to submit a PR that modifies lizard_compress.c/h.  Yann and others can
   // do that if they feel it's worth expanding this example.
   //
   // I will, however, leave a skeleton of what would be required to use it directly:

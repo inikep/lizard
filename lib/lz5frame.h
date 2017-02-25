@@ -28,13 +28,13 @@
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    You can contact the author at :
-   - Lizard source repository : https://github.com/inikep/lz5
+   - Lizard source repository : https://github.com/inikep/lizard
 */
 
 /* LizardF is a stand-alone API to create Lizard-compressed frames
  * conformant with specification v1.5.1.
  * All related operations, including memory management, are handled internally by the library.
- * You don't need lz5_compress.h when using lz5frame.h.
+ * You don't need lizard_compress.h when using lizardframe.h.
  * */
 
 #pragma once

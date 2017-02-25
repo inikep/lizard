@@ -1,6 +1,6 @@
 \."
-\." lz5.1: This is a manual page for 'lz5' program. This file is part of the
-\." lz5 <http://github.com/inikep/lz5/> project.
+\." lizard.1: This is a manual page for 'lizard' program. This file is part of the
+\." lizard <http://github.com/inikep/lizard/> project.
 \." Author: Yann Collet
 \."
 .
@@ -8,70 +8,70 @@
 .hy 0
 .nr HY 0
 .
-.TH lz5 "1" "2015-03-21" "lz5" "User Commands"
+.TH lizard "1" "2015-03-21" "lizard" "User Commands"
 .SH NAME
-\fBlz5, unlz5, lz5cat\fR \- Compress or decompress .lz5 files
+\fBlizard, unlizard, lizardcat\fR \- Compress or decompress .liz files
 
 .SH SYNOPSIS
 .TP 5
-\fBlz5\fR [\fBOPTIONS\fR] [-|INPUT-FILE] <OUTPUT-FILE>
+\fBlizard\fR [\fBOPTIONS\fR] [-|INPUT-FILE] <OUTPUT-FILE>
 .PP
-.B unlz5
+.B unlizard
 is equivalent to
-.BR "lz5 \-d"
+.BR "lizard \-d"
 .br
-.B lz5cat
+.B lizardcat
 is equivalent to
-.BR "lz5 \-dc"
+.BR "lizard \-dc"
 .br
 .PP
 When writing scripts that need to decompress files,
 it is recommended to always use the name
-.B lz5
+.B lizard
 with appropriate arguments
-.RB ( "lz5 \-d"
+.RB ( "lizard \-d"
 or
-.BR "lz5 \-dc" )
+.BR "lizard \-dc" )
 instead of the names
-.B unlz5
+.B unlizard
 and
-.BR lz5cat .
+.BR lizardcat .
 
 
 .SH DESCRIPTION
 .PP
-\fBlz5\fR is an extremely fast lossless compression algorithm,
+\fBlizard\fR is an extremely fast lossless compression algorithm,
 based on \fBbyte-aligned LZ77\fR family of compression scheme.
-\fBlz5\fR offers compression speeds of 400 MB/s per core, linearly scalable with multi-core CPUs.
+\fBlizard\fR offers compression speeds of 400 MB/s per core, linearly scalable with multi-core CPUs.
 It features an extremely fast decoder, with speed in multiple GB/s per core,
 typically reaching RAM speed limit on multi-core systems.
 The native file format is the
-.B .lz5
+.B .liz
 format.
 
-.B lz5
+.B lizard
 supports a command line syntax similar but not identical to
 .BR gzip (1).
 Differences are :
-\fBlz5\fR preserve original files ;
-\fBlz5 file1 file2\fR means : compress file1 \fIinto\fR file2 ;
-\fBlz5 file\fR shows real-time statistics during compression .
+\fBlizard\fR preserve original files ;
+\fBlizard file1 file2\fR means : compress file1 \fIinto\fR file2 ;
+\fBlizard file\fR shows real-time statistics during compression .
 
 Default behaviors can be modified by opt-in commands, described below.
-\fBlz5 --quiet --multiple\fR more closely mimics \fBgzip\fR behavior.
+\fBlizard --quiet --multiple\fR more closely mimics \fBgzip\fR behavior.
 
-.SS "Concatenation of .lz5 files"
+.SS "Concatenation of .liz files"
 It is possible to concatenate
-.B .lz5
+.B .liz
 files as is.
-.B lz5
+.B lizard
 will decompress such files as if they were a single
-.B .lz5
+.B .liz
 file. For example:
-  lz5 file1  > foo.lz5
-  lz5 file2 >> foo.lz5
+  lizard file1  > foo.liz
+  lizard file2 >> foo.liz
  then
-  lz5cat foo.lz5
+  lizardcat foo.liz
  is equivalent to :
   cat file1 file2
 
@@ -102,30 +102,30 @@ This is the default operation mode
 when no operation mode option is specified ,
 no other operation mode is implied from the command name
 (for example,
-.B unlz5
+.B unlizard
 implies
 .B \-\-decompress ),
 nor from the input file name
 (for example, a file extension
-.B .lz5
+.B .liz
 implies
 .B \-\-decompress
 by default).
 .B -z
 can also be used to force compression of an already compressed
-.B .lz5
+.B .liz
 file.
 .TP
 .BR \-d ", " \-\-decompress ", " \-\-uncompress
 Decompress.
 .B --decompress
 is also the default operation when the input filename has an
-.B .lz5
+.B .liz
 extensionq
 .TP
 .BR \-t ", " \-\-test
 Test the integrity of compressed
-.B .lz5
+.B .liz
 files.
 The decompressed data is discarded.
 No files are created nor removed.
@@ -149,16 +149,16 @@ overwrite it without prompting.
 When used with
 .B \-\-decompress
 and
-.B lz5
+.B lizard
 cannot recognize the type of the source file,
 copy the source file as is to standard output.
 This allows
-.B lz5cat
+.B lizardcat
 .B \-\-force
 to be used like
 .BR cat (1)
 for files that have not been compressed with
-.BR lz5 .
+.BR lizard .
 .RE
 
 .TP
@@ -173,7 +173,7 @@ for files that have not been compressed with
 .B -m
 , you can specify any number of input filenames. Each of them will be compressed
 independently, and the resulting name of each compressed file will be
-.B filename.lz5
+.B filename.liz
 .
 
 .TP
@@ -223,7 +223,7 @@ This is default behavior anyway, so this option is just for compatibility with g
  iteration loops [1-9](default : 3), benchmark mode only
 
 .SH BUGS
-Report bugs at: https://github.com/inikep/lz5/issues
+Report bugs at: https://github.com/inikep/lizard/issues
 
 .SH AUTHOR
 Yann Collet

@@ -20,11 +20,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # You can contact the author at :
-#  - Lizard source repository : https://github.com/inikep/lz5
+#  - Lizard source repository : https://github.com/inikep/lizard
 # ##########################################################################
-# fuzzer  : Test tool, to check lz5 integrity on target platform
+# fuzzer  : Test tool, to check lizard integrity on target platform
 # fuzzer32: Same as fuzzer, but forced to compile in 32-bits mode
-# frametest  : Test tool, to check lz5frame integrity on target platform
+# frametest  : Test tool, to check lizardframe integrity on target platform
 # frametest32: Same as frametest, but forced to compile in 32-bits mode
 # fullbench  : Precisely measure speed for each Lizard function variant
 # fullbench32: Same as fullbench, but forced to compile in 32-bits mode
@@ -74,39 +74,39 @@ native: fullbench fuzzer frametest datagen
 all: native m32
 
 
-lz5:
+lizard:
 	$(MAKE) -C $(PRGDIR) $@
 
-lz5c:
+lizardc:
 	$(MAKE) -C $(PRGDIR) $@
 
-lz5c32:
+lizardc32:
 	$(MAKE) -C $(PRGDIR) $@
 
-fullbench  : $(LIBDIR)/lz5_compress.o $(LIBDIR)/lz5_decompress.o $(LIBDIR)/lz5frame.o $(LIBDIR)/xxhash/xxhash.o fullbench.c $(ENTROPY_FILES)
+fullbench  : $(LIBDIR)/lizard_compress.o $(LIBDIR)/lizard_decompress.o $(LIBDIR)/lizardframe.o $(LIBDIR)/xxhash/xxhash.o fullbench.c $(ENTROPY_FILES)
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-fullbench32: $(LIBDIR)/lz5_compress.c $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5frame.c $(LIBDIR)/xxhash/xxhash.c fullbench.c $(ENTROPY_FILES)
+fullbench32: $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizardframe.c $(LIBDIR)/xxhash/xxhash.c fullbench.c $(ENTROPY_FILES)
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
 fullbench-lib: fullbench.c $(LIBDIR)/xxhash/xxhash.c
-	$(MAKE) -C $(LIBDIR) liblz5.a
-	$(CC) $(FLAGS) $^ -o $@$(EXT) $(LIBDIR)/liblz5.a
+	$(MAKE) -C $(LIBDIR) liblizard.a
+	$(CC) $(FLAGS) $^ -o $@$(EXT) $(LIBDIR)/liblizard.a
 
 fullbench-dll: fullbench.c $(LIBDIR)/xxhash/xxhash.c
-	$(MAKE) -C $(LIBDIR) liblz5
-	$(CC) $(FLAGS) $^ -o $@$(EXT) -DLIZARD_DLL_IMPORT=1 $(LIBDIR)/dll/liblz5.dll
+	$(MAKE) -C $(LIBDIR) liblizard
+	$(CC) $(FLAGS) $^ -o $@$(EXT) -DLIZARD_DLL_IMPORT=1 $(LIBDIR)/dll/liblizard.dll
 
-fuzzer  : $(LIBDIR)/lz5_compress.c $(LIBDIR)/lz5_decompress.o $(LIBDIR)/xxhash/xxhash.o fuzzer.c $(ENTROPY_FILES)
+fuzzer  : $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizard_decompress.o $(LIBDIR)/xxhash/xxhash.o fuzzer.c $(ENTROPY_FILES)
 	$(CC) -DLIZARD_RESET_MEM $(FLAGS) $^ -o $@$(EXT)
 
-fuzzer32: $(LIBDIR)/lz5_compress.c $(LIBDIR)/lz5_decompress.c $(LIBDIR)/xxhash/xxhash.c fuzzer.c $(ENTROPY_FILES)
+fuzzer32: $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizard_decompress.c $(LIBDIR)/xxhash/xxhash.c fuzzer.c $(ENTROPY_FILES)
 	$(CC) -m32 -DLIZARD_RESET_MEM $(FLAGS) $^ -o $@$(EXT)
 
-frametest: $(LIBDIR)/lz5frame.o $(LIBDIR)/lz5_compress.o $(LIBDIR)/lz5_decompress.o $(LIBDIR)/xxhash/xxhash.o frametest.c $(ENTROPY_FILES)
+frametest: $(LIBDIR)/lizardframe.o $(LIBDIR)/lizard_compress.o $(LIBDIR)/lizard_decompress.o $(LIBDIR)/xxhash/xxhash.o frametest.c $(ENTROPY_FILES)
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-frametest32: $(LIBDIR)/lz5frame.c $(LIBDIR)/lz5_compress.c $(LIBDIR)/lz5_decompress.c $(LIBDIR)/xxhash/xxhash.c frametest.c $(ENTROPY_FILES)
+frametest32: $(LIBDIR)/lizardframe.c $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizard_decompress.c $(LIBDIR)/xxhash/xxhash.c frametest.c $(ENTROPY_FILES)
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
 datagen : $(PRGDIR)/datagen.c datagencli.c
@@ -124,7 +124,7 @@ clean:
 	@echo Cleaning completed
 
 versionsTest:
-	$(PYTHON) test-lz5-versions.py
+	$(PYTHON) test-lizard-versions.py
 
 
 #------------------------------------------------------------------------
@@ -132,161 +132,161 @@ versionsTest:
 #FreeBSD targets
 ifneq (,$(filter $(shell uname),Linux Darwin GNU/kFreeBSD GNU FreeBSD Haiku))
 
-test: test-lz5 test-lz5c test-frametest test-fullbench test-fuzzer
+test: test-lizard test-lizardc test-frametest test-fullbench test-fuzzer
 
-test32: test-lz5c32 test-frametest32 test-fullbench32 test-fuzzer32
+test32: test-lizardc32 test-frametest32 test-fullbench32 test-fuzzer32
 
 test-all: test test32
 
-test-lz5-sparse: lz5 datagen
+test-lizard-sparse: lizard datagen
 	@echo "\n ---- test sparse file support ----"
 	./datagen -g5M  -P100 > tmpSrc
-	$(PRGDIR)/lz5 -B4D tmpSrc | $(PRGDIR)/lz5 -dv --sparse > tmpB4
+	$(PRGDIR)/lizard -B4D tmpSrc | $(PRGDIR)/lizard -dv --sparse > tmpB4
 	diff -s tmpSrc tmpB4
-	$(PRGDIR)/lz5 -B5D tmpSrc | $(PRGDIR)/lz5 -dv --sparse > tmpB5
+	$(PRGDIR)/lizard -B5D tmpSrc | $(PRGDIR)/lizard -dv --sparse > tmpB5
 	diff -s tmpSrc tmpB5
-	$(PRGDIR)/lz5 -B6D tmpSrc | $(PRGDIR)/lz5 -dv --sparse > tmpB6
+	$(PRGDIR)/lizard -B6D tmpSrc | $(PRGDIR)/lizard -dv --sparse > tmpB6
 	diff -s tmpSrc tmpB6
-	$(PRGDIR)/lz5 -B7D tmpSrc | $(PRGDIR)/lz5 -dv --sparse > tmpB7
+	$(PRGDIR)/lizard -B7D tmpSrc | $(PRGDIR)/lizard -dv --sparse > tmpB7
 	diff -s tmpSrc tmpB7
-	$(PRGDIR)/lz5 tmpSrc | $(PRGDIR)/lz5 -dv --no-sparse > tmpNoSparse
+	$(PRGDIR)/lizard tmpSrc | $(PRGDIR)/lizard -dv --no-sparse > tmpNoSparse
 	diff -s tmpSrc tmpNoSparse
 	ls -ls tmp*
-	./datagen -s1 -g1200007 -P100 | $(PRGDIR)/lz5 | $(PRGDIR)/lz5 -dv --sparse > tmpOdd   # Odd size file (to generate non-full last block)
+	./datagen -s1 -g1200007 -P100 | $(PRGDIR)/lizard | $(PRGDIR)/lizard -dv --sparse > tmpOdd   # Odd size file (to generate non-full last block)
 	./datagen -s1 -g1200007 -P100 | diff -s - tmpOdd
 	ls -ls tmpOdd
 	@$(RM) tmp*
 	@echo "\n Compatibility with Console :"
-	echo "Hello World 1 !" | $(PRGDIR)/lz5 | $(PRGDIR)/lz5 -d -c
-	echo "Hello World 2 !" | $(PRGDIR)/lz5 | $(PRGDIR)/lz5 -d | cat
-	echo "Hello World 3 !" | $(PRGDIR)/lz5 --no-frame-crc | $(PRGDIR)/lz5 -d -c
+	echo "Hello World 1 !" | $(PRGDIR)/lizard | $(PRGDIR)/lizard -d -c
+	echo "Hello World 2 !" | $(PRGDIR)/lizard | $(PRGDIR)/lizard -d | cat
+	echo "Hello World 3 !" | $(PRGDIR)/lizard --no-frame-crc | $(PRGDIR)/lizard -d -c
 	@echo "\n Compatibility with Append :"
 	./datagen -P100 -g1M > tmp1M
 	cat tmp1M tmp1M > tmp2M
-	$(PRGDIR)/lz5 -B5 -v tmp1M tmpC
-	$(PRGDIR)/lz5 -d -v tmpC tmpR
-	$(PRGDIR)/lz5 -d -v tmpC >> tmpR
+	$(PRGDIR)/lizard -B5 -v tmp1M tmpC
+	$(PRGDIR)/lizard -d -v tmpC tmpR
+	$(PRGDIR)/lizard -d -v tmpC >> tmpR
 	ls -ls tmp*
 	diff tmp2M tmpR
 	@$(RM) tmp*
 
-test-lz5-contentSize: lz5 datagen
+test-lizard-contentSize: lizard datagen
 	@echo "\n ---- test original size support ----"
 	./datagen -g15M > tmp
-	$(PRGDIR)/lz5 -v tmp | $(PRGDIR)/lz5 -t
-	$(PRGDIR)/lz5 -v --content-size tmp | $(PRGDIR)/lz5 -d > tmp2
+	$(PRGDIR)/lizard -v tmp | $(PRGDIR)/lizard -t
+	$(PRGDIR)/lizard -v --content-size tmp | $(PRGDIR)/lizard -d > tmp2
 	diff -s tmp tmp2
 	# test large size [2-4] GB
-	@./datagen -g3G -P100 | $(PRGDIR)/lz5 | $(PRGDIR)/lz5 --decompress --force --sparse - tmp
+	@./datagen -g3G -P100 | $(PRGDIR)/lizard | $(PRGDIR)/lizard --decompress --force --sparse - tmp
 	@ls -ls tmp
-	$(PRGDIR)/lz5 --quiet --content-size tmp | $(PRGDIR)/lz5 --verbose --decompress --force --sparse - tmp2
+	$(PRGDIR)/lizard --quiet --content-size tmp | $(PRGDIR)/lizard --verbose --decompress --force --sparse - tmp2
 	@ls -ls tmp2
 	@$(RM) tmp*
 
-test-lz5-frame-concatenation: lz5 datagen
+test-lizard-frame-concatenation: lizard datagen
 	@echo "\n ---- test frame concatenation ----"
 	@echo -n > empty.test
 	@echo hi > nonempty.test
 	cat nonempty.test empty.test nonempty.test > orig.test
-	@$(PRGDIR)/lz5 -zq empty.test > empty.lz5.test
-	@$(PRGDIR)/lz5 -zq nonempty.test > nonempty.lz5.test
-	cat nonempty.lz5.test empty.lz5.test nonempty.lz5.test > concat.lz5.test
-	$(PRGDIR)/lz5 -d concat.lz5.test > result.test
+	@$(PRGDIR)/lizard -zq empty.test > empty.liz.test
+	@$(PRGDIR)/lizard -zq nonempty.test > nonempty.liz.test
+	cat nonempty.liz.test empty.liz.test nonempty.liz.test > concat.liz.test
+	$(PRGDIR)/lizard -d concat.liz.test > result.test
 	sdiff orig.test result.test
 	@$(RM) *.test
 	@echo frame concatenation test completed
 
-test-lz5-multiple: lz5 datagen
+test-lizard-multiple: lizard datagen
 	@echo "\n ---- test multiple files ----"
 	@./datagen -s1        > tmp1 2> $(VOID)
 	@./datagen -s2 -g100K > tmp2 2> $(VOID)
 	@./datagen -s3 -g1M   > tmp3 2> $(VOID)
-	$(PRGDIR)/lz5 -f -m tmp*
+	$(PRGDIR)/lizard -f -m tmp*
 	ls -ls tmp*
 	@$(RM) tmp1 tmp2 tmp3
-	$(PRGDIR)/lz5 -df -m *.lz5
+	$(PRGDIR)/lizard -df -m *.liz
 	ls -ls tmp*
-	$(PRGDIR)/lz5 -f -m tmp1 notHere tmp2; echo $$?
+	$(PRGDIR)/lizard -f -m tmp1 notHere tmp2; echo $$?
 	@$(RM) tmp*
 
-test-lz5-basic: lz5 datagen
-	@echo "\n ---- test lz5 basic compression/decompression ----"
-	./datagen -g0     | $(PRGDIR)/lz5 -v     | $(PRGDIR)/lz5 -t
-	./datagen -g16KB  | $(PRGDIR)/lz5 -19    | $(PRGDIR)/lz5 -t
+test-lizard-basic: lizard datagen
+	@echo "\n ---- test lizard basic compression/decompression ----"
+	./datagen -g0     | $(PRGDIR)/lizard -v     | $(PRGDIR)/lizard -t
+	./datagen -g16KB  | $(PRGDIR)/lizard -19    | $(PRGDIR)/lizard -t
 	./datagen -g20KB > tmpSrc
-	$(PRGDIR)/lz5 < tmpSrc | $(PRGDIR)/lz5 -d > tmpRes
+	$(PRGDIR)/lizard < tmpSrc | $(PRGDIR)/lizard -d > tmpRes
 	diff -q tmpSrc tmpRes
-	$(PRGDIR)/lz5 --no-frame-crc < tmpSrc | $(PRGDIR)/lz5 -d > tmpRes
+	$(PRGDIR)/lizard --no-frame-crc < tmpSrc | $(PRGDIR)/lizard -d > tmpRes
 	diff -q tmpSrc tmpRes
-	./datagen         | $(PRGDIR)/lz5        | $(PRGDIR)/lz5 -t
-	./datagen -g6M -P99 | $(PRGDIR)/lz5 -19BD | $(PRGDIR)/lz5 -t
-	./datagen -g17M   | $(PRGDIR)/lz5 -19v    | $(PRGDIR)/lz5 -qt
-	./datagen -g33M   | $(PRGDIR)/lz5 --no-frame-crc | $(PRGDIR)/lz5 -t
-	./datagen -g256MB | $(PRGDIR)/lz5 -vqB4D | $(PRGDIR)/lz5 -t
+	./datagen         | $(PRGDIR)/lizard        | $(PRGDIR)/lizard -t
+	./datagen -g6M -P99 | $(PRGDIR)/lizard -19BD | $(PRGDIR)/lizard -t
+	./datagen -g17M   | $(PRGDIR)/lizard -19v    | $(PRGDIR)/lizard -qt
+	./datagen -g33M   | $(PRGDIR)/lizard --no-frame-crc | $(PRGDIR)/lizard -t
+	./datagen -g256MB | $(PRGDIR)/lizard -vqB4D | $(PRGDIR)/lizard -t
 	@$(RM) tmp*
 
-test-lz5-hugefile: lz5 datagen
+test-lizard-hugefile: lizard datagen
 	@echo "\n ---- test huge files compression/decompression ----"
-	./datagen -g6GB   | $(PRGDIR)/lz5 -vB5D  | $(PRGDIR)/lz5 -qt
-	./datagen -g6GB   | $(PRGDIR)/lz5 -v15BD  | $(PRGDIR)/lz5 -qt
+	./datagen -g6GB   | $(PRGDIR)/lizard -vB5D  | $(PRGDIR)/lizard -qt
+	./datagen -g6GB   | $(PRGDIR)/lizard -v15BD  | $(PRGDIR)/lizard -qt
 	@$(RM) tmp*
 
-test-lz5-testmode: lz5 datagen
+test-lizard-testmode: lizard datagen
 	@echo "\n ---- bench mode ----"
-	$(PRGDIR)/lz5 -bi1
+	$(PRGDIR)/lizard -bi1
 	@echo "\n ---- test mode ----"
-	./datagen | $(PRGDIR)/lz5 -t             && false || true
-	./datagen | $(PRGDIR)/lz5 -tf            && false || true
+	./datagen | $(PRGDIR)/lizard -t             && false || true
+	./datagen | $(PRGDIR)/lizard -tf            && false || true
 	@echo "\n ---- pass-through mode ----"
-	./datagen | $(PRGDIR)/lz5 -d  > $(VOID)  && false || true
-	./datagen | $(PRGDIR)/lz5 -df > $(VOID)
+	./datagen | $(PRGDIR)/lizard -d  > $(VOID)  && false || true
+	./datagen | $(PRGDIR)/lizard -df > $(VOID)
 	@echo "Hello World !" > tmp1
-	$(PRGDIR)/lz5 -dcf tmp1
+	$(PRGDIR)/lizard -dcf tmp1
 	@echo "from underground..." > tmp2
-	$(PRGDIR)/lz5 -dcfm tmp1 tmp2
+	$(PRGDIR)/lizard -dcfm tmp1 tmp2
 	@echo "\n ---- test cli ----"
-	$(PRGDIR)/lz5     file-does-not-exist    && false || true
-	$(PRGDIR)/lz5 -f  file-does-not-exist    && false || true
-	$(PRGDIR)/lz5 -fm file1-dne file2-dne    && false || true
-	$(PRGDIR)/lz5 -fm file1-dne file2-dne    && false || true
+	$(PRGDIR)/lizard     file-does-not-exist    && false || true
+	$(PRGDIR)/lizard -f  file-does-not-exist    && false || true
+	$(PRGDIR)/lizard -fm file1-dne file2-dne    && false || true
+	$(PRGDIR)/lizard -fm file1-dne file2-dne    && false || true
 
-test-lz5: lz5 datagen test-lz5-basic test-lz5-multiple test-lz5-sparse \
-          test-lz5-frame-concatenation test-lz5-testmode test-lz5-contentSize \
-          test-lz5-hugefile
+test-lizard: lizard datagen test-lizard-basic test-lizard-multiple test-lizard-sparse \
+          test-lizard-frame-concatenation test-lizard-testmode test-lizard-contentSize \
+          test-lizard-hugefile
 
-test-lz5c: lz5c datagen
-	@echo "\n ---- test lz5c version ----"
-	./datagen -g256MB | $(PRGDIR)/lz5c -l -v    | $(PRGDIR)/lz5c   -t
+test-lizardc: lizardc datagen
+	@echo "\n ---- test lizardc version ----"
+	./datagen -g256MB | $(PRGDIR)/lizardc -l -v    | $(PRGDIR)/lizardc   -t
 
-test-interop-32-64: lz5 lz5c32 datagen
+test-interop-32-64: lizard lizardc32 datagen
 	@echo "\n ---- test interoperability 32-bits -vs- 64 bits ----"
-	./datagen -g16KB  | $(PRGDIR)/lz5c32 -19    | $(PRGDIR)/lz5    -t
-	./datagen -P10    | $(PRGDIR)/lz5    -19B4  | $(PRGDIR)/lz5c32 -t
-	./datagen         | $(PRGDIR)/lz5c32        | $(PRGDIR)/lz5    -t
-	./datagen -g1M    | $(PRGDIR)/lz5    -13B5  | $(PRGDIR)/lz5c32 -t
-	./datagen -g256MB | $(PRGDIR)/lz5c32 -vqB4D | $(PRGDIR)/lz5    -qt
-	./datagen -g1G -P90 | $(PRGDIR)/lz5         | $(PRGDIR)/lz5c32 -t
-	./datagen -g6GB   | $(PRGDIR)/lz5c32 -vq15BD | $(PRGDIR)/lz5    -qt
+	./datagen -g16KB  | $(PRGDIR)/lizardc32 -19    | $(PRGDIR)/lizard    -t
+	./datagen -P10    | $(PRGDIR)/lizard    -19B4  | $(PRGDIR)/lizardc32 -t
+	./datagen         | $(PRGDIR)/lizardc32        | $(PRGDIR)/lizard    -t
+	./datagen -g1M    | $(PRGDIR)/lizard    -13B5  | $(PRGDIR)/lizardc32 -t
+	./datagen -g256MB | $(PRGDIR)/lizardc32 -vqB4D | $(PRGDIR)/lizard    -qt
+	./datagen -g1G -P90 | $(PRGDIR)/lizard         | $(PRGDIR)/lizardc32 -t
+	./datagen -g6GB   | $(PRGDIR)/lizardc32 -vq15BD | $(PRGDIR)/lizard    -qt
 
-test-lz5c32-basic: lz5c32 datagen
-	@echo "\n ---- test lz5c32 32-bits version ----"
-	./datagen -g16KB  | $(PRGDIR)/lz5c32 -19    | $(PRGDIR)/lz5c32 -t
-	./datagen         | $(PRGDIR)/lz5c32        | $(PRGDIR)/lz5c32 -t
-	./datagen -g256MB | $(PRGDIR)/lz5c32 -vqB4D | $(PRGDIR)/lz5c32 -qt
-	./datagen -g6GB   | $(PRGDIR)/lz5c32 -vqB5D | $(PRGDIR)/lz5c32 -qt
+test-lizardc32-basic: lizardc32 datagen
+	@echo "\n ---- test lizardc32 32-bits version ----"
+	./datagen -g16KB  | $(PRGDIR)/lizardc32 -19    | $(PRGDIR)/lizardc32 -t
+	./datagen         | $(PRGDIR)/lizardc32        | $(PRGDIR)/lizardc32 -t
+	./datagen -g256MB | $(PRGDIR)/lizardc32 -vqB4D | $(PRGDIR)/lizardc32 -qt
+	./datagen -g6GB   | $(PRGDIR)/lizardc32 -vqB5D | $(PRGDIR)/lizardc32 -qt
 
 test-platform:
-	@echo "\n ---- test lz5 $(QEMU_SYS) platform ----"
-	$(QEMU_SYS) ./datagen -g16KB  | $(QEMU_SYS) $(PRGDIR)/lz5 -19    | $(QEMU_SYS) $(PRGDIR)/lz5 -t
-	$(QEMU_SYS) ./datagen         | $(QEMU_SYS) $(PRGDIR)/lz5        | $(QEMU_SYS) $(PRGDIR)/lz5 -t
-	$(QEMU_SYS) ./datagen -g256MB | $(QEMU_SYS) $(PRGDIR)/lz5 -vqB4D | $(QEMU_SYS) $(PRGDIR)/lz5 -qt
+	@echo "\n ---- test lizard $(QEMU_SYS) platform ----"
+	$(QEMU_SYS) ./datagen -g16KB  | $(QEMU_SYS) $(PRGDIR)/lizard -19    | $(QEMU_SYS) $(PRGDIR)/lizard -t
+	$(QEMU_SYS) ./datagen         | $(QEMU_SYS) $(PRGDIR)/lizard        | $(QEMU_SYS) $(PRGDIR)/lizard -t
+	$(QEMU_SYS) ./datagen -g256MB | $(QEMU_SYS) $(PRGDIR)/lizard -vqB4D | $(QEMU_SYS) $(PRGDIR)/lizard -qt
 ifneq ($(QEMU_SYS),qemu-arm-static)
 ifneq ($(QEMU_SYS),qemu-ppc-static)
-	$(QEMU_SYS) ./datagen -g3GB   | $(QEMU_SYS) $(PRGDIR)/lz5 -vqB5D | $(QEMU_SYS) $(PRGDIR)/lz5 -qt
+	$(QEMU_SYS) ./datagen -g3GB   | $(QEMU_SYS) $(PRGDIR)/lizard -vqB5D | $(QEMU_SYS) $(PRGDIR)/lizard -qt
 endif
 endif
 
-test-lz5c32: test-lz5c32-basic test-interop-32-64
+test-lizardc32: test-lizardc32-basic test-interop-32-64
 
 test-fullbench: fullbench
 	./fullbench --no-prompt $(NB_LOOPS) $(TEST_FILES)
@@ -306,26 +306,26 @@ test-frametest: frametest
 test-frametest32: frametest32
 	./frametest32 $(FUZZER_TIME)
 
-test-mem: lz5 datagen fuzzer frametest fullbench
+test-mem: lizard datagen fuzzer frametest fullbench
 	@echo "\n ---- valgrind tests : memory analyzer ----"
 	valgrind --leak-check=yes --error-exitcode=1 ./datagen -g50M > $(VOID)
 	./datagen -g16KB > tmp
-	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lz5 -19 -BD -f tmp $(VOID)
+	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lizard -19 -BD -f tmp $(VOID)
 	./datagen -g16KB -s2 > tmp2
 	./datagen -g16KB -s3 > tmp3
-	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lz5 --force --multiple tmp tmp2 tmp3
+	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lizard --force --multiple tmp tmp2 tmp3
 	./datagen -g16MB > tmp
-	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lz5 -19 -B5D -f tmp tmp2
-	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lz5 -t tmp2
-	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lz5 -bi1 tmp
+	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lizard -19 -B5D -f tmp tmp2
+	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lizard -t tmp2
+	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lizard -bi1 tmp
 	valgrind --leak-check=yes --error-exitcode=1 ./fullbench -i1 tmp tmp2
 	./datagen -g256MB > tmp
-	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lz5 -B4D -f -vq tmp $(VOID)
+	valgrind --leak-check=yes --error-exitcode=1 $(PRGDIR)/lizard -B4D -f -vq tmp $(VOID)
 	$(RM) tmp*
 	valgrind --leak-check=yes --error-exitcode=1 ./fuzzer -i64 -t1
 	valgrind --leak-check=yes --error-exitcode=1 ./frametest -i256
 
-test-mem32: lz5c32 datagen
+test-mem32: lizardc32 datagen
 # unfortunately, valgrind doesn't seem to work with non-native binary...
 
 endif

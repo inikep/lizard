@@ -6,8 +6,8 @@
 #  define _CRT_SECURE_NO_WARNINGS
 #  define snprintf sprintf_s
 #endif
-#include "lz5_common.h"
-#include "lz5_decompress.h"
+#include "lizard_common.h"
+#include "lizard_decompress.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -40,7 +40,7 @@ static void test_compress(
     size_t messageMaxBytes,
     size_t ringBufferBytes)
 {
-    Lizard_stream_t* const lz5Stream = Lizard_createStream_MinLevel();
+    Lizard_stream_t* const lizardStream = Lizard_createStream_MinLevel();
     const size_t cmpBufBytes = LIZARD_COMPRESSBOUND(messageMaxBytes);
     char* const cmpBuf = (char*) malloc(cmpBufBytes);
     char* const inpBuf = (char*) malloc(ringBufferBytes);
@@ -64,7 +64,7 @@ static void test_compress(
 #endif
 
         {
-            const int cmpBytes = Lizard_compress_continue(lz5Stream, inpPtr, cmpBuf, inpBytes, cmpBufBytes);
+            const int cmpBytes = Lizard_compress_continue(lizardStream, inpPtr, cmpBuf, inpBytes, cmpBufBytes);
             if (cmpBytes <= 0) break;
             write_uint16(outFp, (uint16_t) cmpBytes);
             write_bin(outFp, cmpBuf, cmpBytes);
@@ -78,7 +78,7 @@ static void test_compress(
 
     free(inpBuf);
     free(cmpBuf);
-    Lizard_freeStream(lz5Stream);
+    Lizard_freeStream(lizardStream);
 }
 
 
@@ -88,7 +88,7 @@ static void test_decompress(
     size_t messageMaxBytes,
     size_t ringBufferBytes)
 {
-    Lizard_streamDecode_t* const lz5StreamDecode = Lizard_createStreamDecode();
+    Lizard_streamDecode_t* const lizardStreamDecode = Lizard_createStreamDecode();
     char* const cmpBuf = (char*) malloc(LIZARD_COMPRESSBOUND(messageMaxBytes));
     char* const decBuf = (char*) malloc(ringBufferBytes);
     int decOffset = 0;
@@ -104,7 +104,7 @@ static void test_decompress(
         {
             char* const decPtr = &decBuf[decOffset];
             const int decBytes = Lizard_decompress_safe_continue(
-                lz5StreamDecode, cmpBuf, decPtr, cmpBytes, (int) messageMaxBytes);
+                lizardStreamDecode, cmpBuf, decPtr, cmpBytes, (int) messageMaxBytes);
             if (decBytes <= 0) break;
             write_bin(outFp, decPtr, decBytes);
 
@@ -116,7 +116,7 @@ static void test_decompress(
 
     free(decBuf);
     free(cmpBuf);
-    Lizard_freeStreamDecode(lz5StreamDecode);
+    Lizard_freeStreamDecode(lizardStreamDecode);
 }
 
 
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
     };
 
     char inpFilename[256] = { 0 };
-    char lz5Filename[256] = { 0 };
+    char lizardFilename[256] = { 0 };
     char decFilename[256] = { 0 };
 
     if (argc < 2)
@@ -162,17 +162,17 @@ int main(int argc, char* argv[])
     }
 
     snprintf(inpFilename, 256, "%s", argv[1]);
-    snprintf(lz5Filename, 256, "%s.lz5s", argv[1]);
-    snprintf(decFilename, 256, "%s.lz5s.dec", argv[1]);
+    snprintf(lizardFilename, 256, "%s.lizs", argv[1]);
+    snprintf(decFilename, 256, "%s.lizs.dec", argv[1]);
 
     printf("inp = [%s]\n", inpFilename);
-    printf("lz5 = [%s]\n", lz5Filename);
+    printf("lizard = [%s]\n", lizardFilename);
     printf("dec = [%s]\n", decFilename);
 
     // compress
     {
         FILE* inpFp = fopen(inpFilename, "rb");
-        FILE* outFp = fopen(lz5Filename, "wb");
+        FILE* outFp = fopen(lizardFilename, "wb");
 
         test_compress(outFp, inpFp, MESSAGE_MAX_BYTES, RING_BUFFER_BYTES);
 
@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
 
     // decompress
     {
-        FILE* inpFp = fopen(lz5Filename, "rb");
+        FILE* inpFp = fopen(lizardFilename, "rb");
         FILE* outFp = fopen(decFilename, "wb");
 
         test_decompress(outFp, inpFp, MESSAGE_MAX_BYTES, RING_BUFFER_BYTES);

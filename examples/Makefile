@@ -19,7 +19,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # You can contact the author at :
-#  - Lizard source repository : https://github.com/inikep/lz5
+#  - Lizard source repository : https://github.com/inikep/lizard
 # ##########################################################################
 # This makefile compile and test
 # example programs, using (mostly) Lizard streaming library,
@@ -32,7 +32,7 @@ FLAGS  := -I../lib $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)
 
 TESTFILE= Makefile
 LIBDIR := ../lib
-Lizard = ../programs/lz5
+Lizard = ../programs/lizard
 ENTROPY_FILES := $(LIBDIR)/entropy/*.c
 
 
@@ -50,28 +50,28 @@ default: all
 
 all: printVersion doubleBuffer ringBuffer ringBufferHC lineCompress frameCompress
 
-printVersion: $(LIBDIR)/lz5_compress.c printVersion.c $(ENTROPY_FILES)
+printVersion: $(LIBDIR)/lizard_compress.c printVersion.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-doubleBuffer: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.c blockStreaming_doubleBuffer.c $(ENTROPY_FILES)
+doubleBuffer: $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizard_compress.c blockStreaming_doubleBuffer.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-ringBuffer  : $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.c blockStreaming_ringBuffer.c $(ENTROPY_FILES)
+ringBuffer  : $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizard_compress.c blockStreaming_ringBuffer.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-ringBufferHC: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.c HCStreaming_ringBuffer.c $(ENTROPY_FILES)
+ringBufferHC: $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizard_compress.c HCStreaming_ringBuffer.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
-lineCompress: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.c blockStreaming_lineByLine.c $(ENTROPY_FILES)
+lineCompress: $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizard_compress.c blockStreaming_lineByLine.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
 frameCompress: frameCompress.c
-	$(CC)      $(FLAGS) $^ -o $@$(EXT) -L$(LIBDIR) -llz5
+	$(CC)      $(FLAGS) $^ -o $@$(EXT) -L$(LIBDIR) -llizard
 
-compressFunctions: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.c compress_functions.c $(ENTROPY_FILES)
+compressFunctions: $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizard_compress.c compress_functions.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT) -lrt
 
-simpleBuffer: $(LIBDIR)/lz5_decompress.c $(LIBDIR)/lz5_compress.c simple_buffer.c $(ENTROPY_FILES)
+simpleBuffer: $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizard_compress.c simple_buffer.c $(ENTROPY_FILES)
 	$(CC)      $(FLAGS) $^ -o $@$(EXT)
 
 test : all
@@ -81,10 +81,10 @@ test : all
 	./ringBufferHC$(EXT) $(TESTFILE)
 	./lineCompress$(EXT) $(TESTFILE)
 	LD_LIBRARY_PATH=$(LIBDIR) ./frameCompress$(EXT) $(TESTFILE)
-	$(Lizard) -vt $(TESTFILE).lz5
+	$(Lizard) -vt $(TESTFILE).liz
 
 clean:
-	@rm -f core *.o *.dec *-0 *-9 *-8192 *.lz5s *.lz5 \
+	@rm -f core *.o *.dec *-0 *-9 *-8192 *.lizs *.liz \
 	 printVersion$(EXT) doubleBuffer$(EXT) ringBuffer$(EXT) ringBufferHC$(EXT) \
 	 lineCompress$(EXT) frameCompress$(EXT) compressFunctions$(EXT) simpleBuffer$(EXT)
 	@echo Cleaning completed

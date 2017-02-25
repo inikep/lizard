@@ -156,17 +156,17 @@
     <ClCompile Include="..\..\..\lib\entropy\fse_decompress.c" />
     <ClCompile Include="..\..\..\lib\entropy\huf_compress.c" />
     <ClCompile Include="..\..\..\lib\entropy\huf_decompress.c" />
-    <ClCompile Include="..\..\..\lib\lz5_compress.c" />
-    <ClCompile Include="..\..\..\lib\lz5_decompress.c" />
-    <ClCompile Include="..\..\..\lib\lz5frame.c" />
+    <ClCompile Include="..\..\..\lib\lizard_compress.c" />
+    <ClCompile Include="..\..\..\lib\lizard_decompress.c" />
+    <ClCompile Include="..\..\..\lib\lizardframe.c" />
     <ClCompile Include="..\..\..\lib\xxhash\xxhash.c" />
     <ClCompile Include="..\..\..\tests\fullbench.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\lib\lz5_compress.h" />
-    <ClInclude Include="..\..\..\lib\lz5frame.h" />
-    <ClInclude Include="..\..\..\lib\lz5frame_static.h" />
-    <ClInclude Include="..\..\..\lib\lz5_common.h" />
+    <ClInclude Include="..\..\..\lib\lizard_compress.h" />
+    <ClInclude Include="..\..\..\lib\lizardframe.h" />
+    <ClInclude Include="..\..\..\lib\lizardframe_static.h" />
+    <ClInclude Include="..\..\..\lib\lizard_common.h" />
     <ClInclude Include="..\..\..\lib\xxhash\xxhash.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -29,7 +29,7 @@
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    You can contact the author at :
-   - Lizard source repository : https://github.com/inikep/lz5
+   - Lizard source repository : https://github.com/inikep/lizard
 */
 
 #pragma once
@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-/* lz5frame_static.h should be used solely in the context of static linking.
+/* lizardframe_static.h should be used solely in the context of static linking.
  * It contains definitions which may still change overtime.
  * Never use it in the context of DLL linking.
  * */
@@ -47,7 +47,7 @@ extern "C" {
 /**************************************
 *  Includes
 **************************************/
-#include "lz5frame.h"
+#include "lizardframe.h"
 
 
 /**************************************

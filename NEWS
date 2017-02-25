@@ -13,7 +13,7 @@ LZ5 v1.5
 - introduced compatibility with Visual C++ 2010 and newer
 - attached Visual Studio 2010 project
 - thoroughly tested with 21 Travis CI and 7 AppVeyor CI tests
-- fixed bug with reusing a context in lz5frame.c (LizardF_compressBegin and Lizard_compress_HC_continue)
+- fixed bug with reusing a context in lizardframe.c (LizardF_compressBegin and Lizard_compress_HC_continue)
 - fixed rare bug in match finder (concerns levels 4 - 15)
 
 LZ5 v1.4.1
@@ -22,8 +22,8 @@ LZ5 v1.4.1
 LZ5 v1.4
 - improved: levels from 13 to 15 (maximum compression ratio)
 - added a new parser: LizardHC_optimal_price_bt
-- updated documentation: lz5_Block_format.md and lz5_Frame_format.md 
-- changed lz5.exe: the "-B" option with block size [1-7] = 64KB, 256KB, 1MB, 4MB, 16MB, 64MB, 256MB (default : 4 = 4MB)
+- updated documentation: lizard_Block_format.md and lizard_Frame_format.md 
+- changed lizard.exe: the "-B" option with block size [1-7] = 64KB, 256KB, 1MB, 4MB, 16MB, 64MB, 256MB (default : 4 = 4MB)
  
 LZ5 v1.3.3
 - added: new levels from 11 to 18 (maximum compression ratio)

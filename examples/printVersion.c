@@ -3,7 +3,7 @@
 
 
 #include <stdio.h>
-#include "lz5_compress.h"
+#include "lizard_compress.h"
 
 int main(int argc, char** argv)
 {

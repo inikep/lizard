@@ -19,7 +19,7 @@
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
   You can contact the author at :
-  - Lizard source repository : https://github.com/inikep/lz5
+  - Lizard source repository : https://github.com/inikep/lizard
 */
 /*
   Note : this is stand-alone program.
@@ -39,8 +39,8 @@
 #include <stdlib.h>   /* exit, calloc, free */
 #include <string.h>   /* strcmp, strlen */
 #include "bench.h"    /* BMK_benchFile, BMK_SetNbIterations, BMK_SetBlocksize, BMK_SetPause */
-#include "lz5io.h"    /* LizardIO_compressFilename, LizardIO_decompressFilename, LizardIO_compressMultipleFilenames */
-#include "lz5_compress.h" /* LizardHC_DEFAULT_CLEVEL, LIZARD_VERSION_STRING */
+#include "lizardio.h"    /* LizardIO_compressFilename, LizardIO_decompressFilename, LizardIO_compressMultipleFilenames */
+#include "lizard_compress.h" /* LizardHC_DEFAULT_CLEVEL, LIZARD_VERSION_STRING */
 
 
 
@@ -50,9 +50,9 @@
 #define COMPRESSOR_NAME "Lizard command line interface"
 #define AUTHOR "Y.Collet & P.Skibinski"
 #define WELCOME_MESSAGE "%s %i-bit %s by %s (%s)\n", COMPRESSOR_NAME, (int)(sizeof(void*)*8), LIZARD_VERSION_STRING, AUTHOR, __DATE__
-#define LIZARD_EXTENSION ".lz5"
-#define LIZARDCAT "lz5cat"
-#define UNLIZARD "unlz5"
+#define LIZARD_EXTENSION ".liz"
+#define LIZARDCAT "lizardcat"
+#define UNLIZARD "unlizard"
 
 #define KB *(1U<<10)
 #define MB *(1U<<20)
@@ -180,7 +180,7 @@ static int usage_longhelp(const char* exeName)
     DISPLAY( "\n");
     DISPLAY( "Simple example :\n");
     DISPLAY( "----------------\n");
-    DISPLAY( "1 : compress 'filename' fast, using default output name 'filename.lz5'\n");
+    DISPLAY( "1 : compress 'filename' fast, using default output name 'filename.liz'\n");
     DISPLAY( "          %s filename\n", exeName);
     DISPLAY( "\n");
     DISPLAY( "Short arguments can be aggregated. For example :\n");
@@ -268,7 +268,7 @@ int main(int argc, const char** argv)
     inFileNames[0] = stdinmark;
     LizardIO_setOverwrite(0);
 
-    /* lz5cat predefined behavior */
+    /* lizardcat predefined behavior */
     if (!strcmp(exeName, LIZARDCAT)) {
         mode = om_decompress;
         LizardIO_setOverwrite(1);
@@ -412,7 +412,7 @@ int main(int argc, const char** argv)
                         /* recursive */
                 case 'r': recursive=1;  /* without break */
 #endif
-                    /* Treat non-option args as input files.  See https://code.google.com/p/lz5/issues/detail?id=151 */
+                    /* Treat non-option args as input files.  See https://code.google.com/p/lizard/issues/detail?id=151 */
                 case 'm': multiple_inputs=1;
                     break;
 

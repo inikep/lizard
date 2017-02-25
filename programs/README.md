@@ -3,8 +3,8 @@ Command Line Interface for LZ4 library
 
 Command Line Interface (CLI) can be created using the `make` command without any additional parameters.
 There are also multiple targets that create different variations of CLI:
-- `lz5` : default CLI, with a command line syntax close to gzip
-- `lz5c32` : Same as `lz5`, but forced to compile in 32-bits mode
+- `lizard` : default CLI, with a command line syntax close to gzip
+- `lizardc32` : Same as `lizard`, but forced to compile in 32-bits mode
 
 
 #### Aggregation of parameters
@@ -13,7 +13,7 @@ CLI supports aggregation of parameters i.e. `-b1`, `-e18`, and `-i1` can be join
 
 
 #### Benchmark in Command Line Interface
-CLI includes in-memory compression benchmark module for lz5.
+CLI includes in-memory compression benchmark module for lizard.
 The benchmark is conducted using a given filename.
 The file is read into memory.
 It makes benchmark more precise as it eliminates I/O overhead.
@@ -28,7 +28,7 @@ The `-i` parameter selects a number of seconds used for each of tested levels.
 The full list of commands can be obtained with `-h` or `-H` parameter:
 ```
 Usage :
-      lz5 [arg] [input] [output]
+      lizard [arg] [input] [output]
 
 input   : a filename
           with no FILE, or when FILE is - or stdin, read standard input
@@ -38,7 +38,7 @@ Arguments :
  -20...-29 : compression method LIZv1 = 24-bit bytewise codewords
  -30...-39 : compression method fastLZ4 + Huffman
  -40...-49 : compression method LIZv1 + Huffman
- -d     : decompression (default for .lz5 extension)
+ -d     : decompression (default for .liz extension)
  -z     : force compression
  -f     : overwrite output without prompting
 --rm    : remove source file(s) after successful de/compression

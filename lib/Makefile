@@ -29,13 +29,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # You can contact the author at :
-#  - Lizard source repository : https://github.com/inikep/lz5
+#  - Lizard source repository : https://github.com/inikep/lizard
 # ################################################################
 
 # Version numbers
-LIBVER_MAJOR_SCRIPT:=`sed -n '/define LIZARD_VERSION_MAJOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < ./lz5_compress.h`
-LIBVER_MINOR_SCRIPT:=`sed -n '/define LIZARD_VERSION_MINOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < ./lz5_compress.h`
-LIBVER_PATCH_SCRIPT:=`sed -n '/define LIZARD_VERSION_RELEASE/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < ./lz5_compress.h`
+LIBVER_MAJOR_SCRIPT:=`sed -n '/define LIZARD_VERSION_MAJOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < ./lizard_compress.h`
+LIBVER_MINOR_SCRIPT:=`sed -n '/define LIZARD_VERSION_MINOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < ./lizard_compress.h`
+LIBVER_PATCH_SCRIPT:=`sed -n '/define LIZARD_VERSION_RELEASE/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < ./lizard_compress.h`
 LIBVER_SCRIPT:= $(LIBVER_MAJOR_SCRIPT).$(LIBVER_MINOR_SCRIPT).$(LIBVER_PATCH_SCRIPT)
 LIBVER_MAJOR := $(shell echo $(LIBVER_MAJOR_SCRIPT))
 LIBVER_MINOR := $(shell echo $(LIBVER_MINOR_SCRIPT))
@@ -60,9 +60,9 @@ ifeq ($(shell uname), Darwin)
 	SHARED_EXT = dylib
 	SHARED_EXT_MAJOR = $(LIBVER_MAJOR).$(SHARED_EXT)
 	SHARED_EXT_VER = $(LIBVER).$(SHARED_EXT)
-	SONAME_FLAGS = -install_name $(PREFIX)/lib/liblz5.$(SHARED_EXT_MAJOR) -compatibility_version $(LIBVER_MAJOR) -current_version $(LIBVER)
+	SONAME_FLAGS = -install_name $(PREFIX)/lib/liblizard.$(SHARED_EXT_MAJOR) -compatibility_version $(LIBVER_MAJOR) -current_version $(LIBVER)
 else
-	SONAME_FLAGS = -Wl,-soname=liblz5.$(SHARED_EXT).$(LIBVER_MAJOR)
+	SONAME_FLAGS = -Wl,-soname=liblizard.$(SHARED_EXT).$(LIBVER_MAJOR)
 	SHARED_EXT = so
 	SHARED_EXT_MAJOR = $(SHARED_EXT).$(LIBVER_MAJOR)
 	SHARED_EXT_VER = $(SHARED_EXT).$(LIBVER)
@@ -72,20 +72,20 @@ default: lib
 
 all: lib
 
-lib: liblz5.a liblz5
+lib: liblizard.a liblizard
 
-liblz5.a: *.c xxhash/*.c entropy/*.c
+liblizard.a: *.c xxhash/*.c entropy/*.c
 ifeq ($(BUILD_STATIC),yes)
 	@echo compiling static library
 	@$(CC) $(FLAGS) -c $^
 	@$(AR) rcs $@ *.o
 endif
 
-liblz5: *.c xxhash/*.c entropy/*.c
+liblizard: *.c xxhash/*.c entropy/*.c
 	@echo compiling dynamic library $(LIBVER)
 ifneq (,$(filter Windows%,$(OS)))
 	@$(CC) $(FLAGS) -DLIZARD_DLL_EXPORT=1 -shared $^ -o dll\$@.dll
-	dlltool -D dll\liblz5.dll -d dll\liblz5.def -l dll\liblz5.lib
+	dlltool -D dll\liblizard.dll -d dll\liblizard.def -l dll\liblizard.lib
 else
 	@$(CC) $(FLAGS) -shared $^ -fPIC $(SONAME_FLAGS) -o $@.$(SHARED_EXT_VER)
 	@echo creating versioned links
@@ -94,7 +94,7 @@ else
 endif
 
 clean:
-	@rm -f core entropy/*.o xxhash/*.o *.o *.a *.$(SHARED_EXT) *.$(SHARED_EXT).* liblz5.pc dll/liblz5.dll dll/liblz5.lib
+	@rm -f core entropy/*.o xxhash/*.o *.o *.a *.$(SHARED_EXT) *.$(SHARED_EXT).* liblizard.pc dll/liblizard.dll dll/liblizard.lib
 	@echo Cleaning library completed
 
 
@@ -123,7 +123,7 @@ endif
 INSTALL_LIB  ?= $(INSTALL) -m 755
 INSTALL_DATA ?= $(INSTALL) -m 644
 
-liblz5.pc: liblz5.pc.in Makefile
+liblizard.pc: liblizard.pc.in Makefile
 	@echo creating pkgconfig
 	@sed -e 's|@PREFIX@|$(PREFIX)|' \
             -e 's|@LIBDIR@|$(LIBDIR)|' \
@@ -131,31 +131,31 @@ liblz5.pc: liblz5.pc.in Makefile
             -e 's|@VERSION@|$(LIBVER)|' \
              $< >$@
 
-install: lib liblz5.pc
+install: lib liblizard.pc
 	@$(INSTALL) -d -m 755 $(DESTDIR)$(PKGCONFIGDIR)/ $(DESTDIR)$(INCLUDEDIR)/
-	@$(INSTALL_DATA) liblz5.pc $(DESTDIR)$(PKGCONFIGDIR)/
+	@$(INSTALL_DATA) liblizard.pc $(DESTDIR)$(PKGCONFIGDIR)/
 	@echo Installing libraries
 ifeq ($(BUILD_STATIC),yes)
-	@$(INSTALL_LIB) liblz5.a $(DESTDIR)$(LIBDIR)/liblz5.a
+	@$(INSTALL_LIB) liblizard.a $(DESTDIR)$(LIBDIR)/liblizard.a
 endif
-	@$(INSTALL_LIB) liblz5.$(SHARED_EXT_VER) $(DESTDIR)$(LIBDIR)
-	@ln -sf liblz5.$(SHARED_EXT_VER) $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT_MAJOR)
-	@ln -sf liblz5.$(SHARED_EXT_VER) $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT)
+	@$(INSTALL_LIB) liblizard.$(SHARED_EXT_VER) $(DESTDIR)$(LIBDIR)
+	@ln -sf liblizard.$(SHARED_EXT_VER) $(DESTDIR)$(LIBDIR)/liblizard.$(SHARED_EXT_MAJOR)
+	@ln -sf liblizard.$(SHARED_EXT_VER) $(DESTDIR)$(LIBDIR)/liblizard.$(SHARED_EXT)
 	@echo Installing includes
-	@$(INSTALL_DATA) lz5_compress.h $(DESTDIR)$(INCLUDEDIR)/lz5_compress.h
-	@$(INSTALL_DATA) lz5_common.h $(DESTDIR)$(INCLUDEDIR)/lz5_common.h
-	@$(INSTALL_DATA) lz5frame.h $(DESTDIR)$(INCLUDEDIR)/lz5frame.h
-	@echo lz5 static and shared libraries installed
+	@$(INSTALL_DATA) lizard_compress.h $(DESTDIR)$(INCLUDEDIR)/lizard_compress.h
+	@$(INSTALL_DATA) lizard_common.h $(DESTDIR)$(INCLUDEDIR)/lizard_common.h
+	@$(INSTALL_DATA) lizardframe.h $(DESTDIR)$(INCLUDEDIR)/lizardframe.h
+	@echo lizard static and shared libraries installed
 
 uninstall:
-	@$(RM) $(DESTDIR)$(PKGCONFIGDIR)/liblz5.pc
-	@$(RM) $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT)
-	@$(RM) $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT_MAJOR)
-	@$(RM) $(DESTDIR)$(LIBDIR)/liblz5.$(SHARED_EXT_VER)
-	@$(RM) $(DESTDIR)$(LIBDIR)/liblz5.a
-	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lz5_compress.h
-	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lz5_common.h
-	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lz5frame.h
-	@echo lz5 libraries successfully uninstalled
+	@$(RM) $(DESTDIR)$(PKGCONFIGDIR)/liblizard.pc
+	@$(RM) $(DESTDIR)$(LIBDIR)/liblizard.$(SHARED_EXT)
+	@$(RM) $(DESTDIR)$(LIBDIR)/liblizard.$(SHARED_EXT_MAJOR)
+	@$(RM) $(DESTDIR)$(LIBDIR)/liblizard.$(SHARED_EXT_VER)
+	@$(RM) $(DESTDIR)$(LIBDIR)/liblizard.a
+	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lizard_compress.h
+	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lizard_common.h
+	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lizardframe.h
+	@echo lizard libraries successfully uninstalled
 
 endif

@@ -1,6 +1,6 @@
 # local binary (Makefile)
-lz5
-lz5c32
+lizard
+lizardc32
 datagen
 frametest
 frametest32

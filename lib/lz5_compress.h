@@ -30,7 +30,7 @@
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    You can contact the author at :
-    - Lizard source repository : https://github.com/inikep/lz5
+    - Lizard source repository : https://github.com/inikep/lizard
 */
 #ifndef LIZARD_H_2983
 #define LIZARD_H_2983
@@ -40,12 +40,12 @@ extern "C" {
 #endif
 
 /*
- * lz5_compress.h provides block compression functions. It gives full buffer control to user.
+ * lizard_compress.h provides block compression functions. It gives full buffer control to user.
  * Block compression functions are not-enough to send information,
  * since it's still necessary to provide metadata (such as compressed size),
  * and each application can do it in whichever way it wants.
- * For interoperability, there is Lizard frame specification (lz5_Frame_format.md).
- * A library is provided to take care of it, see lz5frame.h.
+ * For interoperability, there is Lizard frame specification (lizard_Frame_format.md).
+ * A library is provided to take care of it, see lizardframe.h.
 */
 
 
@@ -156,7 +156,7 @@ LIZARDLIB_API int Lizard_compress_extState(void* state, const char* src, char* d
 
 /*! Lizard_createStream() will allocate and initialize an `Lizard_stream_t` structure.
  *  Lizard_freeStream() releases its memory.
- *  In the context of a DLL (liblz5), please use these methods rather than the static struct.
+ *  In the context of a DLL (liblizard), please use these methods rather than the static struct.
  *  They are more future proof, in case of a change of `Lizard_stream_t` size.
  */
 LIZARDLIB_API Lizard_stream_t* Lizard_createStream(int compressionLevel);

@@ -23,7 +23,7 @@
 .clang_complete
 
 # Directories
-_lz5bench/
+_lizardbench/
 _visual/
 _codelite/
 _backup/
@@ -31,7 +31,7 @@ _codelite_lz4/
 
 # Archives
 *.zip
-*.lz5
+*.liz
 
 *.txt
 *.bat

@@ -1,5 +1,5 @@
-# lz5 for DOS/djgpp
-This file details on how to compile lz5.exe, and liblz5.a for use on DOS/djgpp using
+# lizard for DOS/djgpp
+This file details on how to compile lizard.exe, and liblizard.a for use on DOS/djgpp using
 Andrew Wu's build-djgpp cross compilers ([GH][0], [Binaries][1]) on OSX, Linux.
 
 ## Setup
@@ -9,11 +9,11 @@ Andrew Wu's build-djgpp cross compilers ([GH][0], [Binaries][1]) on OSX, Linux.
 * The `Makefile` in `contrib/djgpp/` sets up `CC`, `AR`, `LD` for you.  So, `CC=i586-pc-msdosdjgpp-gcc`, `AR=i586-pc-msdosdjgpp-ar`, `LD=i586-pc-msdosdjgpp-gcc`.
 
 ## Building Lizard for DOS
-In the base dir of lz5 and with `contrib/djgpp/Makefile`, try:
+In the base dir of lizard and with `contrib/djgpp/Makefile`, try:
 Try:
 * `make -f contrib/djgpp/Makefile`
-* `make -f contrib/djgpp/Makefile liblz5.a`
-* `make -f contrib/djgpp/Makefile lz5.exe`
+* `make -f contrib/djgpp/Makefile liblizard.a`
+* `make -f contrib/djgpp/Makefile lizard.exe`
 * `make -f contrib/djgpp/Makefile DESTDIR=/home/user/dos install`, however it doesn't make much sense on a \*nix.
 * You can also do `make -f contrib/djgpp/Makefile uninstall`
 
