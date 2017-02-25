@@ -59,7 +59,7 @@ typedef enum { full = 0, partial = 1 } earlyEnd_directive;
         #include "test/lz5_common_test.h"
         #include "test/lz5_decompress_test.h"
     #else
-        #include "lz5_decompress_lz5v2.h"
+        #include "lz5_decompress_liz.h"
     #endif
 #endif
 #include "entropy/huf.h"
@@ -238,7 +238,7 @@ FORCE_INLINE int LZ5_decompress_generic(
 #ifdef USE_LZ4_ONLY
             res = LZ5_decompress_LZ4(&ctx, op, outputSize, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
 #else
-            res = LZ5_decompress_LZ5v2(&ctx, op, outputSize, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
+            res = LZ5_decompress_LIZv1(&ctx, op, outputSize, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
 #endif        
         LZ5_LOG_DECOMPRESS("LZ5_decompress_generic res=%d inputSize=%d\n", res, (int)(ctx.literalsEnd-ctx.lenEnd));
 

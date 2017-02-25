@@ -35,9 +35,9 @@ input   : a filename
 Arguments :
  -10...-19 : compression method fastLZ4 = 16-bit bytewise codewords
              higher number == more compression but slower
- -20...-29 : compression method LZ5v2 = 24-bit bytewise codewords
+ -20...-29 : compression method LIZv1 = 24-bit bytewise codewords
  -30...-39 : compression method fastLZ4 + Huffman
- -40...-49 : compression method LZ5v2 + Huffman
+ -40...-49 : compression method LIZv1 + Huffman
  -d     : decompression (default for .lz5 extension)
  -z     : force compression
  -f     : overwrite output without prompting

@@ -45,7 +45,7 @@
         #include "test/lz5_common_test.h"
         #include "test/lz5_compress_test.h"
     #else
-        #include "lz5_compress_lz5v2.h"
+        #include "lz5_compress_liz.h"
     #endif
 #endif
 #include "lz5_compress_lz4.h"
@@ -263,7 +263,7 @@ FORCE_INLINE int LZ5_encodeSequence (
     if (ctx->params.decompressType == LZ5_coderwords_LZ4)
         return LZ5_encodeSequence_LZ4(ctx, ip, anchor, matchLength, match);
 
-    return LZ5_encodeSequence_LZ5v2(ctx, ip, anchor, matchLength, match);
+    return LZ5_encodeSequence_LIZv1(ctx, ip, anchor, matchLength, match);
 #endif
 }
 
@@ -280,7 +280,7 @@ FORCE_INLINE int LZ5_encodeLastLiterals (
     if (ctx->params.decompressType == LZ5_coderwords_LZ4)
         return LZ5_encodeLastLiterals_LZ4(ctx, ip, anchor);
 
-    return LZ5_encodeLastLiterals_LZ5v2(ctx, ip, anchor);
+    return LZ5_encodeLastLiterals_LIZv1(ctx, ip, anchor);
 #endif
 }
 

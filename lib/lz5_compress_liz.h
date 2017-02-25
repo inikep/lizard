@@ -40,7 +40,7 @@ MEM_STATIC void LZ5_rescaleFreqs(LZ5_stream_t* ctx)
 }
 
 
-FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
+FORCE_INLINE int LZ5_encodeSequence_LIZv1 (
     LZ5_stream_t* ctx,
     const BYTE** ip,
     const BYTE** anchor,
@@ -53,7 +53,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
 
     if (length > 0 || offset < LZ5_MAX_16BIT_OFFSET) {
         /* Encode Literal length */
-      //  if ((limitedOutputBuffer) && (ctx->literalsPtr > oend - length - LZ5_LENGTH_SIZE_LZ5v2(length) - WILDCOPYLENGTH)) { LZ5_LOG_COMPRESS_LZ5v2("encodeSequence overflow1\n"); return 1; }   /* Check output limit */
+      //  if ((limitedOutputBuffer) && (ctx->literalsPtr > oend - length - LZ5_LENGTH_SIZE_LIZv1(length) - WILDCOPYLENGTH)) { LZ5_LOG_COMPRESS_LIZv1("encodeSequence overflow1\n"); return 1; }   /* Check output limit */
         if (length >= MAX_SHORT_LITLEN) 
         {   size_t len; 
             *token = MAX_SHORT_LITLEN; 
@@ -81,7 +81,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
 
 
         if (offset >= LZ5_MAX_16BIT_OFFSET) {
-            COMPLOG_CODEWORDS_LZ5v2("T32+ literal=%u match=%u offset=%d\n", (U32)length, 0, 0);
+            COMPLOG_CODEWORDS_LIZv1("T32+ literal=%u match=%u offset=%d\n", (U32)length, 0, 0);
             *token+=(1<<ML_RUN_BITS);
 #ifndef LZ5_NO_HUFFMAN
             if (ctx->huffType) { 
@@ -98,7 +98,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
     {
         if (matchLength < MM_LONGOFF) printf("ERROR matchLength=%d/%d\n", (int)matchLength, MM_LONGOFF), exit(1);
 
-      //  if ((limitedOutputBuffer) && (ctx->literalsPtr > oend - 8 /*LZ5_LENGTH_SIZE_LZ5v2(length)*/)) { LZ5_LOG_COMPRESS_LZ5v2("encodeSequence overflow2\n"); return 1; }   /* Check output limit */
+      //  if ((limitedOutputBuffer) && (ctx->literalsPtr > oend - 8 /*LZ5_LENGTH_SIZE_LIZv1(length)*/)) { LZ5_LOG_COMPRESS_LIZv1("encodeSequence overflow2\n"); return 1; }   /* Check output limit */
         if (matchLength - MM_LONGOFF >= LZ5_LAST_LONG_OFF) 
         {
             size_t len = matchLength - MM_LONGOFF - LZ5_LAST_LONG_OFF;
@@ -106,11 +106,11 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
             if (len >= (1<<16)) { *(ctx->literalsPtr) = 255;  MEM_writeLE24(ctx->literalsPtr+1, (U32)(len));  ctx->literalsPtr += 4; }
             else if (len >= 254) { *(ctx->literalsPtr) = 254;  MEM_writeLE16(ctx->literalsPtr+1, (U16)(len));  ctx->literalsPtr += 3; }
             else *(ctx->literalsPtr)++ = (BYTE)len; 
-            COMPLOG_CODEWORDS_LZ5v2("T31 literal=%u match=%u offset=%d\n", 0, (U32)matchLength, offset);
+            COMPLOG_CODEWORDS_LIZv1("T31 literal=%u match=%u offset=%d\n", 0, (U32)matchLength, offset);
         }
         else
         {
-            COMPLOG_CODEWORDS_LZ5v2("T0-30 literal=%u match=%u offset=%d\n", 0, (U32)matchLength, offset);
+            COMPLOG_CODEWORDS_LIZv1("T0-30 literal=%u match=%u offset=%d\n", 0, (U32)matchLength, offset);
             *token = (BYTE)(matchLength - MM_LONGOFF);
         }
 
@@ -121,7 +121,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
     }
     else
     {
-        COMPLOG_CODEWORDS_LZ5v2("T32+ literal=%u match=%u offset=%d\n", (U32)length, (U32)matchLength, offset);
+        COMPLOG_CODEWORDS_LIZv1("T32+ literal=%u match=%u offset=%d\n", (U32)length, (U32)matchLength, offset);
         if (offset == 0)
         {
             *token+=(1<<ML_RUN_BITS);
@@ -138,15 +138,15 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
 
         /* Encode MatchLength */
         length = matchLength;
-       // if ((limitedOutputBuffer) && (ctx->literalsPtr > oend - 5 /*LZ5_LENGTH_SIZE_LZ5v2(length)*/)) { LZ5_LOG_COMPRESS_LZ5v2("encodeSequence overflow2\n"); return 1; }   /* Check output limit */
+       // if ((limitedOutputBuffer) && (ctx->literalsPtr > oend - 5 /*LZ5_LENGTH_SIZE_LIZv1(length)*/)) { LZ5_LOG_COMPRESS_LIZv1("encodeSequence overflow2\n"); return 1; }   /* Check output limit */
         if (length >= MAX_SHORT_MATCHLEN) {
-            *token += (BYTE)(MAX_SHORT_MATCHLEN<<RUN_BITS_LZ5v2);
+            *token += (BYTE)(MAX_SHORT_MATCHLEN<<RUN_BITS_LIZv1);
             length -= MAX_SHORT_MATCHLEN;
             if (length >= (1<<16)) { *(ctx->literalsPtr) = 255;  MEM_writeLE24(ctx->literalsPtr+1, (U32)(length));  ctx->literalsPtr += 4; }
             else if (length >= 254) { *(ctx->literalsPtr) = 254;  MEM_writeLE16(ctx->literalsPtr+1, (U16)(length));  ctx->literalsPtr += 3; }
             else *(ctx->literalsPtr)++ = (BYTE)length;
         }
-        else *token += (BYTE)(length<<RUN_BITS_LZ5v2);
+        else *token += (BYTE)(length<<RUN_BITS_LIZv1);
     }
 
 #ifndef LZ5_NO_HUFFMAN
@@ -165,7 +165,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ5v2 (
 }
 
 
-FORCE_INLINE int LZ5_encodeLastLiterals_LZ5v2 (
+FORCE_INLINE int LZ5_encodeLastLiterals_LIZv1 (
     LZ5_stream_t* ctx,
     const BYTE** ip,
     const BYTE** anchor)
@@ -180,10 +180,10 @@ FORCE_INLINE int LZ5_encodeLastLiterals_LZ5v2 (
 
 
 #define LZ5_PRICE_MULT 1
-#define LZ5_GET_TOKEN_PRICE_LZ5v2(token)  (LZ5_PRICE_MULT * (ctx->log2FlagSum - LZ5_highbit32(ctx->flagFreq[token]+1)))
+#define LZ5_GET_TOKEN_PRICE_LIZv1(token)  (LZ5_PRICE_MULT * (ctx->log2FlagSum - LZ5_highbit32(ctx->flagFreq[token]+1)))
 
 
-FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const BYTE *ip, const BYTE *off24pos, size_t litLength, U32 offset, size_t matchLength) 
+FORCE_INLINE size_t LZ5_get_price_LIZv1(LZ5_stream_t* const ctx, int rep, const BYTE *ip, const BYTE *off24pos, size_t litLength, U32 offset, size_t matchLength) 
 {
     size_t price = 0;
     BYTE token = 0;
@@ -236,7 +236,7 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
         if (offset >= LZ5_MAX_16BIT_OFFSET) {
             token+=(1<<ML_RUN_BITS);
             if (ctx->huffType && ctx->params.parserType != LZ5_parser_lowestPrice)
-                price += LZ5_GET_TOKEN_PRICE_LZ5v2(token);
+                price += LZ5_GET_TOKEN_PRICE_LIZv1(token);
             else
                 price += 8;
        }
@@ -270,13 +270,13 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
         /* Encode MatchLength */
         length = matchLength;
         if (length >= MAX_SHORT_MATCHLEN) {
-            token += (BYTE)(MAX_SHORT_MATCHLEN<<RUN_BITS_LZ5v2);
+            token += (BYTE)(MAX_SHORT_MATCHLEN<<RUN_BITS_LIZv1);
             length -= MAX_SHORT_MATCHLEN;
             if (length >= (1<<16)) price += 32;
             else if (length >= 254) price += 24;
             else price += 8;
         }
-        else token += (BYTE)(length<<RUN_BITS_LZ5v2);
+        else token += (BYTE)(length<<RUN_BITS_LIZv1);
     }
 
     if (offset > 0 || matchLength > 0) {
@@ -289,12 +289,12 @@ FORCE_INLINE size_t LZ5_get_price_LZ5v2(LZ5_stream_t* const ctx, int rep, const 
             price += 6 + (matchLength==1);
         }
         if (ctx->huffType && ctx->params.parserType != LZ5_parser_lowestPrice)
-            price += LZ5_GET_TOKEN_PRICE_LZ5v2(token);
+            price += LZ5_GET_TOKEN_PRICE_LIZv1(token);
         else
             price += 8;
     } else {
         if (ctx->huffType && ctx->params.parserType != LZ5_parser_lowestPrice)
-            price += LZ5_GET_TOKEN_PRICE_LZ5v2(token);  // 1=better ratio
+            price += LZ5_GET_TOKEN_PRICE_LIZv1(token);  // 1=better ratio
     }
 
     return price;

@@ -12,7 +12,7 @@ FORCE_INLINE size_t LZ5_get_price(LZ5_stream_t* const ctx, int rep, const BYTE *
     if (ctx->params.decompressType == LZ5_coderwords_LZ4)
         return LZ5_get_price_LZ4(ctx, ip, litLength, offset, matchLength);
 
-    return LZ5_get_price_LZ5v2(ctx, rep, ip, off24pos, litLength, offset, matchLength);
+    return LZ5_get_price_LIZv1(ctx, rep, ip, off24pos, litLength, offset, matchLength);
 }
 
 

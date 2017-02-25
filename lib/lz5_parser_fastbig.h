@@ -124,7 +124,7 @@ FORCE_INLINE int LZ5_compress_fastBig(
         }
 
 _next_match:
-        if (LZ5_encodeSequence_LZ5v2(ctx, &ip, &anchor, matchLength+MINMATCH, match)) goto _output_error;
+        if (LZ5_encodeSequence_LIZv1(ctx, &ip, &anchor, matchLength+MINMATCH, match)) goto _output_error;
         
         /* Test end of chunk */
         if (ip > mflimit) break;
@@ -166,7 +166,7 @@ _next_match:
 _last_literals:
     /* Encode Last Literals */
     ip = iend;
-    if (LZ5_encodeLastLiterals_LZ5v2(ctx, &ip, &anchor)) goto _output_error;
+    if (LZ5_encodeLastLiterals_LIZv1(ctx, &ip, &anchor)) goto _output_error;
 
     /* End */
     return 1;

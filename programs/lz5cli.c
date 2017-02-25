@@ -108,10 +108,10 @@ static int usage(const char* exeName)
     DISPLAY( "Arguments :\n");
     DISPLAY( " -10...-19 : compression method fastLZ4 = 16-bit bytewise codewords\n");
     DISPLAY( "             higher number == more compression but slower\n");
-    DISPLAY( " -20...-29 : compression method LZ5v2 = 24-bit bytewise codewords\n");
+    DISPLAY( " -20...-29 : compression method LIZv1 = 24-bit bytewise codewords\n");
 #ifndef LZ5_NO_HUFFMAN
     DISPLAY( " -30...-39 : compression method fastLZ4 + Huffman\n");
-    DISPLAY( " -40...-49 : compression method LZ5v2 + Huffman\n");
+    DISPLAY( " -40...-49 : compression method LIZv1 + Huffman\n");
 #endif
     DISPLAY( " -d     : decompression (default for %s extension)\n", LZ5_EXTENSION);
     DISPLAY( " -z     : force compression\n");
