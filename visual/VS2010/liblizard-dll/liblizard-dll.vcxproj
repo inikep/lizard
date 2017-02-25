@@ -154,8 +154,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\lib\lizard_compress.h" />
-    <ClInclude Include="..\..\..\lib\lizardframe.h" />
-    <ClInclude Include="..\..\..\lib\lizardframe_static.h" />
+    <ClInclude Include="..\..\..\lib\lizard_frame.h" />
+    <ClInclude Include="..\..\..\lib\lizard_frame_static.h" />
     <ClInclude Include="..\..\..\lib\lizard_common.h" />
     <ClInclude Include="..\..\..\lib\xxhash\xxhash.h" />
   </ItemGroup>
@@ -167,7 +167,7 @@
     <ClCompile Include="..\..\..\lib\entropy\huf_decompress.c" />
     <ClCompile Include="..\..\..\lib\lizard_compress.c" />
     <ClCompile Include="..\..\..\lib\lizard_decompress.c" />
-    <ClCompile Include="..\..\..\lib\lizardframe.c" />
+    <ClCompile Include="..\..\..\lib\lizard_frame.c" />
     <ClCompile Include="..\..\..\lib\xxhash\xxhash.c" />
   </ItemGroup>
   <ItemGroup>
