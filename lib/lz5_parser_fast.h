@@ -7,8 +7,8 @@
 static size_t LZ5_hashPosition(const void* p) 
 {
     if (MEM_64bits())
-        return LZ5_hash5Ptr(p, LZ5_HASHLOG_LZ4);
-    return LZ5_hash4Ptr(p, LZ5_HASHLOG_LZ4);
+        return LZ5_hash5Ptr(p, LIZARD_HASHLOG_LZ4);
+    return LZ5_hash4Ptr(p, LIZARD_HASHLOG_LZ4);
 }
 
 static void LZ5_putPositionOnHash(const BYTE* p, size_t h, U32* hashTable, const BYTE* srcBase)
@@ -58,7 +58,7 @@ FORCE_INLINE int LZ5_compress_fast(
     const U32 lowLimit = (ctx->lowLimit + maxDistance >= (U32)(ip - base)) ? ctx->lowLimit : (U32)(ip - base) - maxDistance;
 
     /* Init conditions */
-    if ((U32)(iend-ip) > (U32)LZ5_MAX_INPUT_SIZE) goto _output_error;   /* Unsupported inputSize, too large (or negative) */
+    if ((U32)(iend-ip) > (U32)LIZARD_MAX_INPUT_SIZE) goto _output_error;   /* Unsupported inputSize, too large (or negative) */
 
     if ((U32)(iend-ip) < LZ5_minLength) goto _last_literals;                  /* Input too small, no compression (all literals) */
 
@@ -102,7 +102,7 @@ FORCE_INLINE int LZ5_compress_fast(
                         while ((ip+back > anchor) && (match+back > lowPrefixPtr) && (ip[back-1] == match[back-1])) back--;
                         matchLength -= back;
 #if LZ5_FAST_LONGOFF_MM > 0
-                        if ((matchLength >= LZ5_FAST_LONGOFF_MM) || ((U32)(ip - match) < LZ5_MAX_16BIT_OFFSET))
+                        if ((matchLength >= LZ5_FAST_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
 #endif
                         {
                             ip += back;
@@ -125,7 +125,7 @@ FORCE_INLINE int LZ5_compress_fast(
                         matchLength -= back;
                         match = base + matchIndex + back;
 #if LZ5_FAST_LONGOFF_MM > 0
-                        if ((matchLength >= LZ5_FAST_LONGOFF_MM) || ((U32)(ip - match) < LZ5_MAX_16BIT_OFFSET))
+                        if ((matchLength >= LZ5_FAST_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
 #endif
                         {
                             ip += back;
@@ -159,7 +159,7 @@ _next_match:
                 {
                     matchLength = LZ5_count(ip+MINMATCH, match+MINMATCH, matchlimit);
 #if LZ5_FAST_LONGOFF_MM > 0
-                    if ((matchLength >= LZ5_FAST_LONGOFF_MM) || ((U32)(ip - match) < LZ5_MAX_16BIT_OFFSET))
+                    if ((matchLength >= LZ5_FAST_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
 #endif
                         goto _next_match;
                 }
@@ -173,7 +173,7 @@ _next_match:
                     matchLength = LZ5_count_2segments(ip+MINMATCH, match+MINMATCH, matchlimit, dictEnd, lowPrefixPtr);
                     match = base + matchIndex;
 #if LZ5_FAST_LONGOFF_MM > 0
-                    if ((matchLength >= LZ5_FAST_LONGOFF_MM) || ((U32)(ip - match) < LZ5_MAX_16BIT_OFFSET))
+                    if ((matchLength >= LZ5_FAST_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
 #endif
                         goto _next_match;
                 }

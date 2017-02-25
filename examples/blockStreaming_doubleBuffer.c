@@ -55,7 +55,7 @@ void test_compress(FILE* outFp, FILE* inpFp)
         }
 
         {
-            char cmpBuf[LZ5_COMPRESSBOUND(BLOCK_BYTES)];
+            char cmpBuf[LIZARD_COMPRESSBOUND(BLOCK_BYTES)];
             const int cmpBytes = LZ5_compress_continue(lz5Stream, inpPtr, cmpBuf, inpBytes, sizeof(cmpBuf));
             if(cmpBytes <= 0) {
                 break;
@@ -83,7 +83,7 @@ void test_decompress(FILE* outFp, FILE* inpFp)
     LZ5_setStreamDecode(lz5StreamDecode, NULL, 0);
 
     for(;;) {
-        char cmpBuf[LZ5_COMPRESSBOUND(BLOCK_BYTES)];
+        char cmpBuf[LIZARD_COMPRESSBOUND(BLOCK_BYTES)];
         int  cmpBytes = 0;
 
         {

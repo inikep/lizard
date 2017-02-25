@@ -55,7 +55,7 @@ typedef enum { full = 0, partial = 1 } earlyEnd_directive;
 
 #include "lz5_decompress_lz4.h"
 #ifndef USE_LZ4_ONLY
-    #ifdef LZ5_USE_TEST
+    #ifdef LIZARD_USE_TEST
         #include "test/lz5_common_test.h"
         #include "test/lz5_decompress_test.h"
     #else
@@ -136,22 +136,22 @@ FORCE_INLINE int LZ5_decompress_generic(
     BYTE* decompFlagsBase, *decompOff24Base, *decompOff16Base, *decompLiteralsBase = NULL;
     int res, compressionLevel;
 
-    if (inputSize < 1) { LZ5_LOG_DECOMPRESS("inputSize=%d outputSize=%d targetOutputSize=%d partialDecoding=%d\n", inputSize, outputSize, targetOutputSize, partialDecoding); return 0; }
+    if (inputSize < 1) { LIZARD_LOG_DECOMPRESS("inputSize=%d outputSize=%d targetOutputSize=%d partialDecoding=%d\n", inputSize, outputSize, targetOutputSize, partialDecoding); return 0; }
 
     compressionLevel = *ip++;
 
     if (compressionLevel < LIZARD_MIN_CLEVEL || compressionLevel > LIZARD_MAX_CLEVEL) {
-        LZ5_LOG_DECOMPRESS("ERROR LZ5_decompress_generic inputSize=%d compressionLevel=%d\n", inputSize, compressionLevel);
+        LIZARD_LOG_DECOMPRESS("ERROR LZ5_decompress_generic inputSize=%d compressionLevel=%d\n", inputSize, compressionLevel);
         return -1;
     }
 
-    LZ5_LOG_DECOMPRESS("LZ5_decompress_generic ip=%p inputSize=%d targetOutputSize=%d dest=%p outputSize=%d cLevel=%d dict=%d dictSize=%d dictStart=%p partialDecoding=%d\n", ip, inputSize, targetOutputSize, dest, outputSize, compressionLevel, dict, (int)dictSize, dictStart, partialDecoding);
+    LIZARD_LOG_DECOMPRESS("LZ5_decompress_generic ip=%p inputSize=%d targetOutputSize=%d dest=%p outputSize=%d cLevel=%d dict=%d dictSize=%d dictStart=%p partialDecoding=%d\n", ip, inputSize, targetOutputSize, dest, outputSize, compressionLevel, dict, (int)dictSize, dictStart, partialDecoding);
 
-    decompLiteralsBase = (BYTE*)malloc(4*LZ5_HUF_BLOCK_SIZE);
+    decompLiteralsBase = (BYTE*)malloc(4*LIZARD_HUF_BLOCK_SIZE);
     if (!decompLiteralsBase) return -1;
-    decompFlagsBase = decompLiteralsBase + LZ5_HUF_BLOCK_SIZE;
-    decompOff24Base = decompFlagsBase + LZ5_HUF_BLOCK_SIZE;
-    decompOff16Base = decompOff24Base + LZ5_HUF_BLOCK_SIZE;
+    decompFlagsBase = decompLiteralsBase + LIZARD_HUF_BLOCK_SIZE;
+    decompOff24Base = decompFlagsBase + LIZARD_HUF_BLOCK_SIZE;
+    decompOff16Base = decompOff24Base + LIZARD_HUF_BLOCK_SIZE;
 
 #ifdef LZ5_STATS
     init_stats();
@@ -161,26 +161,26 @@ FORCE_INLINE int LZ5_decompress_generic(
     while (ip < iend)
     {
         res = *ip++;
-        if (res == LZ5_FLAG_UNCOMPRESSED) /* uncompressed */
+        if (res == LIZARD_FLAG_UNCOMPRESSED) /* uncompressed */
         {
             uint32_t length;
-            if (ip > iend - 3) { LZ5_LOG_DECOMPRESS("UNCOMPRESSED  ip[%p] > iend[%p] - 3\n", ip, iend); goto _output_error; }
+            if (ip > iend - 3) { LIZARD_LOG_DECOMPRESS("UNCOMPRESSED  ip[%p] > iend[%p] - 3\n", ip, iend); goto _output_error; }
             length = MEM_readLE24(ip);
             ip += 3;
          //   printf("%d: total=%d block=%d UNCOMPRESSED op=%p oexit=%p oend=%p\n", (int)(op-(BYTE*)dest) ,(int)(ip-istart), length, op, oexit, oend);
-            if (ip + length > iend || op + length > oend) { LZ5_LOG_DECOMPRESS("UNCOMPRESSED  ip[%p]+length[%d] > iend[%p]\n", ip, length, iend); goto _output_error; }
+            if (ip + length > iend || op + length > oend) { LIZARD_LOG_DECOMPRESS("UNCOMPRESSED  ip[%p]+length[%d] > iend[%p]\n", ip, length, iend); goto _output_error; }
             memcpy(op, ip, length);
             op += length;
             ip += length;
             if ((partialDecoding) && (op >= oexit)) break;
 #ifdef LZ5_STATS
-            uncompr_stream[LZ5_STREAM_UNCOMPRESSED] += length;
+            uncompr_stream[LIZARD_STREAM_UNCOMPRESSED] += length;
 #endif
             continue;
         }
         
-        if (res&LZ5_FLAG_LEN) {
-            LZ5_LOG_DECOMPRESS("res=%d\n", res); goto _output_error;
+        if (res&LIZARD_FLAG_LEN) {
+            LIZARD_LOG_DECOMPRESS("res=%d\n", res); goto _output_error;
         }
 
         if (ip > iend - 5*3) goto _output_error;
@@ -188,36 +188,36 @@ FORCE_INLINE int LZ5_decompress_generic(
         ctx.lenEnd = ctx.lenPtr + MEM_readLE24(ip);
         if (ctx.lenEnd < ctx.lenPtr || (ctx.lenEnd > iend - 3)) goto _output_error;
 #ifdef LZ5_STATS
-        uncompr_stream[LZ5_STREAM_LEN] += ctx.lenEnd-ctx.lenPtr + 3;
+        uncompr_stream[LIZARD_STREAM_LEN] += ctx.lenEnd-ctx.lenPtr + 3;
 #endif
         ip = ctx.lenEnd;
 
         {   size_t streamLen;
-#ifdef LZ5_USE_LOGS
+#ifdef LIZARD_USE_LOGS
             const BYTE* ipos;
             size_t comprFlagsLen, comprLiteralsLen, total;
 #endif
-            streamLen = LZ5_readStream(res&LZ5_FLAG_OFFSET16, &ip, iend, decompOff16Base, decompOff16Base + LZ5_HUF_BLOCK_SIZE, &ctx.offset16Ptr, &ctx.offset16End, LZ5_STREAM_OFFSET16);
+            streamLen = LZ5_readStream(res&LIZARD_FLAG_OFFSET16, &ip, iend, decompOff16Base, decompOff16Base + LIZARD_HUF_BLOCK_SIZE, &ctx.offset16Ptr, &ctx.offset16End, LIZARD_STREAM_OFFSET16);
             if (streamLen == 0) goto _output_error;
 
-            streamLen = LZ5_readStream(res&LZ5_FLAG_OFFSET24, &ip, iend, decompOff24Base, decompOff24Base + LZ5_HUF_BLOCK_SIZE, &ctx.offset24Ptr, &ctx.offset24End, LZ5_STREAM_OFFSET24);
+            streamLen = LZ5_readStream(res&LIZARD_FLAG_OFFSET24, &ip, iend, decompOff24Base, decompOff24Base + LIZARD_HUF_BLOCK_SIZE, &ctx.offset24Ptr, &ctx.offset24End, LIZARD_STREAM_OFFSET24);
             if (streamLen == 0) goto _output_error;
 
-#ifdef LZ5_USE_LOGS
+#ifdef LIZARD_USE_LOGS
             ipos = ip;
-            streamLen = LZ5_readStream(res&LZ5_FLAG_FLAGS, &ip, iend, decompFlagsBase, decompFlagsBase + LZ5_HUF_BLOCK_SIZE, &ctx.flagsPtr, &ctx.flagsEnd, LZ5_STREAM_FLAGS);
+            streamLen = LZ5_readStream(res&LIZARD_FLAG_FLAGS, &ip, iend, decompFlagsBase, decompFlagsBase + LIZARD_HUF_BLOCK_SIZE, &ctx.flagsPtr, &ctx.flagsEnd, LIZARD_STREAM_FLAGS);
             if (streamLen == 0) goto _output_error;
             streamLen = (size_t)(ctx.flagsEnd-ctx.flagsPtr);
             comprFlagsLen = ((size_t)(ip - ipos) + 3 >= streamLen) ? 0 : (size_t)(ip - ipos);
             ipos = ip;
 #else
-            streamLen = LZ5_readStream(res&LZ5_FLAG_FLAGS, &ip, iend, decompFlagsBase, decompFlagsBase + LZ5_HUF_BLOCK_SIZE, &ctx.flagsPtr, &ctx.flagsEnd, LZ5_STREAM_FLAGS);
+            streamLen = LZ5_readStream(res&LIZARD_FLAG_FLAGS, &ip, iend, decompFlagsBase, decompFlagsBase + LIZARD_HUF_BLOCK_SIZE, &ctx.flagsPtr, &ctx.flagsEnd, LIZARD_STREAM_FLAGS);
             if (streamLen == 0) goto _output_error;
 #endif
 
-            streamLen = LZ5_readStream(res&LZ5_FLAG_LITERALS, &ip, iend, decompLiteralsBase, decompLiteralsBase + LZ5_HUF_BLOCK_SIZE, &ctx.literalsPtr, &ctx.literalsEnd, LZ5_STREAM_LITERALS);
+            streamLen = LZ5_readStream(res&LIZARD_FLAG_LITERALS, &ip, iend, decompLiteralsBase, decompLiteralsBase + LIZARD_HUF_BLOCK_SIZE, &ctx.literalsPtr, &ctx.literalsEnd, LIZARD_STREAM_LITERALS);
             if (streamLen == 0) goto _output_error;
-#ifdef LZ5_USE_LOGS
+#ifdef LIZARD_USE_LOGS
             streamLen = (size_t)(ctx.literalsEnd-ctx.literalsPtr);
             comprLiteralsLen = ((size_t)(ip - ipos) + 3 >= streamLen) ? 0 : (size_t)(ip - ipos);
             total = (size_t)(ip-(ctx.lenEnd-1));
@@ -225,12 +225,12 @@ FORCE_INLINE int LZ5_decompress_generic(
 
             if (ip > iend) goto _output_error;
 
-            LZ5_LOG_DECOMPRESS("%d: total=%d block=%d flagsLen=%d(HUF=%d) literalsLen=%d(HUF=%d) offset16Len=%d offset24Len=%d lengthsLen=%d \n", (int)(op-(BYTE*)dest) ,(int)(ip-istart), (int)total, 
+            LIZARD_LOG_DECOMPRESS("%d: total=%d block=%d flagsLen=%d(HUF=%d) literalsLen=%d(HUF=%d) offset16Len=%d offset24Len=%d lengthsLen=%d \n", (int)(op-(BYTE*)dest) ,(int)(ip-istart), (int)total, 
                         (int)(ctx.flagsEnd-ctx.flagsPtr), (int)comprFlagsLen, (int)(ctx.literalsEnd-ctx.literalsPtr), (int)comprLiteralsLen, 
                         (int)(ctx.offset16End-ctx.offset16Ptr), (int)(ctx.offset24End-ctx.offset24Ptr), (int)(ctx.lenEnd-ctx.lenPtr));
         }
 
-        ctx.last_off = -LZ5_INIT_LAST_OFFSET;
+        ctx.last_off = -LIZARD_INIT_LAST_OFFSET;
         params = LZ5_defaultParameters[compressionLevel - LIZARD_MIN_CLEVEL];
         if (params.decompressType == LZ5_coderwords_LZ4)
             res = LZ5_decompress_LZ4(&ctx, op, outputSize, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
@@ -240,7 +240,7 @@ FORCE_INLINE int LZ5_decompress_generic(
 #else
             res = LZ5_decompress_LIZv1(&ctx, op, outputSize, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
 #endif        
-        LZ5_LOG_DECOMPRESS("LZ5_decompress_generic res=%d inputSize=%d\n", res, (int)(ctx.literalsEnd-ctx.lenEnd));
+        LIZARD_LOG_DECOMPRESS("LZ5_decompress_generic res=%d inputSize=%d\n", res, (int)(ctx.literalsEnd-ctx.lenEnd));
 
         if (res <= 0) { free(decompLiteralsBase); return res; }
         
@@ -253,12 +253,12 @@ FORCE_INLINE int LZ5_decompress_generic(
     print_stats();
 #endif
 
-    LZ5_LOG_DECOMPRESS("LZ5_decompress_generic total=%d\n", (int)(op-(BYTE*)dest));
+    LIZARD_LOG_DECOMPRESS("LZ5_decompress_generic total=%d\n", (int)(op-(BYTE*)dest));
     free(decompLiteralsBase);
     return (int)(op-(BYTE*)dest);
 
 _output_error:
-    LZ5_LOG_DECOMPRESS("LZ5_decompress_generic ERROR ip=%p iend=%p\n", ip, iend);
+    LIZARD_LOG_DECOMPRESS("LZ5_decompress_generic ERROR ip=%p iend=%p\n", ip, iend);
     free(decompLiteralsBase);
     return -1;
 }
@@ -357,8 +357,8 @@ int LZ5_decompress_safe_usingDict(const char* source, char* dest, int compressed
         return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, full, 0, noDict, (BYTE*)dest, NULL, 0);
     if (dictStart+dictSize == dest)
     {
-        if (dictSize >= (int)(LZ5_DICT_SIZE - 1))
-            return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, full, 0, withPrefix64k, (BYTE*)dest-LZ5_DICT_SIZE, NULL, 0);
+        if (dictSize >= (int)(LIZARD_DICT_SIZE - 1))
+            return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, full, 0, withPrefix64k, (BYTE*)dest-LIZARD_DICT_SIZE, NULL, 0);
         return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, full, 0, noDict, (BYTE*)dest-dictSize, NULL, 0);
     }
     return LZ5_decompress_generic(source, dest, compressedSize, maxOutputSize, full, 0, usingExtDict, (BYTE*)dest, (const BYTE*)dictStart, dictSize);

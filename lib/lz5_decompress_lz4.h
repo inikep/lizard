@@ -29,7 +29,7 @@ FORCE_INLINE int LZ5_decompress_LZ4(
     const BYTE* const lowLimit = lowPrefix - dictSize;
     const BYTE* const dictEnd = (const BYTE*)dictStart + dictSize;
 
-    const int checkOffset = (dictSize < (int)(LZ5_DICT_SIZE));
+    const int checkOffset = (dictSize < (int)(LIZARD_DICT_SIZE));
 
     intptr_t length = 0;
     (void)compressionLevel;
@@ -46,7 +46,7 @@ FORCE_INLINE int LZ5_decompress_LZ4(
         /* get literal length */
         token = *ctx->flagsPtr++;
         if ((length=(token & RUN_MASK_LZ4)) == RUN_MASK_LZ4) {
-            if (unlikely(ctx->literalsPtr > iend - 5)) { LZ5_LOG_DECOMPRESS_LZ4("0"); goto _output_error; } 
+            if (unlikely(ctx->literalsPtr > iend - 5)) { LIZARD_LOG_DECOMPRESS_LZ4("0"); goto _output_error; } 
             length = *ctx->literalsPtr;
             if unlikely(length >= 254) {
                 if (length == 254) {
@@ -59,13 +59,13 @@ FORCE_INLINE int LZ5_decompress_LZ4(
             }
             length += RUN_MASK_LZ4;
             ctx->literalsPtr++;
-            if (unlikely((size_t)(op+length)<(size_t)(op))) { LZ5_LOG_DECOMPRESS_LZ4("1"); goto _output_error; }  /* overflow detection */
-            if (unlikely((size_t)(ctx->literalsPtr+length)<(size_t)(ctx->literalsPtr))) { LZ5_LOG_DECOMPRESS_LZ4("2"); goto _output_error; }   /* overflow detection */
+            if (unlikely((size_t)(op+length)<(size_t)(op))) { LIZARD_LOG_DECOMPRESS_LZ4("1"); goto _output_error; }  /* overflow detection */
+            if (unlikely((size_t)(ctx->literalsPtr+length)<(size_t)(ctx->literalsPtr))) { LIZARD_LOG_DECOMPRESS_LZ4("2"); goto _output_error; }   /* overflow detection */
         }
 
         /* copy literals */
         cpy = op + length;
-        if (unlikely(cpy > oend - WILDCOPYLENGTH || ctx->literalsPtr + length > iend - (2 + WILDCOPYLENGTH))) { LZ5_LOG_DECOMPRESS_LZ4("offset outside buffers\n"); goto _output_error; }   /* Error : offset outside buffers */
+        if (unlikely(cpy > oend - WILDCOPYLENGTH || ctx->literalsPtr + length > iend - (2 + WILDCOPYLENGTH))) { LIZARD_LOG_DECOMPRESS_LZ4("offset outside buffers\n"); goto _output_error; }   /* Error : offset outside buffers */
 
 #if 1
         LZ5_wildCopy16(op, ctx->literalsPtr, cpy);
@@ -86,12 +86,12 @@ FORCE_INLINE int LZ5_decompress_LZ4(
         ctx->literalsPtr += 2;
 
         match = op - offset;
-        if ((checkOffset) && (unlikely(match < lowLimit))) { LZ5_LOG_DECOMPRESS_LZ4("lowPrefix[%p]-dictSize[%d]=lowLimit[%p] match[%p]=op[%p]-offset[%d]\n", lowPrefix, (int)dictSize, lowLimit, match, op, (int)offset); goto _output_error; }  /* Error : offset outside buffers */
+        if ((checkOffset) && (unlikely(match < lowLimit))) { LIZARD_LOG_DECOMPRESS_LZ4("lowPrefix[%p]-dictSize[%d]=lowLimit[%p] match[%p]=op[%p]-offset[%d]\n", lowPrefix, (int)dictSize, lowLimit, match, op, (int)offset); goto _output_error; }  /* Error : offset outside buffers */
 
         /* get matchlength */
         length = token >> RUN_BITS_LZ4;
         if (length == ML_MASK_LZ4) {
-            if (unlikely(ctx->literalsPtr > iend - 5)) { LZ5_LOG_DECOMPRESS_LZ4("4"); goto _output_error; } 
+            if (unlikely(ctx->literalsPtr > iend - 5)) { LIZARD_LOG_DECOMPRESS_LZ4("4"); goto _output_error; } 
             length = *ctx->literalsPtr;
             if unlikely(length >= 254) {
                 if (length == 254) {
@@ -104,13 +104,13 @@ FORCE_INLINE int LZ5_decompress_LZ4(
             }
             length += ML_MASK_LZ4;
             ctx->literalsPtr++;
-            if (unlikely((size_t)(op+length)<(size_t)(op))) { LZ5_LOG_DECOMPRESS_LZ4("5"); goto _output_error; }  /* overflow detection */
+            if (unlikely((size_t)(op+length)<(size_t)(op))) { LIZARD_LOG_DECOMPRESS_LZ4("5"); goto _output_error; }  /* overflow detection */
         }
         length += MINMATCH;
 
         /* check external dictionary */
         if ((dict==usingExtDict) && (match < lowPrefix)) {
-            if (unlikely(op + length > oend - WILDCOPYLENGTH)) { LZ5_LOG_DECOMPRESS_LZ4("6"); goto _output_error; }  /* doesn't respect parsing restriction */
+            if (unlikely(op + length > oend - WILDCOPYLENGTH)) { LIZARD_LOG_DECOMPRESS_LZ4("6"); goto _output_error; }  /* doesn't respect parsing restriction */
 
             if (length <= (intptr_t)(lowPrefix - match)) {
                 /* match can be copied as a single segment from external dictionary */
@@ -135,7 +135,7 @@ FORCE_INLINE int LZ5_decompress_LZ4(
 
         /* copy match within block */
         cpy = op + length;
-        if (unlikely(cpy > oend - WILDCOPYLENGTH)) { LZ5_LOG_DECOMPRESS_LZ4("1match=%p lowLimit=%p\n", match, lowLimit); goto _output_error; }   /* Error : offset outside buffers */
+        if (unlikely(cpy > oend - WILDCOPYLENGTH)) { LIZARD_LOG_DECOMPRESS_LZ4("1match=%p lowLimit=%p\n", match, lowLimit); goto _output_error; }   /* Error : offset outside buffers */
         LZ5_copy8(op, match);
         LZ5_copy8(op+8, match+8);
         if (length > 16)
@@ -147,7 +147,7 @@ FORCE_INLINE int LZ5_decompress_LZ4(
     /* last literals */
     length = ctx->literalsEnd - ctx->literalsPtr;
     cpy = op + length;
-    if ((ctx->literalsPtr+length != iend) || (cpy > oend)) { LZ5_LOG_DECOMPRESS_LZ4("9"); goto _output_error; }   /* Error : input must be consumed */
+    if ((ctx->literalsPtr+length != iend) || (cpy > oend)) { LIZARD_LOG_DECOMPRESS_LZ4("9"); goto _output_error; }   /* Error : input must be consumed */
     memcpy(op, ctx->literalsPtr, length);
     ctx->literalsPtr += length;
     op += length;
@@ -157,7 +157,7 @@ FORCE_INLINE int LZ5_decompress_LZ4(
 
     /* Overflow error detected */
 _output_error:
-    LZ5_LOG_DECOMPRESS_LZ4("_output_error=%d ctx->flagsPtr=%p blockBase=%p\n", (int) (-(ctx->flagsPtr-blockBase))-1, ctx->flagsPtr, blockBase);
-    LZ5_LOG_DECOMPRESS_LZ4("cpy=%p oend=%p ctx->literalsPtr+length[%d]=%p iend=%p\n", cpy, oend, (int)length, ctx->literalsPtr+length, iend);
+    LIZARD_LOG_DECOMPRESS_LZ4("_output_error=%d ctx->flagsPtr=%p blockBase=%p\n", (int) (-(ctx->flagsPtr-blockBase))-1, ctx->flagsPtr, blockBase);
+    LIZARD_LOG_DECOMPRESS_LZ4("cpy=%p oend=%p ctx->literalsPtr+length[%d]=%p iend=%p\n", cpy, oend, (int)length, ctx->literalsPtr+length, iend);
     return (int) (-(ctx->flagsPtr-blockBase))-1;
 }

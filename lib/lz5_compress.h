@@ -108,7 +108,7 @@ LZ5_compress() :
     compression stops *immediately*, and the function result is zero.
     As a consequence, 'dest' content is not valid.
     This function never writes outside 'dest' buffer, nor read outside 'source' buffer.
-        sourceSize  : Max supported value is LZ5_MAX_INPUT_VALUE
+        sourceSize  : Max supported value is LIZARD_MAX_INPUT_VALUE
         maxDestSize : full or partial size of buffer 'dest' (which must be already allocated)
         return : the number of bytes written into buffer 'dest' (necessarily <= maxOutputSize)
               or 0 if compression fails
@@ -118,21 +118,21 @@ LZ5_compress() :
 /*-************************************
 *  Advanced Functions
 **************************************/
-#define LZ5_MAX_INPUT_SIZE  0x7E000000   /* 2 113 929 216 bytes */
-#define LZ5_BLOCK_SIZE      (1<<17)
-#define LZ5_BLOCK64K_SIZE   (1<<16)
-#define LZ5_COMPRESSBOUND(isize)  ((unsigned)(isize) > (unsigned)LZ5_MAX_INPUT_SIZE ? 0 : (isize) + 1 + 1 + ((isize/LZ5_BLOCK_SIZE)+1)*4)
+#define LIZARD_MAX_INPUT_SIZE  0x7E000000   /* 2 113 929 216 bytes */
+#define LIZARD_BLOCK_SIZE      (1<<17)
+#define LIZARD_BLOCK64K_SIZE   (1<<16)
+#define LIZARD_COMPRESSBOUND(isize)  ((unsigned)(isize) > (unsigned)LIZARD_MAX_INPUT_SIZE ? 0 : (isize) + 1 + 1 + ((isize/LIZARD_BLOCK_SIZE)+1)*4)
 
 
 /*!
 LZ5_compressBound() :
     Provides the maximum size that LZ5 compression may output in a "worst case" scenario (input data not compressible)
     This function is primarily useful for memory allocation purposes (destination buffer size).
-    Macro LZ5_COMPRESSBOUND() is also provided for compilation-time evaluation (stack memory allocation for example).
+    Macro LIZARD_COMPRESSBOUND() is also provided for compilation-time evaluation (stack memory allocation for example).
     Note that LZ5_compress() compress faster when dest buffer size is >= LZ5_compressBound(srcSize)
-        inputSize  : max supported value is LZ5_MAX_INPUT_SIZE
+        inputSize  : max supported value is LIZARD_MAX_INPUT_SIZE
         return : maximum output size in a "worst case" scenario
-              or 0, if input size is too large ( > LZ5_MAX_INPUT_SIZE)
+              or 0, if input size is too large ( > LIZARD_MAX_INPUT_SIZE)
 */
 LIZARDLIB_API int LZ5_compressBound(int inputSize);
 
@@ -173,7 +173,7 @@ LIZARDLIB_API LZ5_stream_t* LZ5_resetStream (LZ5_stream_t* streamPtr, int compre
  *  Use this function to load a static dictionary into LZ5_stream.
  *  Any previous data will be forgotten, only 'dictionary' will remain in memory.
  *  Loading a size of 0 is allowed.
- *  Return : dictionary size, in bytes (necessarily <= LZ5_DICT_SIZE)
+ *  Return : dictionary size, in bytes (necessarily <= LIZARD_DICT_SIZE)
  */
 LIZARDLIB_API int LZ5_loadDict (LZ5_stream_t* streamPtr, const char* dictionary, int dictSize);
 

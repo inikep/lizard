@@ -58,7 +58,7 @@
 #define MB *(1U<<20)
 #define GB *(1U<<30)
 
-#define LZ5_BLOCKSIZEID_DEFAULT 4
+#define LIZARD_BLOCKSIZEID_DEFAULT 4
 
 
 /*-************************************
@@ -252,7 +252,7 @@ int main(int argc, const char** argv)
     unsigned ifnIdx=0;
     const char nullOutput[] = NULL_OUTPUT;
     const char extension[] = LZ5_EXTENSION;
-    size_t blockSize = LZ5IO_setBlockSizeID(LZ5_BLOCKSIZEID_DEFAULT);
+    size_t blockSize = LZ5IO_setBlockSizeID(LIZARD_BLOCKSIZEID_DEFAULT);
     const char* const exeName = lastNameFromPath(argv[0]);
 #ifdef UTIL_HAS_CREATEFILELIST
     const char** extendedFileList = NULL;

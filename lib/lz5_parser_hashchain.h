@@ -79,7 +79,7 @@ FORCE_INLINE int LZ5_InsertAndFindBestMatch (LZ5_stream_t* ctx,   /* Index table
             {
                 size_t const mlt = LZ5_count(ip+MINMATCH, match+MINMATCH, iLimit) + MINMATCH;
 #if LZ5_HC_LONGOFF_MM > 0
-                if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - match) < LZ5_MAX_16BIT_OFFSET))
+                if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
 #endif
                 if (mlt > ml) { ml = mlt; *matchpos = match; }
             }
@@ -92,7 +92,7 @@ FORCE_INLINE int LZ5_InsertAndFindBestMatch (LZ5_stream_t* ctx,   /* Index table
             if (MEM_read32(match) == MEM_read32(ip)) {
                 size_t mlt = LZ5_count_2segments(ip+MINMATCH, match+MINMATCH, iLimit, dictEnd, lowPrefixPtr) + MINMATCH;
 #if LZ5_HC_LONGOFF_MM > 0
-                if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - (base + matchIndex)) < LZ5_MAX_16BIT_OFFSET))
+                if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - (base + matchIndex)) < LIZARD_MAX_16BIT_OFFSET))
 #endif
                 if (mlt > ml) { ml = mlt; *matchpos = base + matchIndex; }   /* virtual matchpos */
             }
@@ -150,7 +150,7 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatch (
                     mlt -= back;
 
 #if LZ5_HC_LONGOFF_MM > 0
-                    if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - match) < LZ5_MAX_16BIT_OFFSET))
+                    if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - match) < LIZARD_MAX_16BIT_OFFSET))
 #endif
                     if (mlt > longest) {
                         longest = (int)mlt;
@@ -171,7 +171,7 @@ FORCE_INLINE int LZ5_InsertAndGetWiderMatch (
                 while ((ip+back > iLowLimit) && (matchIndex+back > lowLimit) && (ip[back-1] == match[back-1])) back--;
                 mlt -= back;
 #if LZ5_HC_LONGOFF_MM > 0
-                if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - (base + matchIndex)) < LZ5_MAX_16BIT_OFFSET))
+                if ((mlt >= LZ5_HC_LONGOFF_MM) || ((U32)(ip - (base + matchIndex)) < LIZARD_MAX_16BIT_OFFSET))
 #endif
                 if ((int)mlt > longest) { longest = (int)mlt; *matchpos = base + matchIndex + back; *startpos = ip+back; }
             }

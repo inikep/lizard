@@ -125,18 +125,18 @@ LZ5DLIB_API int LZ5_setStreamDecode (LZ5_streamDecode_t* LZ5_streamDecode, const
 /*
 *_continue() :
     These decoding functions allow decompression of multiple blocks in "streaming" mode.
-    Previously decoded blocks *must* remain available at the memory position where they were decoded (up to LZ5_DICT_SIZE)
+    Previously decoded blocks *must* remain available at the memory position where they were decoded (up to LIZARD_DICT_SIZE)
     In the case of a ring buffers, decoding buffer must be either :
     - Exactly same size as encoding buffer, with same update rule (block boundaries at same positions)
-      In which case, the decoding & encoding ring buffer can have any size, including small ones ( < LZ5_DICT_SIZE).
+      In which case, the decoding & encoding ring buffer can have any size, including small ones ( < LIZARD_DICT_SIZE).
     - Larger than encoding buffer, by a minimum of maxBlockSize more bytes.
       maxBlockSize is implementation dependent. It's the maximum size you intend to compress into a single block.
       In which case, encoding and decoding buffers do not need to be synchronized,
-      and encoding ring buffer can have any size, including small ones ( < LZ5_DICT_SIZE).
-    - _At least_ LZ5_DICT_SIZE + 8 bytes + maxBlockSize.
+      and encoding ring buffer can have any size, including small ones ( < LIZARD_DICT_SIZE).
+    - _At least_ LIZARD_DICT_SIZE + 8 bytes + maxBlockSize.
       In which case, encoding and decoding buffers do not need to be synchronized,
       and encoding ring buffer can have any size, including larger than decoding buffer.
-    Whenever these conditions are not possible, save the last LZ5_DICT_SIZE of decoded data into a safe buffer,
+    Whenever these conditions are not possible, save the last LIZARD_DICT_SIZE of decoded data into a safe buffer,
     and indicate where it is saved using LZ5_setStreamDecode()
 */
 LZ5DLIB_API int LZ5_decompress_safe_continue (LZ5_streamDecode_t* LZ5_streamDecode, const char* source, char* dest, int compressedSize, int maxDecompressedSize);

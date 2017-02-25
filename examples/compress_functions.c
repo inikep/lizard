@@ -69,8 +69,8 @@
 #define BILLION 1000000000L
 
 /* Create a crude set of test IDs so we can switch on them later  (Can't switch() on a char[] or char*). */
-#define ID__LZ5_COMPRESS_DEFAULT        1
-#define ID__LZ5_COMPRESS_GENERIC        4
+#define ID__LIZARD_COMPRESS_DEFAULT        1
+#define ID__LIZARD_COMPRESS_GENERIC        4
 #define ID__LZ5_DECOMPRESS_SAFE         5
 
 
@@ -119,7 +119,7 @@ uint64_t bench(
   // Select the right function to perform the benchmark on.  We perform 5000 initial loops to warm the cache and ensure that dst
   // remains matching to known_good_dst between successive calls.
   switch(function_id) {
-    case ID__LZ5_COMPRESS_DEFAULT:
+    case ID__LIZARD_COMPRESS_DEFAULT:
       printf("Starting benchmark for function: LZ5_compress_MinLevel()\n");
       for(int junk=0; junk<warm_up; junk++)
         rv = LZ5_compress_MinLevel(src, dst, src_size, max_dst_size);
@@ -133,7 +133,7 @@ uint64_t bench(
       break;
 
 //    Disabled until LZ5_compress_generic() is exposed in the header.
-//    case ID__LZ5_COMPRESS_GENERIC:
+//    case ID__LIZARD_COMPRESS_GENERIC:
 //      printf("Starting benchmark for function: LZ5_compress_generic()\n");
 //      LZ5_resetStream_MinLevel((LZ5_stream_t*)state);
 //      for(int junk=0; junk<warm_up; junk++) {
@@ -266,14 +266,14 @@ int main(int argc, char **argv) {
   char *dst_d = calloc(1, src_size);
   memset(dst, 0, max_dst_size);
   printf("\nStarting suite A:  Normal compressible text.\n");
-  uint64_t time_taken__default       = bench(known_good_dst, ID__LZ5_COMPRESS_DEFAULT,       iterations, src,            dst,   src_size, max_dst_size, src_comp_size);
-  //uint64_t time_taken__generic       = bench(known_good_dst, ID__LZ5_COMPRESS_GENERIC,       iterations, src,            dst,   src_size, max_dst_size, src_comp_size);
+  uint64_t time_taken__default       = bench(known_good_dst, ID__LIZARD_COMPRESS_DEFAULT,       iterations, src,            dst,   src_size, max_dst_size, src_comp_size);
+  //uint64_t time_taken__generic       = bench(known_good_dst, ID__LIZARD_COMPRESS_GENERIC,       iterations, src,            dst,   src_size, max_dst_size, src_comp_size);
   uint64_t time_taken__decomp_safe   = bench(src,            ID__LZ5_DECOMPRESS_SAFE,        iterations, known_good_dst, dst_d, src_size, max_dst_size, src_comp_size);
   // Suite B - Highly Compressible
   memset(dst, 0, max_dst_size);
   printf("\nStarting suite B:  Highly compressible text.\n");
-  uint64_t time_taken_hc__default       = bench(known_good_hc_dst, ID__LZ5_COMPRESS_DEFAULT,       iterations, hc_src,            dst,   src_size, max_dst_size, hc_src_comp_size);
-  //uint64_t time_taken_hc__generic       = bench(known_good_hc_dst, ID__LZ5_COMPRESS_GENERIC,       iterations, hc_src,            dst,   src_size, max_dst_size, hc_src_comp_size);
+  uint64_t time_taken_hc__default       = bench(known_good_hc_dst, ID__LIZARD_COMPRESS_DEFAULT,       iterations, hc_src,            dst,   src_size, max_dst_size, hc_src_comp_size);
+  //uint64_t time_taken_hc__generic       = bench(known_good_hc_dst, ID__LIZARD_COMPRESS_GENERIC,       iterations, hc_src,            dst,   src_size, max_dst_size, hc_src_comp_size);
   uint64_t time_taken_hc__decomp_safe   = bench(hc_src,            ID__LZ5_DECOMPRESS_SAFE,        iterations, known_good_hc_dst, dst_d, src_size, max_dst_size, hc_src_comp_size);
 
   // Report and leave.

@@ -24,8 +24,8 @@ on implementation details of the compressor, and vice versa.
 Division into blocks
 --------------------
 
-The input data is divided into blocks of maximum size LZ5_BLOCK_SIZE (which is 128 KB). The subsequent blocks use the same sliding window and are dependent on previous blocks.
-Our impementation of LZ5 compressor divides input data into blocks of size of LZ5_BLOCK_SIZE except the last one which usually will be smaller.
+The input data is divided into blocks of maximum size LIZARD_BLOCK_SIZE (which is 128 KB). The subsequent blocks use the same sliding window and are dependent on previous blocks.
+Our impementation of LZ5 compressor divides input data into blocks of size of LIZARD_BLOCK_SIZE except the last one which usually will be smaller.
 The output data is a single byte 'Compression_Level' and one or more blocks in the format described below.
 
 
@@ -36,32 +36,32 @@ The block header is a single byte `Header_Byte` that is combination of following
 
 | Name                | Value |
 | --------------------- | --- |
-| LZ5_FLAG_LITERALS     | 1   |
-| LZ5_FLAG_FLAGS        | 2   |
-| LZ5_FLAG_OFF16LEN     | 4   |
-| LZ5_FLAG_OFF24LEN     | 8   |
-| LZ5_FLAG_LEN          | 16  |
-| LZ5_FLAG_UNCOMPRESSED | 128 |
+| LIZARD_FLAG_LITERALS     | 1   |
+| LIZARD_FLAG_FLAGS        | 2   |
+| LIZARD_FLAG_OFF16LEN     | 4   |
+| LIZARD_FLAG_OFF24LEN     | 8   |
+| LIZARD_FLAG_LEN          | 16  |
+| LIZARD_FLAG_UNCOMPRESSED | 128 |
 
-When `Header_Byte & LZ5_FLAG_UNCOMPRESSED` is true then the block is followed by 3-byte `Uncompressed_length` and uncompressed data of given size.
+When `Header_Byte & LIZARD_FLAG_UNCOMPRESSED` is true then the block is followed by 3-byte `Uncompressed_length` and uncompressed data of given size.
 
 
 Compressed block content
 ------------------------
 
-When `Header_Byte & LZ5_FLAG_UNCOMPRESSED` is false then compressed block contains of 5 streams:
-- `Lengths_Stream` (compressed with Huffman if LZ5_FLAG_LEN is set)
-- `16-bit_Offsets_Stream` (compressed with Huffman if LZ5_FLAG_OFF16LEN is set)
-- `24-bit_Offsets_Stream` (compressed with Huffman if LZ5_FLAG_OFF24LEN is set)
-- `Tokens_Stream` (compressed with Huffman if LZ5_FLAG_FLAGS is set)
-- `Literals_Stream` (compressed with Huffman if LZ5_FLAG_LITERALS is set)
+When `Header_Byte & LIZARD_FLAG_UNCOMPRESSED` is false then compressed block contains of 5 streams:
+- `Lengths_Stream` (compressed with Huffman if LIZARD_FLAG_LEN is set)
+- `16-bit_Offsets_Stream` (compressed with Huffman if LIZARD_FLAG_OFF16LEN is set)
+- `24-bit_Offsets_Stream` (compressed with Huffman if LIZARD_FLAG_OFF24LEN is set)
+- `Tokens_Stream` (compressed with Huffman if LIZARD_FLAG_FLAGS is set)
+- `Literals_Stream` (compressed with Huffman if LIZARD_FLAG_LITERALS is set)
 
 
 Stream format
 -------------
 The single stream is either:
-- if LZ5_FLAG_XXX is not set: 3 byte `Stream_Length` followed by a given number bytes
-- if LZ5_FLAG_XXX is set: 3 byte `Original_Stream_Length`, 3 byte `Compressed_Stream_Length`, followed by a given number of Huffman compressed bytes
+- if LIZARD_FLAG_XXX is not set: 3 byte `Stream_Length` followed by a given number bytes
+- if LIZARD_FLAG_XXX is set: 3 byte `Original_Stream_Length`, 3 byte `Compressed_Stream_Length`, followed by a given number of Huffman compressed bytes
 
 
 LZ5 block decompression

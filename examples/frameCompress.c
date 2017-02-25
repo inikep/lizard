@@ -10,7 +10,7 @@
 
 #define BUF_SIZE (16*1024)
 #define LIZARD_HEADER_SIZE 19
-#define LZ5_FOOTER_SIZE 4
+#define LIZARD_FOOTER_SIZE 4
 
 static const LZ5F_preferences_t lz5_preferences = {
 	{ LZ5F_max256KB, LZ5F_blockLinked, LZ5F_noContentChecksum, LZ5F_frame, 0, { 0, 0 } },
@@ -39,7 +39,7 @@ static int compress_file(FILE *in, FILE *out, size_t *size_in, size_t *size_out)
 	}
 
 	frame_size = LZ5F_compressBound(BUF_SIZE, &lz5_preferences);
-	size =  frame_size + LIZARD_HEADER_SIZE + LZ5_FOOTER_SIZE;
+	size =  frame_size + LIZARD_HEADER_SIZE + LIZARD_FOOTER_SIZE;
 	buf = malloc(size);
 	if (!buf) {
 		printf("Not enough memory");
@@ -68,7 +68,7 @@ static int compress_file(FILE *in, FILE *out, size_t *size_in, size_t *size_out)
 
 		offset += n;
 		count_out += n;
-		if (size - offset < frame_size + LZ5_FOOTER_SIZE) {
+		if (size - offset < frame_size + LIZARD_FOOTER_SIZE) {
 			printf("Writing %zu bytes\n", offset);
 
 			k = fwrite(buf, 1, offset, out);

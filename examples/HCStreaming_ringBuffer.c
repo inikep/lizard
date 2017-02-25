@@ -69,7 +69,7 @@ void test_compress(FILE* outFp, FILE* inpFp)
         if (0 == inpBytes) break;
 
         {
-            char cmpBuf[LZ5_COMPRESSBOUND(MESSAGE_MAX_BYTES)];
+            char cmpBuf[LIZARD_COMPRESSBOUND(MESSAGE_MAX_BYTES)];
             const int cmpBytes = LZ5_compress_continue(lz5Stream, inpPtr, cmpBuf, inpBytes, LZ5_compressBound(inpBytes));
 
             if(cmpBytes <= 0) break;
@@ -99,7 +99,7 @@ void test_decompress(FILE* outFp, FILE* inpFp)
     for(;;)
     {
         int  cmpBytes = 0;
-        char cmpBuf[LZ5_COMPRESSBOUND(MESSAGE_MAX_BYTES)];
+        char cmpBuf[LIZARD_COMPRESSBOUND(MESSAGE_MAX_BYTES)];
 
         {
             const size_t r0 = read_int32(inpFp, &cmpBytes);

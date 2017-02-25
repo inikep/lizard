@@ -14,7 +14,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ4 (
     COMPLOG_CODEWORDS_LZ4("literal : %u  --  match : %u  --  offset : %u\n", (U32)(*ip - *anchor), (U32)matchLength, (U32)(*ip-match));
   
     /* Encode Literal length */
- //   if (ctx->literalsPtr > ctx->literalsEnd - length - LZ5_LENGTH_SIZE_LZ4(length) - 2 - WILDCOPYLENGTH) { LZ5_LOG_COMPRESS_LZ4("encodeSequence overflow1\n"); return 1; }   /* Check output limit */
+ //   if (ctx->literalsPtr > ctx->literalsEnd - length - LZ5_LENGTH_SIZE_LZ4(length) - 2 - WILDCOPYLENGTH) { LIZARD_LOG_COMPRESS_LZ4("encodeSequence overflow1\n"); return 1; }   /* Check output limit */
     if (length >= RUN_MASK_LZ4) 
     {   size_t len = length - RUN_MASK_LZ4;
         *token = RUN_MASK_LZ4; 
@@ -27,7 +27,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ4 (
     /* Copy Literals */
     if (length > 0) {
         LZ5_wildCopy(ctx->literalsPtr, *anchor, (ctx->literalsPtr) + length);
-#if 0 //def LZ5_USE_HUFFMAN
+#if 0 //def LIZARD_USE_HUFFMAN
         ctx->litSum += (U32)length;
         ctx->litPriceSum += (U32)(length * ctx->log2LitSum);
         {   U32 u;
@@ -45,7 +45,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ4 (
 
     /* Encode MatchLength */
     length = matchLength - MINMATCH;
-  //  if (ctx->literalsPtr > ctx->literalsEnd - 5 /*LZ5_LENGTH_SIZE_LZ4(length)*/) { LZ5_LOG_COMPRESS_LZ4("encodeSequence overflow2\n"); return 1; }   /* Check output limit */
+  //  if (ctx->literalsPtr > ctx->literalsEnd - 5 /*LZ5_LENGTH_SIZE_LZ4(length)*/) { LIZARD_LOG_COMPRESS_LZ4("encodeSequence overflow2\n"); return 1; }   /* Check output limit */
     if (length >= ML_MASK_LZ4) {
         *token += (BYTE)(ML_MASK_LZ4<<RUN_BITS_LZ4);
         length -= ML_MASK_LZ4;
@@ -92,7 +92,7 @@ FORCE_INLINE size_t LZ5_get_price_LZ4(LZ5_stream_t* const ctx, const BYTE *ip, c
 {
     size_t price = 0;
     BYTE token = 0;
-#if 0 //def LZ5_USE_HUFFMAN
+#if 0 //def LIZARD_USE_HUFFMAN
     const BYTE* literals = ip - litLength;
     U32 u;
 
@@ -137,8 +137,8 @@ FORCE_INLINE size_t LZ5_get_price_LZ4(LZ5_stream_t* const ctx, const BYTE *ip, c
         size_t length;
         price += 16; /* Encode Offset */
 
-        if (offset < 8) return LZ5_MAX_PRICE; // error
-        if (matchLength < MINMATCH) return LZ5_MAX_PRICE; // error
+        if (offset < 8) return LIZARD_MAX_PRICE; // error
+        if (matchLength < MINMATCH) return LIZARD_MAX_PRICE; // error
             
         length = matchLength - MINMATCH;
         if (length >= ML_MASK_LZ4) {

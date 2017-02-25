@@ -270,7 +270,7 @@ static int FUZ_test(U32 seed, U32 nbCycles, const U32 startCycle, const double c
     void* CNBuffer;
     char* compressedBuffer;
     char* decodedBuffer;
-#   define FUZ_max   LZ5_COMPRESSBOUND(LEN)
+#   define FUZ_max   LIZARD_COMPRESSBOUND(LEN)
     int ret;
     unsigned cycleNb;
 #   define FUZ_CHECKTEST(cond, ...) if (cond) { printf("Test %u : ", testNb); printf(__VA_ARGS__); \

@@ -41,7 +41,7 @@ static void test_compress(
     size_t ringBufferBytes)
 {
     LZ5_stream_t* const lz5Stream = LZ5_createStream_MinLevel();
-    const size_t cmpBufBytes = LZ5_COMPRESSBOUND(messageMaxBytes);
+    const size_t cmpBufBytes = LIZARD_COMPRESSBOUND(messageMaxBytes);
     char* const cmpBuf = (char*) malloc(cmpBufBytes);
     char* const inpBuf = (char*) malloc(ringBufferBytes);
     int inpOffset = 0;
@@ -89,7 +89,7 @@ static void test_decompress(
     size_t ringBufferBytes)
 {
     LZ5_streamDecode_t* const lz5StreamDecode = LZ5_createStreamDecode();
-    char* const cmpBuf = (char*) malloc(LZ5_COMPRESSBOUND(messageMaxBytes));
+    char* const cmpBuf = (char*) malloc(LIZARD_COMPRESSBOUND(messageMaxBytes));
     char* const decBuf = (char*) malloc(ringBufferBytes);
     int decOffset = 0;
 

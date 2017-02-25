@@ -52,7 +52,7 @@ You can contact the author at :
 #include "lz5frame_static.h"
 #include "lz5_compress.h"
 #include "lz5_decompress.h"
-#include "lz5_common.h"  /* LZ5_DICT_SIZE */
+#include "lz5_common.h"  /* LIZARD_DICT_SIZE */
 #define XXH_STATIC_LINKING_ONLY
 #include "xxhash/xxhash.h"
 #include <stdio.h>
@@ -383,10 +383,10 @@ size_t LZ5F_compressBegin(LZ5F_compressionContext_t compressionContext, void* ds
     /* Buffer Management */
     if (cctxPtr->prefs.frameInfo.blockSizeID == 0) cctxPtr->prefs.frameInfo.blockSizeID = LZ5F_BLOCKSIZEID_DEFAULT;
     cctxPtr->maxBlockSize = LZ5F_getBlockSize(cctxPtr->prefs.frameInfo.blockSizeID);
-    requiredBuffSize = cctxPtr->maxBlockSize + ((cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * 2 * LZ5_DICT_SIZE);
+    requiredBuffSize = cctxPtr->maxBlockSize + ((cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * 2 * LIZARD_DICT_SIZE);
 
     if (preferencesPtr->autoFlush)
-        requiredBuffSize = (cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * LZ5_DICT_SIZE;   /* just needs dict */
+        requiredBuffSize = (cctxPtr->prefs.frameInfo.blockMode == LZ5F_blockLinked) * LIZARD_DICT_SIZE;   /* just needs dict */
 
     if (cctxPtr->maxBufferSize < requiredBuffSize) {
         cctxPtr->maxBufferSize = requiredBuffSize;
@@ -483,7 +483,7 @@ static compressFunc_t LZ5F_selectCompression(LZ5F_blockMode_t blockMode)
 
 static int LZ5F_localSaveDict(LZ5F_cctx_t* cctxPtr)
 {
-    return LZ5_saveDict ((LZ5_stream_t*)(cctxPtr->lz5CtxPtr), (char*)(cctxPtr->tmpBuff), LZ5_DICT_SIZE);
+    return LZ5_saveDict ((LZ5_stream_t*)(cctxPtr->lz5CtxPtr), (char*)(cctxPtr->tmpBuff), LIZARD_DICT_SIZE);
 }
 
 typedef enum { notDone, fromTmpBuffer, fromSrcBuffer } LZ5F_lastBlockStatus;
@@ -831,7 +831,7 @@ static size_t LZ5F_decodeHeader(LZ5F_dctx_t* dctxPtr, const void* srcVoidPtr, si
     if (contentChecksumFlag) XXH32_reset(&(dctxPtr->xxh), 0);
 
     /* alloc */
-    bufferNeeded = dctxPtr->maxBlockSize + ((dctxPtr->frameInfo.blockMode==LZ5F_blockLinked) * 2 * LZ5_DICT_SIZE);
+    bufferNeeded = dctxPtr->maxBlockSize + ((dctxPtr->frameInfo.blockMode==LZ5F_blockLinked) * 2 * LIZARD_DICT_SIZE);
     if (bufferNeeded > dctxPtr->maxBufferSize || dctxPtr->maxBlockSize > currentBlockSize) {   /* tmp buffers too small */
         FREEMEM(dctxPtr->tmpIn);
         FREEMEM(dctxPtr->tmpOutBuffer);
@@ -910,7 +910,7 @@ static void LZ5F_updateDict(LZ5F_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dst
         return;
     }
 
-    if (dstPtr - dstPtr0 + dstSize >= LZ5_DICT_SIZE) {  /* dstBuffer large enough to become dictionary */
+    if (dstPtr - dstPtr0 + dstSize >= LIZARD_DICT_SIZE) {  /* dstBuffer large enough to become dictionary */
         dctxPtr->dict = (const BYTE*)dstPtr0;
         dctxPtr->dictSize = dstPtr - dstPtr0 + dstSize;
         return;
@@ -924,9 +924,9 @@ static void LZ5F_updateDict(LZ5F_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dst
 
     if (withinTmp) { /* copy relevant dict portion in front of tmpOut within tmpOutBuffer */
         size_t preserveSize = dctxPtr->tmpOut - dctxPtr->tmpOutBuffer;
-        size_t copySize = LZ5_DICT_SIZE - dctxPtr->tmpOutSize;
+        size_t copySize = LIZARD_DICT_SIZE - dctxPtr->tmpOutSize;
         const BYTE* oldDictEnd = dctxPtr->dict + dctxPtr->dictSize - dctxPtr->tmpOutStart;
-        if (dctxPtr->tmpOutSize > LZ5_DICT_SIZE) copySize = 0;
+        if (dctxPtr->tmpOutSize > LIZARD_DICT_SIZE) copySize = 0;
         if (copySize > preserveSize) copySize = preserveSize;
 
         memcpy(dctxPtr->tmpOutBuffer + preserveSize - copySize, oldDictEnd - copySize, copySize);
@@ -938,7 +938,7 @@ static void LZ5F_updateDict(LZ5F_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dst
 
     if (dctxPtr->dict == dctxPtr->tmpOutBuffer) {    /* copy dst into tmp to complete dict */
         if (dctxPtr->dictSize + dstSize > dctxPtr->maxBufferSize) {  /* tmp buffer not large enough */
-            size_t preserveSize = LZ5_DICT_SIZE - dstSize;   /* note : dstSize < LZ5_DICT_SIZE */
+            size_t preserveSize = LIZARD_DICT_SIZE - dstSize;   /* note : dstSize < LIZARD_DICT_SIZE */
             memcpy(dctxPtr->tmpOutBuffer, dctxPtr->dict + dctxPtr->dictSize - preserveSize, preserveSize);
             dctxPtr->dictSize = preserveSize;
         }
@@ -948,7 +948,7 @@ static void LZ5F_updateDict(LZ5F_dctx_t* dctxPtr, const BYTE* dstPtr, size_t dst
     }
 
     /* join dict & dest into tmp */
-    {   size_t preserveSize = LZ5_DICT_SIZE - dstSize;   /* note : dstSize < LZ5_DICT_SIZE */
+    {   size_t preserveSize = LIZARD_DICT_SIZE - dstSize;   /* note : dstSize < LIZARD_DICT_SIZE */
         if (preserveSize > dctxPtr->dictSize) preserveSize = dctxPtr->dictSize;
         memcpy(dctxPtr->tmpOutBuffer, dctxPtr->dict + dctxPtr->dictSize - preserveSize, preserveSize);
         memcpy(dctxPtr->tmpOutBuffer + preserveSize, dstPtr, dstSize);
@@ -1180,14 +1180,14 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
                 /* ensure enough place for tmpOut */
                 if (dctxPtr->frameInfo.blockMode == LZ5F_blockLinked) {
                     if (dctxPtr->dict == dctxPtr->tmpOutBuffer) {
-                        if (dctxPtr->dictSize > 2 * LZ5_DICT_SIZE) {
-                            memcpy(dctxPtr->tmpOutBuffer, dctxPtr->dict + dctxPtr->dictSize - LZ5_DICT_SIZE, LZ5_DICT_SIZE);
-                            dctxPtr->dictSize = LZ5_DICT_SIZE;
+                        if (dctxPtr->dictSize > 2 * LIZARD_DICT_SIZE) {
+                            memcpy(dctxPtr->tmpOutBuffer, dctxPtr->dict + dctxPtr->dictSize - LIZARD_DICT_SIZE, LIZARD_DICT_SIZE);
+                            dctxPtr->dictSize = LIZARD_DICT_SIZE;
                         }
                         dctxPtr->tmpOut = dctxPtr->tmpOutBuffer + dctxPtr->dictSize;
                     } else {  /* dict not within tmp */
                         size_t reservedDictSpace = dctxPtr->dictSize;
-                        if (reservedDictSpace > LZ5_DICT_SIZE) reservedDictSpace = LZ5_DICT_SIZE;
+                        if (reservedDictSpace > LIZARD_DICT_SIZE) reservedDictSpace = LIZARD_DICT_SIZE;
                         dctxPtr->tmpOut = dctxPtr->tmpOutBuffer + reservedDictSpace;
                     }
                 }
@@ -1327,9 +1327,9 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
     {
         if (dctxPtr->dStage == dstage_flushOut) {
             size_t preserveSize = dctxPtr->tmpOut - dctxPtr->tmpOutBuffer;
-            size_t copySize = LZ5_DICT_SIZE - dctxPtr->tmpOutSize;
+            size_t copySize = LIZARD_DICT_SIZE - dctxPtr->tmpOutSize;
             const BYTE* oldDictEnd = dctxPtr->dict + dctxPtr->dictSize - dctxPtr->tmpOutStart;
-            if (dctxPtr->tmpOutSize > LZ5_DICT_SIZE) copySize = 0;
+            if (dctxPtr->tmpOutSize > LIZARD_DICT_SIZE) copySize = 0;
             if (copySize > preserveSize) copySize = preserveSize;
 
             memcpy(dctxPtr->tmpOutBuffer + preserveSize - copySize, oldDictEnd - copySize, copySize);
@@ -1339,7 +1339,7 @@ size_t LZ5F_decompress(LZ5F_decompressionContext_t decompressionContext,
         } else {
             size_t newDictSize = dctxPtr->dictSize;
             const BYTE* oldDictEnd = dctxPtr->dict + dctxPtr->dictSize;
-            if ((newDictSize) > LZ5_DICT_SIZE) newDictSize = LZ5_DICT_SIZE;
+            if ((newDictSize) > LIZARD_DICT_SIZE) newDictSize = LIZARD_DICT_SIZE;
 
             memcpy(dctxPtr->tmpOutBuffer, oldDictEnd - newDictSize, newDictSize);
 
