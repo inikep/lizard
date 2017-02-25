@@ -7,9 +7,9 @@ DESTDIR ?= /opt/local
 # Version numbers
 VERSION ?= 129
 RELEASE ?= r$(VERSION)
-LIBVER_MAJOR=$(shell sed -n '/define LZ5_VERSION_MAJOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5_compress.h)
-LIBVER_MINOR=$(shell sed -n '/define LZ5_VERSION_MINOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5_compress.h)
-LIBVER_PATCH=$(shell sed -n '/define LZ5_VERSION_RELEASE/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5_compress.h)
+LIBVER_MAJOR=$(shell sed -n '/define LIZARD_VERSION_MAJOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5_compress.h)
+LIBVER_MINOR=$(shell sed -n '/define LIZARD_VERSION_MINOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5_compress.h)
+LIBVER_PATCH=$(shell sed -n '/define LIZARD_VERSION_RELEASE/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < lib/lz5_compress.h)
 LIBVER=$(LIBVER_MAJOR).$(LIBVER_MINOR).$(LIBVER_PATCH)
 
 ######################################################################

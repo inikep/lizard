@@ -46,12 +46,12 @@ extern "C" {
 *  Export parameters
 *****************************************************************/
 /*
-*  LZ5_DLL_EXPORT :
+*  LIZARD_DLL_EXPORT :
 *  Enable exporting of functions when building a Windows DLL
 */
-#if defined(LZ5_DLL_EXPORT) && (LZ5_DLL_EXPORT==1)
+#if defined(LIZARD_DLL_EXPORT) && (LIZARD_DLL_EXPORT==1)
 #  define LZ5DLIB_API __declspec(dllexport)
-#elif defined(LZ5_DLL_IMPORT) && (LZ5_DLL_IMPORT==1)
+#elif defined(LIZARD_DLL_IMPORT) && (LIZARD_DLL_IMPORT==1)
 #  define LZ5DLIB_API __declspec(dllimport) /* It isn't required but allows to generate better code, saving a function pointer load from the IAT and an indirect jump.*/
 #else
 #  define LZ5DLIB_API

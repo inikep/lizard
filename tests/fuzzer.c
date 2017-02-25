@@ -45,7 +45,7 @@
 #include <stdio.h>      /* fgets, sscanf */
 #include <string.h>     /* strcmp */
 #include <time.h>       /* clock_t, clock, CLOCKS_PER_SEC */
-#include "lz5_compress.h"        /* LZ5_VERSION_STRING */
+#include "lz5_compress.h"        /* LIZARD_VERSION_STRING */
 #include "lz5_decompress.h"
 #include "lz5_common.h"
 #define XXH_STATIC_LINKING_ONLY
@@ -184,7 +184,7 @@ static int FUZ_AddressOverflow(U32* seed)
             char* const input = buffers[nbBuff-1];
             char* output = buffers[nbBuff];
             int r;
-            BYTE cLevel = LZ5_MIN_CLEVEL + (FUZ_rand(seed) % (1+LZ5_MAX_CLEVEL-LZ5_MIN_CLEVEL));
+            BYTE cLevel = LIZARD_MIN_CLEVEL + (FUZ_rand(seed) % (1+LIZARD_MAX_CLEVEL-LIZARD_MIN_CLEVEL));
             for(i = 5; i < nbOf255; i++) input[i] = (char)0xff;
             for(i = 5; i < nbOf255; i+=(FUZ_rand(seed) % 128)) input[i] = (BYTE)(FUZ_rand(seed)%256);
 
@@ -1060,7 +1060,7 @@ int main(int argc, char** argv)
         }
     }
 
-    printf("Starting LZ5 fuzzer (%i-bits, v%s)\n", (int)(sizeof(size_t)*8), LZ5_VERSION_STRING);
+    printf("Starting LZ5 fuzzer (%i-bits, v%s)\n", (int)(sizeof(size_t)*8), LIZARD_VERSION_STRING);
 
     if (!seedset) {
         time_t const t = time(NULL);

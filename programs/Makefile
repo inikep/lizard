@@ -82,7 +82,7 @@ lz5: $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/lz5_compress.o $(LZ5DIR)/lz5frame.o $(
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
 lz5nohuf: $(LZ5DIR)/lz5_decompress.c $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5frame.o $(LZ5DIR)/xxhash/xxhash.o bench.c lz5io.o lz5cli.c datagen.o
-	$(CC) -DLZ5_NO_HUFFMAN $(FLAGS) $^ -o $@$(EXT)
+	$(CC) -DLIZARD_NO_HUFFMAN $(FLAGS) $^ -o $@$(EXT)
 
 lz5c32: $(LZ5DIR)/lz5_decompress32.o $(LZ5DIR)/lz5_compress32.o $(LZ5DIR)/lz5frame.c $(LZ5DIR)/xxhash/xxhash.c bench.c lz5io.c lz5cli.c datagen.c $(ENTROPY_FILES)
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)

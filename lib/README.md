@@ -31,7 +31,7 @@ in case a user program would link to several libraries containing xxhash symbols
 Files `lz5_common.h`, `lz5_compress*`, `lz5_parser_*.h`, `lz5_decompress*`, and `entropy\mem.h` are required in all circumstances.
 
 To compile:
-- LZ5_raw only with levels 10...29 : use the `-DLZ5_NO_HUFFMAN` compiler flag
+- LZ5_raw only with levels 10...29 : use the `-DLIZARD_NO_HUFFMAN` compiler flag
 - LZ5_raw with levels 10...49 : include also all files from `entropy` directory
 - LZ5_frame with levels 10...49 : `lz5frame*` and all files from `entropy` and `xxhash` directories
 

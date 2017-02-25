@@ -9,7 +9,7 @@
 #include <lz5frame.h>
 
 #define BUF_SIZE (16*1024)
-#define LZ5_HEADER_SIZE 19
+#define LIZARD_HEADER_SIZE 19
 #define LZ5_FOOTER_SIZE 4
 
 static const LZ5F_preferences_t lz5_preferences = {
@@ -39,7 +39,7 @@ static int compress_file(FILE *in, FILE *out, size_t *size_in, size_t *size_out)
 	}
 
 	frame_size = LZ5F_compressBound(BUF_SIZE, &lz5_preferences);
-	size =  frame_size + LZ5_HEADER_SIZE + LZ5_FOOTER_SIZE;
+	size =  frame_size + LIZARD_HEADER_SIZE + LZ5_FOOTER_SIZE;
 	buf = malloc(size);
 	if (!buf) {
 		printf("Not enough memory");

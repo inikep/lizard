@@ -53,50 +53,50 @@ extern "C" {
 *  Export parameters
 *****************************************************************/
 /*
-*  LZ5_DLL_EXPORT :
+*  LIZARD_DLL_EXPORT :
 *  Enable exporting of functions when building a Windows DLL
 */
-#if defined(LZ5_DLL_EXPORT) && (LZ5_DLL_EXPORT==1)
-#  define LZ5LIB_API __declspec(dllexport)
-#elif defined(LZ5_DLL_IMPORT) && (LZ5_DLL_IMPORT==1)
-#  define LZ5LIB_API __declspec(dllimport) /* It isn't required but allows to generate better code, saving a function pointer load from the IAT and an indirect jump.*/
+#if defined(LIZARD_DLL_EXPORT) && (LIZARD_DLL_EXPORT==1)
+#  define LIZARDLIB_API __declspec(dllexport)
+#elif defined(LIZARD_DLL_IMPORT) && (LIZARD_DLL_IMPORT==1)
+#  define LIZARDLIB_API __declspec(dllimport) /* It isn't required but allows to generate better code, saving a function pointer load from the IAT and an indirect jump.*/
 #else
-#  define LZ5LIB_API
+#  define LIZARDLIB_API
 #endif
 
 
 /*-************************************
 *  Version
 **************************************/
-#define LZ5_VERSION_MAJOR    2    /* for breaking interface changes  */
-#define LZ5_VERSION_MINOR    0    /* for new (non-breaking) interface capabilities */
-#define LZ5_VERSION_RELEASE  1    /* for tweaks, bug-fixes, or development */
+#define LIZARD_VERSION_MAJOR    1    /* for breaking interface changes  */
+#define LIZARD_VERSION_MINOR    0    /* for new (non-breaking) interface capabilities */
+#define LIZARD_VERSION_RELEASE  0    /* for tweaks, bug-fixes, or development */
 
-#define LZ5_VERSION_NUMBER (LZ5_VERSION_MAJOR *100*100 + LZ5_VERSION_MINOR *100 + LZ5_VERSION_RELEASE)
+#define LZ5_VERSION_NUMBER (LIZARD_VERSION_MAJOR *100*100 + LIZARD_VERSION_MINOR *100 + LIZARD_VERSION_RELEASE)
 int LZ5_versionNumber (void);
 
-#define LZ5_LIB_VERSION LZ5_VERSION_MAJOR.LZ5_VERSION_MINOR.LZ5_VERSION_RELEASE
-#define LZ5_QUOTE(str) #str
-#define LZ5_EXPAND_AND_QUOTE(str) LZ5_QUOTE(str)
-#define LZ5_VERSION_STRING LZ5_EXPAND_AND_QUOTE(LZ5_LIB_VERSION)
+#define LIZARD_LIB_VERSION LIZARD_VERSION_MAJOR.LIZARD_VERSION_MINOR.LIZARD_VERSION_RELEASE
+#define LIZARD_QUOTE(str) #str
+#define LIZARD_EXPAND_AND_QUOTE(str) LIZARD_QUOTE(str)
+#define LIZARD_VERSION_STRING LIZARD_EXPAND_AND_QUOTE(LIZARD_LIB_VERSION)
 const char* LZ5_versionString (void);
 
 typedef struct LZ5_stream_s LZ5_stream_t;
 
-#define LZ5_MIN_CLEVEL      10  /* minimum compression level */
-#ifndef LZ5_NO_HUFFMAN
-    #define LZ5_MAX_CLEVEL      49  /* maximum compression level */
+#define LIZARD_MIN_CLEVEL      10  /* minimum compression level */
+#ifndef LIZARD_NO_HUFFMAN
+    #define LIZARD_MAX_CLEVEL      49  /* maximum compression level */
 #else
-    #define LZ5_MAX_CLEVEL      29  /* maximum compression level */
+    #define LIZARD_MAX_CLEVEL      29  /* maximum compression level */
 #endif
-#define LZ5_DEFAULT_CLEVEL  17
+#define LIZARD_DEFAULT_CLEVEL  17
 
 
 /*-************************************
 *  Simple Functions
 **************************************/
 
-LZ5LIB_API int LZ5_compress (const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel); 
+LIZARDLIB_API int LZ5_compress (const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel); 
 
 /*
 LZ5_compress() :
@@ -134,7 +134,7 @@ LZ5_compressBound() :
         return : maximum output size in a "worst case" scenario
               or 0, if input size is too large ( > LZ5_MAX_INPUT_SIZE)
 */
-LZ5LIB_API int LZ5_compressBound(int inputSize);
+LIZARDLIB_API int LZ5_compressBound(int inputSize);
 
 
 /*!
@@ -144,9 +144,9 @@ LZ5_compress_extState() :
     and allocate it on 8-bytes boundaries (using malloc() typically).
     Then, provide it as 'void* state' to compression function.
 */
-LZ5LIB_API int LZ5_sizeofState(int compressionLevel); 
+LIZARDLIB_API int LZ5_sizeofState(int compressionLevel); 
 
-LZ5LIB_API int LZ5_compress_extState(void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel);
+LIZARDLIB_API int LZ5_compress_extState(void* state, const char* src, char* dst, int srcSize, int maxDstSize, int compressionLevel);
 
 
 
@@ -159,14 +159,14 @@ LZ5LIB_API int LZ5_compress_extState(void* state, const char* src, char* dst, in
  *  In the context of a DLL (liblz5), please use these methods rather than the static struct.
  *  They are more future proof, in case of a change of `LZ5_stream_t` size.
  */
-LZ5LIB_API LZ5_stream_t* LZ5_createStream(int compressionLevel);
-LZ5LIB_API int           LZ5_freeStream (LZ5_stream_t* streamPtr);
+LIZARDLIB_API LZ5_stream_t* LZ5_createStream(int compressionLevel);
+LIZARDLIB_API int           LZ5_freeStream (LZ5_stream_t* streamPtr);
 
 
 /*! LZ5_resetStream() :
  *  Use this function to reset/reuse an allocated `LZ5_stream_t` structure
  */
-LZ5LIB_API LZ5_stream_t* LZ5_resetStream (LZ5_stream_t* streamPtr, int compressionLevel); 
+LIZARDLIB_API LZ5_stream_t* LZ5_resetStream (LZ5_stream_t* streamPtr, int compressionLevel); 
 
 
 /*! LZ5_loadDict() :
@@ -175,7 +175,7 @@ LZ5LIB_API LZ5_stream_t* LZ5_resetStream (LZ5_stream_t* streamPtr, int compressi
  *  Loading a size of 0 is allowed.
  *  Return : dictionary size, in bytes (necessarily <= LZ5_DICT_SIZE)
  */
-LZ5LIB_API int LZ5_loadDict (LZ5_stream_t* streamPtr, const char* dictionary, int dictSize);
+LIZARDLIB_API int LZ5_loadDict (LZ5_stream_t* streamPtr, const char* dictionary, int dictSize);
 
 
 /*! LZ5_compress_continue() :
@@ -185,7 +185,7 @@ LZ5LIB_API int LZ5_loadDict (LZ5_stream_t* streamPtr, const char* dictionary, in
  *  If maxDstSize >= LZ5_compressBound(srcSize), compression is guaranteed to succeed, and runs faster.
  *  If not, and if compressed data cannot fit into 'dst' buffer size, compression stops, and function returns a zero.
  */
-LZ5LIB_API int LZ5_compress_continue (LZ5_stream_t* streamPtr, const char* src, char* dst, int srcSize, int maxDstSize);
+LIZARDLIB_API int LZ5_compress_continue (LZ5_stream_t* streamPtr, const char* src, char* dst, int srcSize, int maxDstSize);
 
 
 /*! LZ5_saveDict() :
@@ -195,7 +195,7 @@ LZ5LIB_API int LZ5_compress_continue (LZ5_stream_t* streamPtr, const char* src, 
  *         dictionary is immediately usable, you can therefore call LZ5_compress_continue().
  *  Return : saved dictionary size in bytes (necessarily <= dictSize), or 0 if error.
  */
-LZ5LIB_API int LZ5_saveDict (LZ5_stream_t* streamPtr, char* safeBuffer, int dictSize);
+LIZARDLIB_API int LZ5_saveDict (LZ5_stream_t* streamPtr, char* safeBuffer, int dictSize);
 
 
 

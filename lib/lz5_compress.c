@@ -65,7 +65,7 @@
 **************************************/
 int LZ5_versionNumber (void) { return LZ5_VERSION_NUMBER; }
 int LZ5_compressBound(int isize)  { return LZ5_COMPRESSBOUND(isize); }
-int LZ5_sizeofState_MinLevel() { return LZ5_sizeofState(LZ5_MIN_CLEVEL); }
+int LZ5_sizeofState_MinLevel() { return LZ5_sizeofState(LIZARD_MIN_CLEVEL); }
 
 
 
@@ -141,7 +141,7 @@ void LZ5_initBlock(LZ5_stream_t* ctx)
 FORCE_INLINE int LZ5_writeStream(int useHuff, LZ5_stream_t* ctx, BYTE* streamPtr, uint32_t streamLen, BYTE** op, BYTE* oend)
 {
     if (useHuff && streamLen > 1024) {
-#ifndef LZ5_NO_HUFFMAN
+#ifndef LIZARD_NO_HUFFMAN
         int useHuffBuf;
         if (*op + 6 > oend) { LZ5_LOG_COMPRESS("*op[%p] + 6 > oend[%p]\n", *op, oend); return -1; }
 
@@ -167,7 +167,7 @@ FORCE_INLINE int LZ5_writeStream(int useHuff, LZ5_stream_t* ctx, BYTE* streamPtr
             } else { LZ5_LOG_COMPRESS("HUF_compress ERROR comprStreamLen=%d streamLen=%d\n", (int)ctx->comprStreamLen, (int)streamLen); }
         } else { LZ5_LOG_COMPRESS("HUF_compress ERROR %d: %s\n", (int)ctx->comprStreamLen, HUF_getErrorName(ctx->comprStreamLen)); }
 #else
-        LZ5_LOG_COMPRESS("compiled with LZ5_NO_HUFFMAN\n");
+        LZ5_LOG_COMPRESS("compiled with LIZARD_NO_HUFFMAN\n");
         (void)ctx;
         return -1; 
 #endif
@@ -302,8 +302,8 @@ FORCE_INLINE int LZ5_encodeLastLiterals (
 
 int LZ5_verifyCompressionLevel(int compressionLevel)
 {
-    if (compressionLevel > LZ5_MAX_CLEVEL) compressionLevel = LZ5_MAX_CLEVEL;
-    if (compressionLevel < LZ5_MIN_CLEVEL) compressionLevel = LZ5_DEFAULT_CLEVEL;
+    if (compressionLevel > LIZARD_MAX_CLEVEL) compressionLevel = LIZARD_MAX_CLEVEL;
+    if (compressionLevel < LIZARD_MIN_CLEVEL) compressionLevel = LIZARD_DEFAULT_CLEVEL;
     return compressionLevel;
 }
 
@@ -314,7 +314,7 @@ int LZ5_sizeofState(int compressionLevel)
     U32 hashTableSize, chainTableSize;
 
     compressionLevel = LZ5_verifyCompressionLevel(compressionLevel);
-    params = LZ5_defaultParameters[compressionLevel - LZ5_MIN_CLEVEL];
+    params = LZ5_defaultParameters[compressionLevel - LIZARD_MIN_CLEVEL];
 //    hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog3)+((size_t)1 << params.hashLog)));
     hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog)));
     chainTableSize = (U32)(sizeof(U32)*((size_t)1 << params.contentLog));
@@ -350,7 +350,7 @@ LZ5_stream_t* LZ5_initStream(LZ5_stream_t* ctx, int compressionLevel)
     void *tempPtr;
 
     compressionLevel = LZ5_verifyCompressionLevel(compressionLevel);
-    params = LZ5_defaultParameters[compressionLevel - LZ5_MIN_CLEVEL];
+    params = LZ5_defaultParameters[compressionLevel - LIZARD_MIN_CLEVEL];
 //    hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog3)+((size_t)1 << params.hashLog)));
     hashTableSize = (U32)(sizeof(U32)*(((size_t)1 << params.hashLog)));
     chainTableSize = (U32)(sizeof(U32)*((size_t)1 << params.contentLog));
@@ -610,20 +610,20 @@ int LZ5_compress(const char* src, char* dst, int srcSize, int maxDstSize, int co
 **************************************/
 int LZ5_compress_extState_MinLevel(void* state, const char* source, char* dest, int inputSize, int maxOutputSize)
 {
-    return LZ5_compress_extState(state, source, dest, inputSize, maxOutputSize, LZ5_MIN_CLEVEL);
+    return LZ5_compress_extState(state, source, dest, inputSize, maxOutputSize, LIZARD_MIN_CLEVEL);
 }
 
 int LZ5_compress_MinLevel(const char* source, char* dest, int inputSize, int maxOutputSize)
 {
-    return LZ5_compress(source, dest, inputSize, maxOutputSize, LZ5_MIN_CLEVEL);
+    return LZ5_compress(source, dest, inputSize, maxOutputSize, LIZARD_MIN_CLEVEL);
 }
 
 LZ5_stream_t* LZ5_createStream_MinLevel(void)
 {
-    return LZ5_createStream(LZ5_MIN_CLEVEL);
+    return LZ5_createStream(LIZARD_MIN_CLEVEL);
 }
 
 LZ5_stream_t* LZ5_resetStream_MinLevel(LZ5_stream_t* LZ5_stream)
 {
-    return LZ5_resetStream (LZ5_stream, LZ5_MIN_CLEVEL);
+    return LZ5_resetStream (LZ5_stream, LIZARD_MIN_CLEVEL);
 }

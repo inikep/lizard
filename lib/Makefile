@@ -33,9 +33,9 @@
 # ################################################################
 
 # Version numbers
-LIBVER_MAJOR_SCRIPT:=`sed -n '/define LZ5_VERSION_MAJOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < ./lz5_compress.h`
-LIBVER_MINOR_SCRIPT:=`sed -n '/define LZ5_VERSION_MINOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < ./lz5_compress.h`
-LIBVER_PATCH_SCRIPT:=`sed -n '/define LZ5_VERSION_RELEASE/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < ./lz5_compress.h`
+LIBVER_MAJOR_SCRIPT:=`sed -n '/define LIZARD_VERSION_MAJOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < ./lz5_compress.h`
+LIBVER_MINOR_SCRIPT:=`sed -n '/define LIZARD_VERSION_MINOR/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < ./lz5_compress.h`
+LIBVER_PATCH_SCRIPT:=`sed -n '/define LIZARD_VERSION_RELEASE/s/.*[[:blank:]]\([0-9][0-9]*\).*/\1/p' < ./lz5_compress.h`
 LIBVER_SCRIPT:= $(LIBVER_MAJOR_SCRIPT).$(LIBVER_MINOR_SCRIPT).$(LIBVER_PATCH_SCRIPT)
 LIBVER_MAJOR := $(shell echo $(LIBVER_MAJOR_SCRIPT))
 LIBVER_MINOR := $(shell echo $(LIBVER_MINOR_SCRIPT))
@@ -84,7 +84,7 @@ endif
 liblz5: *.c xxhash/*.c entropy/*.c
 	@echo compiling dynamic library $(LIBVER)
 ifneq (,$(filter Windows%,$(OS)))
-	@$(CC) $(FLAGS) -DLZ5_DLL_EXPORT=1 -shared $^ -o dll\$@.dll
+	@$(CC) $(FLAGS) -DLIZARD_DLL_EXPORT=1 -shared $^ -o dll\$@.dll
 	dlltool -D dll\liblz5.dll -d dll\liblz5.def -l dll\liblz5.lib
 else
 	@$(CC) $(FLAGS) -shared $^ -fPIC $(SONAME_FLAGS) -o $@.$(SHARED_EXT_VER)

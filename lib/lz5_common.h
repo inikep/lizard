@@ -84,7 +84,7 @@ extern "C" {
 #define MM_LONGOFF              16
 #define LZ5_BLOCK_SIZE_PAD      (LZ5_BLOCK_SIZE+32)
 #define LZ5_COMPRESS_ADD_BUF    (5*LZ5_BLOCK_SIZE_PAD)
-#ifndef LZ5_NO_HUFFMAN
+#ifndef LIZARD_NO_HUFFMAN
     #define LZ5_COMPRESS_ADD_HUF    HUF_compressBound(LZ5_BLOCK_SIZE_PAD)
     #define LZ5_HUF_BLOCK_SIZE      LZ5_BLOCK_SIZE
 #else
@@ -224,7 +224,7 @@ typedef struct LZ5_dstream_s LZ5_dstream_t;
 
 
 
-static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1-LZ5_MIN_CLEVEL] =
+static const LZ5_parameters LZ5_defaultParameters[LIZARD_MAX_CLEVEL+1-LIZARD_MIN_CLEVEL] =
 {
     /*            windLog,            contentLog,           HashLog,  H3,  Snum, SL,   MMLongOff, SuffL, FS, Parser function,           Decompressor type  */
     {   LZ5_WINDOWLOG_LZ4,                     0, LZ5_HASHLOG_LZ4SM,   0,     0,  0,           0,     0,  0, LZ5_parser_fastSmall,      LZ5_coderwords_LZ4   }, // level 10
@@ -248,7 +248,7 @@ static const LZ5_parameters LZ5_defaultParameters[LZ5_MAX_CLEVEL+1-LZ5_MIN_CLEVE
     { LZ5_WINDOWLOG_LIZv1,  LZ5_CHAINLOG_LIZv1+1,                23,  16,   128,  4,  MM_LONGOFF,    64,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LIZv1 }, // level 27
     { LZ5_WINDOWLOG_LIZv1,  LZ5_CHAINLOG_LIZv1+1,                23,  24, 1<<10,  4,  MM_LONGOFF, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LIZv1 }, // level 28
     {                  24,                    25,                23,  24, 1<<10,  4,  MM_LONGOFF, 1<<10,  1, LZ5_parser_optimalPriceBT, LZ5_coderwords_LIZv1 }, // level 29
-#ifndef LZ5_NO_HUFFMAN
+#ifndef LIZARD_NO_HUFFMAN
     /*            windLog,            contentLog,           HashLog,  H3,  Snum, SL,   MMLongOff, SuffL, FS, Parser function,           Decompressor type  */
     {   LZ5_WINDOWLOG_LZ4,                     0, LZ5_HASHLOG_LZ4SM,   0,     0,  0,           0,     0,  0, LZ5_parser_fastSmall,      LZ5_coderwords_LZ4   }, // level 30
     {   LZ5_WINDOWLOG_LZ4,                     0,   LZ5_HASHLOG_LZ4,   0,     0,  0,           0,     0,  0, LZ5_parser_fast,           LZ5_coderwords_LZ4   }, // level 31

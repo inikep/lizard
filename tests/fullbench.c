@@ -76,7 +76,7 @@
 **************************************/
 #define PROGRAM_DESCRIPTION "LZ5 speed analyzer"
 #define AUTHOR "Yann Collet"
-#define WELCOME_MESSAGE "*** %s v%s %i-bits, by %s ***\n", PROGRAM_DESCRIPTION, LZ5_VERSION_STRING, (int)(sizeof(void*)*8), AUTHOR
+#define WELCOME_MESSAGE "*** %s v%s %i-bits, by %s ***\n", PROGRAM_DESCRIPTION, LIZARD_VERSION_STRING, (int)(sizeof(void*)*8), AUTHOR
 
 #define NBLOOPS    6
 #define TIMELOOP   (CLOCKS_PER_SEC * 25 / 10)

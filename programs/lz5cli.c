@@ -40,7 +40,7 @@
 #include <string.h>   /* strcmp, strlen */
 #include "bench.h"    /* BMK_benchFile, BMK_SetNbIterations, BMK_SetBlocksize, BMK_SetPause */
 #include "lz5io.h"    /* LZ5IO_compressFilename, LZ5IO_decompressFilename, LZ5IO_compressMultipleFilenames */
-#include "lz5_compress.h" /* LZ5HC_DEFAULT_CLEVEL, LZ5_VERSION_STRING */
+#include "lz5_compress.h" /* LZ5HC_DEFAULT_CLEVEL, LIZARD_VERSION_STRING */
 
 
 
@@ -49,7 +49,7 @@
 ******************************/
 #define COMPRESSOR_NAME "LZ5 command line interface"
 #define AUTHOR "Y.Collet & P.Skibinski"
-#define WELCOME_MESSAGE "%s %i-bit %s by %s (%s)\n", COMPRESSOR_NAME, (int)(sizeof(void*)*8), LZ5_VERSION_STRING, AUTHOR, __DATE__
+#define WELCOME_MESSAGE "%s %i-bit %s by %s (%s)\n", COMPRESSOR_NAME, (int)(sizeof(void*)*8), LIZARD_VERSION_STRING, AUTHOR, __DATE__
 #define LZ5_EXTENSION ".lz5"
 #define LZ5CAT "lz5cat"
 #define UNLZ5 "unlz5"
@@ -109,7 +109,7 @@ static int usage(const char* exeName)
     DISPLAY( " -10...-19 : compression method fastLZ4 = 16-bit bytewise codewords\n");
     DISPLAY( "             higher number == more compression but slower\n");
     DISPLAY( " -20...-29 : compression method LIZv1 = 24-bit bytewise codewords\n");
-#ifndef LZ5_NO_HUFFMAN
+#ifndef LIZARD_NO_HUFFMAN
     DISPLAY( " -30...-39 : compression method fastLZ4 + Huffman\n");
     DISPLAY( " -40...-49 : compression method LIZv1 + Huffman\n");
 #endif

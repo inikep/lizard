@@ -39,7 +39,7 @@
 #include <string.h>     /* strcmp */
 #include <time.h>       /* clock_t, clock(), CLOCKS_PER_SEC */
 #include "lz5frame_static.h"
-#include "lz5_compress.h"        /* LZ5_VERSION_STRING */
+#include "lz5_compress.h"        /* LIZARD_VERSION_STRING */
 #define XXH_STATIC_LINKING_ONLY
 #include "xxhash/xxhash.h"     /* XXH64 */
 
@@ -602,7 +602,7 @@ int fuzzerTests(U32 seed, unsigned nbTests, unsigned startTest, double compressi
         prefs.frameInfo.contentChecksumFlag = (LZ5F_contentChecksum_t)CCflag;
         prefs.frameInfo.contentSize = frameContentSize;
         prefs.autoFlush = autoflush;
-        prefs.compressionLevel = LZ5_MIN_CLEVEL + (FUZ_rand(&randState) % (1+LZ5_MAX_CLEVEL-LZ5_MIN_CLEVEL));
+        prefs.compressionLevel = LIZARD_MIN_CLEVEL + (FUZ_rand(&randState) % (1+LIZARD_MAX_CLEVEL-LIZARD_MIN_CLEVEL));
         if ((FUZ_rand(&randState) & 0x1F) == 1) prefsPtr = NULL;
 
         DISPLAYUPDATE(2, "\r%5u   ", testNb);
@@ -847,7 +847,7 @@ int main(int argc, char** argv)
     }
 
     /* Get Seed */
-    printf("Starting lz5frame tester (%i-bits, %s)\n", (int)(sizeof(size_t)*8), LZ5_VERSION_STRING);
+    printf("Starting lz5frame tester (%i-bits, %s)\n", (int)(sizeof(size_t)*8), LIZARD_VERSION_STRING);
 
     if (!seedset) {
         time_t const t = time(NULL);

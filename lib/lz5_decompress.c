@@ -84,7 +84,7 @@ FORCE_INLINE size_t LZ5_readStream(int flag, const BYTE** ip, const BYTE* const 
 #endif
         return 1;
     } else {
-#ifndef LZ5_NO_HUFFMAN
+#ifndef LIZARD_NO_HUFFMAN
         size_t res, streamLen, comprStreamLen;
 
         if (*ip > iend - 6) return 0;
@@ -104,7 +104,7 @@ FORCE_INLINE size_t LZ5_readStream(int flag, const BYTE** ip, const BYTE* const 
 #endif
         return 1;
 #else
-        fprintf(stderr, "compiled with LZ5_NO_HUFFMAN\n");
+        fprintf(stderr, "compiled with LIZARD_NO_HUFFMAN\n");
         (void)op; (void)oend;
         return 0;
 #endif
@@ -140,7 +140,7 @@ FORCE_INLINE int LZ5_decompress_generic(
 
     compressionLevel = *ip++;
 
-    if (compressionLevel < LZ5_MIN_CLEVEL || compressionLevel > LZ5_MAX_CLEVEL) {
+    if (compressionLevel < LIZARD_MIN_CLEVEL || compressionLevel > LIZARD_MAX_CLEVEL) {
         LZ5_LOG_DECOMPRESS("ERROR LZ5_decompress_generic inputSize=%d compressionLevel=%d\n", inputSize, compressionLevel);
         return -1;
     }
@@ -231,7 +231,7 @@ FORCE_INLINE int LZ5_decompress_generic(
         }
 
         ctx.last_off = -LZ5_INIT_LAST_OFFSET;
-        params = LZ5_defaultParameters[compressionLevel - LZ5_MIN_CLEVEL];
+        params = LZ5_defaultParameters[compressionLevel - LIZARD_MIN_CLEVEL];
         if (params.decompressType == LZ5_coderwords_LZ4)
             res = LZ5_decompress_LZ4(&ctx, op, outputSize, partialDecoding, targetOutputSize, dict, lowPrefix, dictStart, dictSize, compressionLevel);
         else 

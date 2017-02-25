@@ -55,7 +55,7 @@ FORCE_INLINE int LZ5_encodeSequence_LZ4 (
     }
     else *token += (BYTE)(length<<RUN_BITS_LZ4);
 
-#ifndef LZ5_NO_HUFFMAN
+#ifndef LIZARD_NO_HUFFMAN
     if (ctx->huffType) { 
         ctx->flagFreq[*token]++;
         ctx->flagSum++;

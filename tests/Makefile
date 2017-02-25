@@ -95,7 +95,7 @@ fullbench-lib: fullbench.c $(LZ5DIR)/xxhash/xxhash.c
 
 fullbench-dll: fullbench.c $(LZ5DIR)/xxhash/xxhash.c
 	$(MAKE) -C $(LZ5DIR) liblz5
-	$(CC) $(FLAGS) $^ -o $@$(EXT) -DLZ5_DLL_IMPORT=1 $(LZ5DIR)/dll/liblz5.dll
+	$(CC) $(FLAGS) $^ -o $@$(EXT) -DLIZARD_DLL_IMPORT=1 $(LZ5DIR)/dll/liblz5.dll
 
 fuzzer  : $(LZ5DIR)/lz5_compress.c $(LZ5DIR)/lz5_decompress.o $(LZ5DIR)/xxhash/xxhash.o fuzzer.c $(ENTROPY_FILES)
 	$(CC) -DLZ5_RESET_MEM $(FLAGS) $^ -o $@$(EXT)

@@ -56,7 +56,7 @@
 #ifndef LZ5_GIT_COMMIT_STRING
 #  define LZ5_GIT_COMMIT_STRING ""
 #else
-#  define LZ5_GIT_COMMIT_STRING LZ5_EXPAND_AND_QUOTE(LZ5_GIT_COMMIT)
+#  define LZ5_GIT_COMMIT_STRING LIZARD_EXPAND_AND_QUOTE(LZ5_GIT_COMMIT)
 #endif
 
 #define NBSECONDS             3
@@ -370,7 +370,7 @@ static void BMK_benchCLevel(void* srcBuffer, size_t benchedSize,
     SET_REALTIME_PRIORITY;
 
     if (g_displayLevel == 1 && !g_additionalParam)
-        DISPLAY("bench %s %s: input %u bytes, %u seconds, %u KB blocks\n", LZ5_VERSION_STRING, LZ5_GIT_COMMIT_STRING, (U32)benchedSize, g_nbSeconds, (U32)(g_blockSize>>10));
+        DISPLAY("bench %s %s: input %u bytes, %u seconds, %u KB blocks\n", LIZARD_VERSION_STRING, LZ5_GIT_COMMIT_STRING, (U32)benchedSize, g_nbSeconds, (U32)(g_blockSize>>10));
 
     if (cLevelLast < cLevel) cLevelLast = cLevel;
 
@@ -477,9 +477,9 @@ int BMK_benchFiles(const char** fileNamesTable, unsigned nbFiles,
 {
     double const compressibility = (double)g_compressibilityDefault / 100;
 
-    if (cLevel < LZ5_MIN_CLEVEL) cLevel = LZ5_MIN_CLEVEL;
-    if (cLevel > LZ5_MAX_CLEVEL) cLevel = LZ5_MAX_CLEVEL;
-    if (cLevelLast > LZ5_MAX_CLEVEL) cLevelLast = LZ5_MAX_CLEVEL;
+    if (cLevel < LIZARD_MIN_CLEVEL) cLevel = LIZARD_MIN_CLEVEL;
+    if (cLevel > LIZARD_MAX_CLEVEL) cLevel = LIZARD_MAX_CLEVEL;
+    if (cLevelLast > LIZARD_MAX_CLEVEL) cLevelLast = LIZARD_MAX_CLEVEL;
     if (cLevelLast < cLevel) cLevelLast = cLevel;
     if (cLevelLast > cLevel) DISPLAYLEVEL(2, "Benchmarking levels from %d to %d\n", cLevel, cLevelLast); 
 
