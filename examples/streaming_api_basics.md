@@ -4,7 +4,7 @@ by *Takayuki Matsuoka*
 
 Lizard has the following API sets :
 
- - "Auto Framing" API (lizardframe.h) :
+ - "Auto Framing" API (lizard_frame.h) :
    This is most recommended API for usual application.
    It guarantees interoperability with other Lizard framing format compliant tools/libraries
    such as Lizard command line utility, node-lizard, etc.

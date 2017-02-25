@@ -6,7 +6,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <lizardframe.h>
+#include <lizard_frame.h>
 
 #define BUF_SIZE (16*1024)
 #define LIZARD_HEADER_SIZE 19

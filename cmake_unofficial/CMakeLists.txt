@@ -27,8 +27,8 @@ ENDIF()
 set(LIB_DIR ../lib/)
 set(PRG_DIR ../programs/)
 set(ENTROPY_DIR ../lib/entropy/)
-set(LIZARD_SRCS_LIB ${LIB_DIR}lizard_decompress.c ${LIB_DIR}lizard_compress.c ${LIB_DIR}lizard_compress.h ${LIB_DIR}lizard_common.h ${LIB_DIR}lizardframe.c ${LIB_DIR}lizardframe.h ${LIB_DIR}xxhash/xxhash.c)
-set(LIZARD_SRCS ${LIB_DIR}lizardframe.c ${LIB_DIR}xxhash/xxhash.c ${PRG_DIR}bench.c ${PRG_DIR}datagen.c ${PRG_DIR}lizardcli.c ${PRG_DIR}lizardio.c)
+set(LIZARD_SRCS_LIB ${LIB_DIR}lizard_decompress.c ${LIB_DIR}lizard_compress.c ${LIB_DIR}lizard_compress.h ${LIB_DIR}lizard_common.h ${LIB_DIR}lizard_frame.c ${LIB_DIR}lizard_frame.h ${LIB_DIR}xxhash/xxhash.c)
+set(LIZARD_SRCS ${LIB_DIR}lizard_frame.c ${LIB_DIR}xxhash/xxhash.c ${PRG_DIR}bench.c ${PRG_DIR}datagen.c ${PRG_DIR}lizardcli.c ${PRG_DIR}lizardio.c)
 #set(ENTROPY_LIB_SRCS ${ENTROPY_DIR}entropy_common.c ${ENTROPY_DIR}fse_compress.c ${ENTROPY_DIR}fse_decompress.c ${ENTROPY_DIR}huf_compress.c ${ENTROPY_DIR}huf_decompress.c)
 
 if(BUILD_TOOLS AND NOT (LINK_TOOLS_WITH_LIB AND BUILD_LIBS))
@@ -68,7 +68,7 @@ if(BUILD_LIBS)
     install(FILES
     ${LIB_DIR}/lizard_compress.h
     ${LIB_DIR}/lizard_common.h
-    ${LIB_DIR}/lizardframe.h
+    ${LIB_DIR}/lizard_frame.h
     DESTINATION include
     )
 

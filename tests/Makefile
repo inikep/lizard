@@ -24,7 +24,7 @@
 # ##########################################################################
 # fuzzer  : Test tool, to check lizard integrity on target platform
 # fuzzer32: Same as fuzzer, but forced to compile in 32-bits mode
-# frametest  : Test tool, to check lizardframe integrity on target platform
+# frametest  : Test tool, to check lizard_frame integrity on target platform
 # frametest32: Same as frametest, but forced to compile in 32-bits mode
 # fullbench  : Precisely measure speed for each Lizard function variant
 # fullbench32: Same as fullbench, but forced to compile in 32-bits mode
@@ -83,10 +83,10 @@ lizardc:
 lizardc32:
 	$(MAKE) -C $(PRGDIR) $@
 
-fullbench  : $(LIBDIR)/lizard_compress.o $(LIBDIR)/lizard_decompress.o $(LIBDIR)/lizardframe.o $(LIBDIR)/xxhash/xxhash.o fullbench.c $(ENTROPY_FILES)
+fullbench  : $(LIBDIR)/lizard_compress.o $(LIBDIR)/lizard_decompress.o $(LIBDIR)/lizard_frame.o $(LIBDIR)/xxhash/xxhash.o fullbench.c $(ENTROPY_FILES)
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-fullbench32: $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizardframe.c $(LIBDIR)/xxhash/xxhash.c fullbench.c $(ENTROPY_FILES)
+fullbench32: $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizard_frame.c $(LIBDIR)/xxhash/xxhash.c fullbench.c $(ENTROPY_FILES)
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
 fullbench-lib: fullbench.c $(LIBDIR)/xxhash/xxhash.c
@@ -103,10 +103,10 @@ fuzzer  : $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizard_decompress.o $(LIBDIR)/xx
 fuzzer32: $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizard_decompress.c $(LIBDIR)/xxhash/xxhash.c fuzzer.c $(ENTROPY_FILES)
 	$(CC) -m32 -DLIZARD_RESET_MEM $(FLAGS) $^ -o $@$(EXT)
 
-frametest: $(LIBDIR)/lizardframe.o $(LIBDIR)/lizard_compress.o $(LIBDIR)/lizard_decompress.o $(LIBDIR)/xxhash/xxhash.o frametest.c $(ENTROPY_FILES)
+frametest: $(LIBDIR)/lizard_frame.o $(LIBDIR)/lizard_compress.o $(LIBDIR)/lizard_decompress.o $(LIBDIR)/xxhash/xxhash.o frametest.c $(ENTROPY_FILES)
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-frametest32: $(LIBDIR)/lizardframe.c $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizard_decompress.c $(LIBDIR)/xxhash/xxhash.c frametest.c $(ENTROPY_FILES)
+frametest32: $(LIBDIR)/lizard_frame.c $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizard_decompress.c $(LIBDIR)/xxhash/xxhash.c frametest.c $(ENTROPY_FILES)
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
 datagen : $(PRGDIR)/datagen.c datagencli.c

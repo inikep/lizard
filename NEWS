@@ -13,7 +13,7 @@ LZ5 v1.5
 - introduced compatibility with Visual C++ 2010 and newer
 - attached Visual Studio 2010 project
 - thoroughly tested with 21 Travis CI and 7 AppVeyor CI tests
-- fixed bug with reusing a context in lizardframe.c (LizardF_compressBegin and Lizard_compress_HC_continue)
+- fixed bug with reusing a context in lizard_frame.c (LizardF_compressBegin and Lizard_compress_HC_continue)
 - fixed rare bug in match finder (concerns levels 4 - 15)
 
 LZ5 v1.4.1

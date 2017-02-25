@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-/* lizardframe_static.h should be used solely in the context of static linking.
+/* lizard_frame_static.h should be used solely in the context of static linking.
  * It contains definitions which may still change overtime.
  * Never use it in the context of DLL linking.
  * */
@@ -47,7 +47,7 @@ extern "C" {
 /**************************************
 *  Includes
 **************************************/
-#include "lizardframe.h"
+#include "lizard_frame.h"
 
 
 /**************************************

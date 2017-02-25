@@ -1,7 +1,7 @@
 Lizard - efficient compression with very fast decompression
 --------------------------------------------------------
 
-Lizard is a lossless compression algorithm which contains 4 compression methods:
+Lizard (formerly LZ5) is a lossless compression algorithm which contains 4 compression methods:
 - fastLZ4 : compression levels -10...-19 are designed to give better decompression speed than [LZ4] i.e. over 2000 MB/s
 - LIZv1 : compression levels -20...-29 are designed to give better ratio than [LZ4] keeping 75% decompression speed
 - fastLZ4 + Huffman : compression levels -30...-39 add Huffman coding to fastLZ4
@@ -14,14 +14,14 @@ The high compression/decompression speed is achieved without any SSE and AVX ext
 
 |Branch      |Status   |
 |------------|---------|
-|lizard_v1.5    | [![Build Status][travis15Badge]][travisLink]    [![Build status][Appveyor15Badge]][AppveyorLink]     |
-|lizard_v2.0    | [![Build Status][travis20Badge]][travisLink]    [![Build status][Appveyor20Badge]][AppveyorLink]     |
+|lz5_v1.5    | [![Build Status][travis15Badge]][travisLink]    [![Build status][Appveyor15Badge]][AppveyorLink]     |
+|lz5_v2.0    | [![Build Status][travis20Badge]][travisLink]    [![Build status][Appveyor20Badge]][AppveyorLink]     |
 
-[travis15Badge]: https://travis-ci.org/inikep/lizard.svg?branch=lizard_v1.5 "Continuous Integration test suite"
-[travis20Badge]: https://travis-ci.org/inikep/lizard.svg?branch=lizard_v2.0 "Continuous Integration test suite"
+[travis15Badge]: https://travis-ci.org/inikep/lizard.svg?branch=lz5_v1.5 "Continuous Integration test suite"
+[travis20Badge]: https://travis-ci.org/inikep/lizard.svg?branch=lz5_v2.0 "Continuous Integration test suite"
 [travisLink]: https://travis-ci.org/inikep/lizard
-[Appveyor15Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lizard_v1.5?svg=true "Visual test suite"
-[Appveyor20Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lizard_v2.0?svg=true "Visual test suite"
+[Appveyor15Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v1.5?svg=true "Visual test suite"
+[Appveyor20Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v2.0?svg=true "Visual test suite"
 [AppveyorLink]: https://ci.appveyor.com/project/inikep/lizard
 [LZ4]: https://github.com/lz4/lz4
 [zlib]: https://github.com/madler/zlib

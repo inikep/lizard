@@ -61,7 +61,7 @@ build_script:
       COPY lib\xxhash.h bin\example\ &&
       COPY lib\lizard.h bin\include\ &&
       COPY lib\lizardhc.h bin\include\ &&
-      COPY lib\lizardframe.h bin\include\ &&
+      COPY lib\lizard_frame.h bin\include\ &&
       COPY lib\liblizard.a bin\static\liblizard_static.lib &&
       COPY lib\dll\liblizard.* bin\dll\ &&
       COPY lib\dll\example\Makefile bin\example\ &&

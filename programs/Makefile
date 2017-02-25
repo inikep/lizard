@@ -78,13 +78,13 @@ $(LIBDIR)/lizard_decompress32.o: $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizard_
 
 
 
-lizard: $(LIBDIR)/lizard_decompress.o $(LIBDIR)/lizard_compress.o $(LIBDIR)/lizardframe.o $(LIBDIR)/xxhash/xxhash.o bench.o lizardio.o lizardcli.o datagen.o $(ENTROPY_FILES)
+lizard: $(LIBDIR)/lizard_decompress.o $(LIBDIR)/lizard_compress.o $(LIBDIR)/lizard_frame.o $(LIBDIR)/xxhash/xxhash.o bench.o lizardio.o lizardcli.o datagen.o $(ENTROPY_FILES)
 	$(CC) $(FLAGS) $^ -o $@$(EXT)
 
-lizardnohuf: $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizardframe.o $(LIBDIR)/xxhash/xxhash.o bench.c lizardio.o lizardcli.c datagen.o
+lizardnohuf: $(LIBDIR)/lizard_decompress.c $(LIBDIR)/lizard_compress.c $(LIBDIR)/lizard_frame.o $(LIBDIR)/xxhash/xxhash.o bench.c lizardio.o lizardcli.c datagen.o
 	$(CC) -DLIZARD_NO_HUFFMAN $(FLAGS) $^ -o $@$(EXT)
 
-lizardc32: $(LIBDIR)/lizard_decompress32.o $(LIBDIR)/lizard_compress32.o $(LIBDIR)/lizardframe.c $(LIBDIR)/xxhash/xxhash.c bench.c lizardio.c lizardcli.c datagen.c $(ENTROPY_FILES)
+lizardc32: $(LIBDIR)/lizard_decompress32.o $(LIBDIR)/lizard_compress32.o $(LIBDIR)/lizard_frame.c $(LIBDIR)/xxhash/xxhash.c bench.c lizardio.c lizardcli.c datagen.c $(ENTROPY_FILES)
 	$(CC) -m32 $(FLAGS) $^ -o $@$(EXT)
 
 

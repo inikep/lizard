@@ -1,5 +1,5 @@
 /*
-    frameTest - test tool for lizardframe
+    frameTest - test tool for lizard_frame
     Copyright (C) Yann Collet 2014-2016
 
     GPL v2 License
@@ -38,7 +38,7 @@
 #include <stdio.h>      /* fprintf */
 #include <string.h>     /* strcmp */
 #include <time.h>       /* clock_t, clock(), CLOCKS_PER_SEC */
-#include "lizardframe_static.h"
+#include "lizard_frame_static.h"
 #include "lizard_compress.h"        /* LIZARD_VERSION_STRING */
 #define XXH_STATIC_LINKING_ONLY
 #include "xxhash/xxhash.h"     /* XXH64 */
@@ -847,7 +847,7 @@ int main(int argc, char** argv)
     }
 
     /* Get Seed */
-    printf("Starting lizardframe tester (%i-bits, %s)\n", (int)(sizeof(size_t)*8), LIZARD_VERSION_STRING);
+    printf("Starting lizard_frame tester (%i-bits, %s)\n", (int)(sizeof(size_t)*8), LIZARD_VERSION_STRING);
 
     if (!seedset) {
         time_t const t = time(NULL);

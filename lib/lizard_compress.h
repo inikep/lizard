@@ -45,7 +45,7 @@ extern "C" {
  * since it's still necessary to provide metadata (such as compressed size),
  * and each application can do it in whichever way it wants.
  * For interoperability, there is Lizard frame specification (lizard_Frame_format.md).
- * A library is provided to take care of it, see lizardframe.h.
+ * A library is provided to take care of it, see lizard_frame.h.
 */
 
 

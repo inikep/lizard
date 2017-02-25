@@ -34,7 +34,7 @@
 /* LizardF is a stand-alone API to create Lizard-compressed frames
  * conformant with specification v1.5.1.
  * All related operations, including memory management, are handled internally by the library.
- * You don't need lizard_compress.h when using lizardframe.h.
+ * You don't need lizard_compress.h when using lizard_frame.h.
  * */
 
 #pragma once

@@ -37,7 +37,7 @@ FORCE_INLINE int Lizard_decompress_LIZv1(
     const BYTE* const lowLimit = lowPrefix - dictSize;
     const BYTE* const dictEnd = (const BYTE*)dictStart + dictSize;
 
-    const int checkOffset = (dictSize < (int)(Lizard_DICT_SIZE));
+    const int checkOffset = (dictSize < (int)(LIZARD_DICT_SIZE));
 
     intptr_t last_off = ctx->last_off;
     intptr_t length = 0;

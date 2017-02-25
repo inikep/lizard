@@ -52,7 +52,7 @@
 #include <sys/types.h> /* stat64 */
 #include <sys/stat.h>  /* stat64 */
 #include "lizardio.h"
-#include "lizardframe.h"
+#include "lizard_frame.h"
 
 
 

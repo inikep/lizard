@@ -56,7 +56,7 @@
 #include "lizard_compress.h"
 #include "lizard_decompress.h"
 #include "lizard_common.h"  /* Lizard_compress_MinLevel, Lizard_createStream_MinLevel */
-#include "lizardframe.h"
+#include "lizard_frame.h"
 
 #include "xxhash/xxhash.h"
 

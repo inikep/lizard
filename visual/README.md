@@ -28,7 +28,7 @@ following projects:
 
 - `lizard` : Command Line Utility, supporting gzip-like arguments
 - `datagen` : Synthetic and parametrable data generator, for tests
-- `frametest` : Test tool that checks lizardframe integrity on target platform
+- `frametest` : Test tool that checks lizard_frame integrity on target platform
 - `fullbench`  : Precisely measure speed for each lizard inner functions
 - `fuzzer` : Test tool, to check lizard integrity on target platform 
 - `liblizard` : A static Lizard library compiled to `liblizard_static.lib`
@@ -38,7 +38,7 @@ following projects:
 
 #### Using Lizard DLL with Microsoft Visual C++ project
 
-The header files `lib\lizard.h`, `lib\lizardhc.h`, `lib\lizardframe.h` and the import library
+The header files `lib\lizard.h`, `lib\lizardhc.h`, `lib\lizard_frame.h` and the import library
 `visual\VS2010\bin\$(Platform)_$(Configuration)\liblizard.lib` are required to compile a
 project using Visual C++.
 

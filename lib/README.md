@@ -33,12 +33,12 @@ Files `lizard_common.h`, `lizard_compress*`, `lizard_parser_*.h`, `lizard_decomp
 To compile:
 - Lizard_raw only with levels 10...29 : use the `-DLIZARD_NO_HUFFMAN` compiler flag
 - Lizard_raw with levels 10...49 : include also all files from `entropy` directory
-- Lizard_frame with levels 10...49 : `lizardframe*` and all files from `entropy` and `xxhash` directories
+- Lizard_frame with levels 10...49 : `lizard_frame*` and all files from `entropy` and `xxhash` directories
 
 
 #### Advanced API 
 
-A more complex `lizardframe_static.h` is also provided.
+A more complex `lizard_frame_static.h` is also provided.
 It contains definitions which are not guaranteed to remain stable within future versions.
 It must be used with static linking ***only***.
 
@@ -48,7 +48,7 @@ It must be used with static linking ***only***.
 DLL can be created using MinGW+MSYS with the `make liblizard` command.
 This command creates `dll\liblizard.dll` and the import library `dll\liblizard.lib`.
 The import library is only required with Visual C++.
-The header files `lizard.h`, `lizardhc.h`, `lizardframe.h` and the dynamic library
+The header files `lizard.h`, `lizardhc.h`, `lizard_frame.h` and the dynamic library
 `dll\liblizard.dll` are required to compile a project using gcc/MinGW.
 The dynamic library has to be added to linking options.
 It means that if a project that uses Lizard consists of a single `test-dll.c`

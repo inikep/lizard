@@ -49,7 +49,7 @@ You can contact the author at :
 /*-************************************
 *  Includes
 **************************************/
-#include "lizardframe_static.h"
+#include "lizard_frame_static.h"
 #include "lizard_compress.h"
 #include "lizard_decompress.h"
 #include "lizard_common.h"  /* LIZARD_DICT_SIZE */
@@ -301,11 +301,11 @@ size_t LizardF_compressFrame(void* dstBuffer, size_t dstMaxSize, const void* src
     if (LizardF_isError(errorCode)) goto error;
     dstPtr += errorCode;
 
-    Lizard_freeStream(cctxI.lizCtxPtr);
+    Lizard_freeStream(cctxI.lizardCtxPtr);
     FREEMEM(cctxI.tmpBuff);
     return (dstPtr - dstStart);
 error:
-    Lizard_freeStream(cctxI.lizCtxPtr);
+    Lizard_freeStream(cctxI.lizardCtxPtr);
     FREEMEM(cctxI.tmpBuff);
     return errorCode;
 }

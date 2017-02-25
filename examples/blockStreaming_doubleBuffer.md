@@ -7,7 +7,7 @@ Please note :
 
  - Firstly, read "Lizard Streaming API Basics".
  - This is relatively advanced application example.
- - Output file is not compatible with lizardframe and platform dependent.
+ - Output file is not compatible with lizard_frame and platform dependent.
 
 
 ## What's the point of this example ?

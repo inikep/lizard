@@ -3,7 +3,7 @@ Programs and scripts for automated testing of Lizard
 
 This directory contains the following programs and scripts:
 - `datagen` : Synthetic and parametrable data generator, for tests
-- `frametest` : Test tool that checks lizardframe integrity on target platform
+- `frametest` : Test tool that checks lizard_frame integrity on target platform
 - `fullbench`  : Precisely measure speed for each lizard inner functions
 - `fuzzer`  : Test tool, to check lizard integrity on target platform
 

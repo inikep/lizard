@@ -29,7 +29,7 @@ EDIR = .
 EXE = lizard.exe
 LNK = lizard
 LDIR = lib
-LSRC = lib/lizard_compress.c lib/lizardframe.c lib/xxhash/xxhash.c
+LSRC = lib/lizard_compress.c lib/lizard_frame.c lib/xxhash/xxhash.c
 INC = $(LSRC:.c=.h)
 LOBJ = $(LSRC:.c=.o)
 LSDEPS = $(LSRC:.c=.d)
