@@ -15,13 +15,13 @@ The high compression/decompression speed is achieved without any SSE and AVX ext
 |Branch      |Status   |
 |------------|---------|
 |lz5_v1.5    | [![Build Status][travis15Badge]][travisLink]    [![Build status][Appveyor15Badge]][AppveyorLink]     |
-|lz5_v2.0    | [![Build Status][travis20Badge]][travisLink]    [![Build status][Appveyor20Badge]][AppveyorLink]     |
+|lizard      | [![Build Status][travis20Badge]][travisLink]    [![Build status][Appveyor20Badge]][AppveyorLink]     |
 
 [travis15Badge]: https://travis-ci.org/inikep/lizard.svg?branch=lz5_v1.5 "Continuous Integration test suite"
-[travis20Badge]: https://travis-ci.org/inikep/lizard.svg?branch=lz5_v2.0 "Continuous Integration test suite"
+[travis20Badge]: https://travis-ci.org/inikep/lizard.svg?branch=lizard "Continuous Integration test suite"
 [travisLink]: https://travis-ci.org/inikep/lizard
 [Appveyor15Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v1.5?svg=true "Visual test suite"
-[Appveyor20Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v2.0?svg=true "Visual test suite"
+[Appveyor20Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lizard?svg=true "Visual test suite"
 [AppveyorLink]: https://ci.appveyor.com/project/inikep/lizard
 [LZ4]: https://github.com/lz4/lz4
 [zlib]: https://github.com/madler/zlib
@@ -45,22 +45,22 @@ with [silesia.tar] which contains tarred files from [Silesia compression corpus]
 | lz4hc 1.7.3 -9          |    22 MB/s |  2315 MB/s |    77892285 | 36.75 |
 | lz4hc 1.7.3 -12         |    17 MB/s |  2323 MB/s |    77849762 | 36.73 |
 | lz4hc 1.7.3 -16         |    10 MB/s |  2323 MB/s |    77841782 | 36.73 |
-| lizard 2.0 -10             |   346 MB/s |  2610 MB/s |   103402971 | 48.79 |
-| lizard 2.0 -12             |   103 MB/s |  2458 MB/s |    86232422 | 40.69 |
-| lizard 2.0 -15             |    50 MB/s |  2552 MB/s |    81187330 | 38.31 |
-| lizard 2.0 -19             |  3.04 MB/s |  2497 MB/s |    77416400 | 36.53 |
-| lizard 2.0 -21             |   157 MB/s |  1795 MB/s |    89239174 | 42.10 |
-| lizard 2.0 -23             |    30 MB/s |  1778 MB/s |    81097176 | 38.26 |
-| lizard 2.0 -26             |  6.63 MB/s |  1734 MB/s |    74503695 | 35.15 |
-| lizard 2.0 -29             |  1.37 MB/s |  1634 MB/s |    68694227 | 32.41 |
-| lizard 2.0 -30             |   246 MB/s |   909 MB/s |    85727429 | 40.45 |
-| lizard 2.0 -32             |    94 MB/s |  1244 MB/s |    76929454 | 36.30 |
-| lizard 2.0 -35             |    47 MB/s |  1435 MB/s |    73850400 | 34.84 |
-| lizard 2.0 -39             |  2.94 MB/s |  1502 MB/s |    69807522 | 32.94 |
-| lizard 2.0 -41             |   126 MB/s |   961 MB/s |    76100661 | 35.91 |
-| lizard 2.0 -43             |    28 MB/s |  1101 MB/s |    70955653 | 33.48 |
-| lizard 2.0 -46             |  6.25 MB/s |  1073 MB/s |    65413061 | 30.86 |
-| lizard 2.0 -49             |  1.27 MB/s |  1064 MB/s |    60679215 | 28.63 |
+| lizard 1.0 -10          |   346 MB/s |  2610 MB/s |   103402971 | 48.79 |
+| lizard 1.0 -12          |   103 MB/s |  2458 MB/s |    86232422 | 40.69 |
+| lizard 1.0 -15          |    50 MB/s |  2552 MB/s |    81187330 | 38.31 |
+| lizard 1.0 -19          |  3.04 MB/s |  2497 MB/s |    77416400 | 36.53 |
+| lizard 1.0 -21          |   157 MB/s |  1795 MB/s |    89239174 | 42.10 |
+| lizard 1.0 -23          |    30 MB/s |  1778 MB/s |    81097176 | 38.26 |
+| lizard 1.0 -26          |  6.63 MB/s |  1734 MB/s |    74503695 | 35.15 |
+| lizard 1.0 -29          |  1.37 MB/s |  1634 MB/s |    68694227 | 32.41 |
+| lizard 1.0 -30          |   246 MB/s |   909 MB/s |    85727429 | 40.45 |
+| lizard 1.0 -32          |    94 MB/s |  1244 MB/s |    76929454 | 36.30 |
+| lizard 1.0 -35          |    47 MB/s |  1435 MB/s |    73850400 | 34.84 |
+| lizard 1.0 -39          |  2.94 MB/s |  1502 MB/s |    69807522 | 32.94 |
+| lizard 1.0 -41          |   126 MB/s |   961 MB/s |    76100661 | 35.91 |
+| lizard 1.0 -43          |    28 MB/s |  1101 MB/s |    70955653 | 33.48 |
+| lizard 1.0 -46          |  6.25 MB/s |  1073 MB/s |    65413061 | 30.86 |
+| lizard 1.0 -49          |  1.27 MB/s |  1064 MB/s |    60679215 | 28.63 |
 | zlib 1.2.8 -1           |    66 MB/s |   244 MB/s |    77259029 | 36.45 |
 | zlib 1.2.8 -6           |    20 MB/s |   263 MB/s |    68228431 | 32.19 |
 | zlib 1.2.8 -9           |  8.37 MB/s |   266 MB/s |    67644548 | 31.92 |

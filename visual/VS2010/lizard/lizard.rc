@@ -1,7 +1,7 @@
 // Microsoft Visual C++ generated resource script.
 //
 
-#include "lz5_compress.h" /* LZ5_VERSION_STRING */
+#include "lizard_compress.h" /* LIZARD_VERSION_STRING */
 #define APSTUDIO_READONLY_SYMBOLS
 #include "verrsrc.h"
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -16,8 +16,8 @@ LANGUAGE 9, 1
 //
 
 VS_VERSION_INFO     VERSIONINFO
-  FILEVERSION       LZ5_VERSION_MAJOR,LZ5_VERSION_MINOR,LZ5_VERSION_RELEASE,0
-  PRODUCTVERSION    LZ5_VERSION_MAJOR,LZ5_VERSION_MINOR,LZ5_VERSION_RELEASE,0
+  FILEVERSION       LIZARD_VERSION_MAJOR,LIZARD_VERSION_MINOR,LIZARD_VERSION_RELEASE,0
+  PRODUCTVERSION    LIZARD_VERSION_MAJOR,LIZARD_VERSION_MINOR,LIZARD_VERSION_RELEASE,0
  FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
 #ifdef _DEBUG
  FILEFLAGS VS_FF_DEBUG
@@ -34,12 +34,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Yann Collet, Przemyslaw Skibinski"
             VALUE "FileDescription", "Extremely fast compression"
-            VALUE "FileVersion", LZ5_VERSION_STRING
-            VALUE "InternalName", "lz5.exe"
+            VALUE "FileVersion", LIZARD_VERSION_STRING
+            VALUE "InternalName", "lizard.exe"
             VALUE "LegalCopyright", "Copyright (C) 2013-2016, Yann Collet, Przemyslaw Skibinski"
-            VALUE "OriginalFilename", "lz5.exe"
-            VALUE "ProductName", "LZ5"
-            VALUE "ProductVersion", LZ5_VERSION_STRING
+            VALUE "OriginalFilename", "lizard.exe"
+            VALUE "ProductName", "Lizard"
+            VALUE "ProductVersion", LIZARD_VERSION_STRING
         END
     END
     BLOCK "VarFileInfo"
