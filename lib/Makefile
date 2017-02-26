@@ -1,7 +1,7 @@
 # ################################################################
 # Lizard library - Makefile
-# Copyright (C) Yann Collet 2011-2015
-# Copyright (C) 2016, Przemyslaw Skibinski <inikep@gmail.com>
+# Copyright (C) 2011-2015, Yann Collet
+# Copyright (C) 2016-2017, Przemyslaw Skibinski <inikep@gmail.com>
 # All rights reserved.
 #
 # This Makefile is validated for Linux, macOS, *BSD, Hurd, Solaris, MSYS2 targets

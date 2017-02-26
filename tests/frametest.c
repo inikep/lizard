@@ -1,6 +1,7 @@
 /*
     frameTest - test tool for lizard_frame
     Copyright (C) Yann Collet 2014-2016
+    Copyright (C) Przemyslaw Skibinski 2016-2017
 
     GPL v2 License
 

@@ -1,8 +1,8 @@
 /*
    Lizard - Fast LZ compression algorithm
    Header File
-   Copyright (C) 2011-2016, Yann Collet.
-   Copyright (C) 2016, Przemyslaw Skibinski <inikep@gmail.com>
+   Copyright (C) 2011-2016, Yann Collet
+   Copyright (C) 2016-2017, Przemyslaw Skibinski <inikep@gmail.com>
 
    BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
 

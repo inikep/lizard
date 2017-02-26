@@ -36,7 +36,7 @@ BEGIN
             VALUE "FileDescription", "Extremely fast compression"
             VALUE "FileVersion", LIZARD_VERSION_STRING
             VALUE "InternalName", "liblizard.dll"
-            VALUE "LegalCopyright", "Copyright (C) 2013-2016, Yann Collet, Przemyslaw Skibinski"
+            VALUE "LegalCopyright", "Copyright (C) 2013-2017, Yann Collet, Przemyslaw Skibinski"
             VALUE "OriginalFilename", "liblizard.dll"
             VALUE "ProductName", "Lizard"
             VALUE "ProductVersion", LIZARD_VERSION_STRING

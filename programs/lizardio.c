@@ -1,6 +1,7 @@
 /*
   Lizardio.c - Lizard File/Stream Interface
   Copyright (C) Yann Collet 2011-2015
+  Copyright (C) Przemyslaw Skibinski 2016-2017
 
   GPL v2 License
 

@@ -1,6 +1,7 @@
 /*
     fuzzer.c - Fuzzer test tool for Lizard
     Copyright (C) Yann Collet 2012-2016
+    Copyright (C) Przemyslaw Skibinski 2016-2017
 
     GPL v2 License
 
