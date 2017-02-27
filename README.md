@@ -20,8 +20,8 @@ The high compression/decompression speed is achieved without any SSE and AVX ext
 [travis15Badge]: https://travis-ci.org/inikep/lizard.svg?branch=lz5_v1.5 "Continuous Integration test suite"
 [travis20Badge]: https://travis-ci.org/inikep/lizard.svg?branch=lizard "Continuous Integration test suite"
 [travisLink]: https://travis-ci.org/inikep/lizard
-[Appveyor15Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lz5_v1.5?svg=true "Visual test suite"
-[Appveyor20Badge]: https://ci.appveyor.com/api/projects/status/o0ib75nwokjiui36/branch/lizard?svg=true "Visual test suite"
+[Appveyor15Badge]: https://ci.appveyor.com/api/projects/status/cqw7emcuqge369p0/branch/lz5_v1.5?svg=true "Visual test suite"
+[Appveyor20Badge]: https://ci.appveyor.com/api/projects/status/cqw7emcuqge369p0/branch/lizard?svg=true "Visual test suite"
 [AppveyorLink]: https://ci.appveyor.com/project/inikep/lizard
 [LZ4]: https://github.com/lz4/lz4
 [zlib]: https://github.com/madler/zlib
