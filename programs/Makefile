@@ -20,7 +20,6 @@
 #
 # You can contact the author at :
 #  - LZ5 source repository : https://github.com/inikep/lz5
-#  - LZ5 public forum : https://groups.google.com/forum/#!forum/lz5c
 # ##########################################################################
 # lz5 : Command Line Utility, supporting gzip-like arguments
 # lz5_32: Same as lz5, but forced to compile in 32-bits mode
