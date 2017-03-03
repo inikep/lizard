@@ -30,6 +30,9 @@
 #ifdef _MSC_VER    /* Visual Studio */
 #  pragma warning(disable : 4127)    /* disable: C4127: conditional expression is constant */
 #endif
+#if defined(__MINGW32__) && !defined(_POSIX_SOURCE)
+#  define _POSIX_SOURCE 1          /* disable %llu warnings with MinGW on Windows */
+#endif
 
 
 /* *************************************
@@ -54,10 +57,10 @@
 /* *************************************
 *  Constants
 ***************************************/
-#ifndef Lizard_GIT_COMMIT_STRING
-#  define Lizard_GIT_COMMIT_STRING ""
+#ifndef LIZARD_GIT_COMMIT_STRING
+#  define LIZARD_GIT_COMMIT_STRING ""
 #else
-#  define Lizard_GIT_COMMIT_STRING LIZARD_EXPAND_AND_QUOTE(Lizard_GIT_COMMIT)
+#  define LIZARD_GIT_COMMIT_STRING LIZARD_EXPAND_AND_QUOTE(Lizard_GIT_COMMIT)
 #endif
 
 #define NBSECONDS             3
@@ -371,7 +374,7 @@ static void BMK_benchCLevel(void* srcBuffer, size_t benchedSize,
     SET_REALTIME_PRIORITY;
 
     if (g_displayLevel == 1 && !g_additionalParam)
-        DISPLAY("bench %s %s: input %u bytes, %u seconds, %u KB blocks\n", LIZARD_VERSION_STRING, Lizard_GIT_COMMIT_STRING, (U32)benchedSize, g_nbSeconds, (U32)(g_blockSize>>10));
+        DISPLAY("bench %s %s: input %u bytes, %u seconds, %u KB blocks\n", LIZARD_VERSION_STRING, LIZARD_GIT_COMMIT_STRING, (U32)benchedSize, g_nbSeconds, (U32)(g_blockSize>>10));
 
     if (cLevelLast < cLevel) cLevelLast = cLevel;
 
@@ -406,6 +409,7 @@ static void BMK_loadFiles(void* buffer, size_t bufferSize,
         if (fileSize > bufferSize-pos) fileSize = bufferSize-pos, nbFiles=n;   /* buffer too small - stop after this file */
         { size_t const readSize = fread(((char*)buffer)+pos, 1, (size_t)fileSize, f);
           if (readSize != (size_t)fileSize) EXM_THROW(11, "could not read %s", fileNamesTable[n]);
+          DISPLAYLEVEL(4, "readSize=%llu\n", (unsigned long long)readSize);
           pos += readSize; }
         fileSizes[n] = (size_t)fileSize;
         totalSize += (size_t)fileSize;
@@ -430,8 +434,14 @@ static void BMK_benchFileTable(const char** fileNamesTable, unsigned nbFiles,
     benchedSize = BMK_findMaxMem(totalSizeToLoad * 3) / 3;
     if (benchedSize==0) EXM_THROW(12, "not enough memory");
     if ((U64)benchedSize > totalSizeToLoad) benchedSize = (size_t)totalSizeToLoad;
-    if (benchedSize < totalSizeToLoad)
+    if (benchedSize > LIZARD_MAX_INPUT_SIZE) {
+        benchedSize = LIZARD_MAX_INPUT_SIZE; 
+        DISPLAY("File(s) bigger than Lizard's max input size; testing %u MB only...\n", (U32)(benchedSize >> 20));
+    }
+    else
+    if (benchedSize < totalSizeToLoad) {
         DISPLAY("Not enough memory; testing %u MB only...\n", (U32)(benchedSize >> 20));
+    }
     srcBuffer = malloc(benchedSize + !benchedSize);   /* avoid alloc of zero */
     if (!srcBuffer) EXM_THROW(12, "not enough memory");
 
