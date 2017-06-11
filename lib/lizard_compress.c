@@ -392,6 +392,7 @@ Lizard_stream_t* Lizard_initStream(Lizard_stream_t* ctx, int compressionLevel)
 Lizard_stream_t* Lizard_createStream(int compressionLevel) 
 { 
     Lizard_stream_t* ctx = Lizard_initStream(NULL, compressionLevel);
+    if (ctx) ctx->base = NULL;
     return ctx; 
 }
 
