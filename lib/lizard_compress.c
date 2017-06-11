@@ -148,9 +148,9 @@ FORCE_INLINE int Lizard_writeStream(int useHuff, Lizard_stream_t* ctx, BYTE* str
         useHuffBuf = ((size_t)(oend - (*op + 6)) < HUF_compressBound(streamLen)); 
         if (useHuffBuf) {
             if (streamLen > LIZARD_BLOCK_SIZE) { LIZARD_LOG_COMPRESS("streamLen[%d] > LIZARD_BLOCK_SIZE\n", streamLen); return -1; }
-            ctx->comprStreamLen = (U32)HUF_compress(ctx->huffBase, ctx->huffEnd - ctx->huffBase, streamPtr, streamLen);
+            ctx->comprStreamLen = HUF_compress(ctx->huffBase, ctx->huffEnd - ctx->huffBase, streamPtr, streamLen);
         } else {
-            ctx->comprStreamLen = (U32)HUF_compress(*op + 6, oend - (*op + 6), streamPtr, streamLen);
+            ctx->comprStreamLen = HUF_compress(*op + 6, oend - (*op + 6), streamPtr, streamLen);
         }
 
         if (!HUF_isError(ctx->comprStreamLen)) {
@@ -429,7 +429,7 @@ int Lizard_loadDict(Lizard_stream_t* Lizard_streamPtr, const char* dictionary, i
         dictionary += dictSize - LIZARD_DICT_SIZE;
         dictSize = LIZARD_DICT_SIZE;
     }
-    Lizard_init (ctxPtr, (const BYTE*)dictionary);
+    Lizard_init(ctxPtr, (const BYTE*)dictionary);
     if (dictSize >= HASH_UPDATE_LIMIT) Lizard_Insert (ctxPtr, (const BYTE*)dictionary + (dictSize - (HASH_UPDATE_LIMIT-1)));
     ctxPtr->end = (const BYTE*)dictionary + dictSize;
     return dictSize;
@@ -550,8 +550,8 @@ int Lizard_compress_continue (Lizard_stream_t* ctxPtr,
                                             const char* source, char* dest,
                                             int inputSize, int maxOutputSize)
 {
-    /* auto-init if forgotten */
-    if (ctxPtr->base == NULL) Lizard_init (ctxPtr, (const BYTE*) source);
+    /* auto-init if required */
+    if (ctxPtr->base == NULL) Lizard_init(ctxPtr, (const BYTE*) source);
 
     /* Check overflow */
     if ((size_t)(ctxPtr->end - ctxPtr->base) > 2 GB) {
@@ -586,7 +586,7 @@ int Lizard_compress_extState (void* state, const char* src, char* dst, int srcSi
 
     /* initialize stream */
     Lizard_initStream(ctx, compressionLevel);
-    Lizard_init ((Lizard_stream_t*)state, (const BYTE*)src);
+    Lizard_init((Lizard_stream_t*)state, (const BYTE*)src);
 
     return Lizard_compress_generic (state, src, dst, srcSize, maxDstSize);
 }
