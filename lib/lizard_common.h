@@ -161,7 +161,7 @@ struct Lizard_stream_s
     int   last_off;
     const BYTE* off24pos;
     U32   huffType;
-    size_t comprStreamLen;
+    U32   comprStreamLen;
 
     BYTE*  huffBase;
     BYTE*  huffEnd;

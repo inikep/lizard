@@ -148,9 +148,9 @@ FORCE_INLINE int Lizard_writeStream(int useHuff, Lizard_stream_t* ctx, BYTE* str
         useHuffBuf = ((size_t)(oend - (*op + 6)) < HUF_compressBound(streamLen)); 
         if (useHuffBuf) {
             if (streamLen > LIZARD_BLOCK_SIZE) { LIZARD_LOG_COMPRESS("streamLen[%d] > LIZARD_BLOCK_SIZE\n", streamLen); return -1; }
-            ctx->comprStreamLen = HUF_compress(ctx->huffBase, ctx->huffEnd - ctx->huffBase, streamPtr, streamLen);
+            ctx->comprStreamLen = (U32)HUF_compress(ctx->huffBase, ctx->huffEnd - ctx->huffBase, streamPtr, streamLen);
         } else {
-            ctx->comprStreamLen = HUF_compress(*op + 6, oend - (*op + 6), streamPtr, streamLen);
+            ctx->comprStreamLen = (U32)HUF_compress(*op + 6, oend - (*op + 6), streamPtr, streamLen);
         }
 
         if (!HUF_isError(ctx->comprStreamLen)) {
