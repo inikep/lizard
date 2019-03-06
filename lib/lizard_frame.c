@@ -1022,7 +1022,9 @@ size_t LizardF_decompress(LizardF_decompressionContext_t decompressionContext,
             dctxPtr->tmpInSize = 0;
             dctxPtr->tmpInTarget = minFHSize;   /* minimum to attempt decode */
             dctxPtr->dStage = dstage_storeHeader;
-            /* pass-through */
+            #if defined(__GNUC__) && !defined(__clang__)
+                __attribute__ ((fallthrough));  /* shut-up -Wimplicit-fallthrough warning in GCC */
+            #endif
 
         case dstage_storeHeader:
             {   size_t sizeToCopy = dctxPtr->tmpInTarget - dctxPtr->tmpInSize;
@@ -1135,7 +1137,9 @@ size_t LizardF_decompress(LizardF_decompressionContext_t decompressionContext,
                 }
                 selectedIn = dctxPtr->tmpIn;
                 dctxPtr->dStage = dstage_decodeCBlock;
-                /* pass-through */
+                #if defined(__GNUC__) && !defined(__clang__)
+                __attribute__ ((fallthrough));  /* shut-up -Wimplicit-fallthrough warning in GCC */
+                #endif
             }
 
         case dstage_decodeCBlock:
