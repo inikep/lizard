@@ -959,6 +959,10 @@ static void LizardF_updateDict(LizardF_dctx_t* dctxPtr, const BYTE* dstPtr, size
 }
 
 
+/* Define a symbol for avoiding fall-through warnings emitted by gcc >= 7.0 */
+#if ((defined(__GNUC__) && BLOSC_GCC_VERSION >= 700) && !defined(__clang__))
+#define AVOID_FALLTHROUGH_WARNING
+#endif
 
 /*! LizardF_decompress() :
 * Call this function repetitively to regenerate data compressed within srcBuffer.
@@ -1022,7 +1026,7 @@ size_t LizardF_decompress(LizardF_decompressionContext_t decompressionContext,
             dctxPtr->tmpInSize = 0;
             dctxPtr->tmpInTarget = minFHSize;   /* minimum to attempt decode */
             dctxPtr->dStage = dstage_storeHeader;
-            #if defined(__GNUC__) && !defined(__clang__)
+            #ifdef AVOID_FALLTHROUGH_WARNING
                 __attribute__ ((fallthrough));  /* shut-up -Wimplicit-fallthrough warning in GCC */
             #endif
 
@@ -1137,7 +1141,7 @@ size_t LizardF_decompress(LizardF_decompressionContext_t decompressionContext,
                 }
                 selectedIn = dctxPtr->tmpIn;
                 dctxPtr->dStage = dstage_decodeCBlock;
-                #if defined(__GNUC__) && !defined(__clang__)
+                #ifdef AVOID_FALLTHROUGH_WARNING
                 __attribute__ ((fallthrough));  /* shut-up -Wimplicit-fallthrough warning in GCC */
                 #endif
             }
