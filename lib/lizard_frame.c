@@ -960,7 +960,8 @@ static void LizardF_updateDict(LizardF_dctx_t* dctxPtr, const BYTE* dstPtr, size
 
 
 /* Define a symbol for avoiding fall-through warnings emitted by gcc >= 7.0 */
-#if ((defined(__GNUC__) && BLOSC_GCC_VERSION >= 700) && !defined(__clang__))
+#define GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
+#if ((defined(__GNUC__) && GCC_VERSION >= 700) && !defined(__clang__))
 #define AVOID_FALLTHROUGH_WARNING
 #endif
 
@@ -1027,7 +1028,7 @@ size_t LizardF_decompress(LizardF_decompressionContext_t decompressionContext,
             dctxPtr->tmpInTarget = minFHSize;   /* minimum to attempt decode */
             dctxPtr->dStage = dstage_storeHeader;
             #ifdef AVOID_FALLTHROUGH_WARNING
-                __attribute__ ((fallthrough));  /* shut-up -Wimplicit-fallthrough warning in GCC */
+            __attribute__ ((fallthrough));  /* shut-up -Wimplicit-fallthrough warning in GCC */
             #endif
 
         case dstage_storeHeader:
