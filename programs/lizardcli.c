@@ -410,10 +410,12 @@ int main(int argc, const char** argv)
                     break;
 
 #ifdef UTIL_HAS_CREATEFILELIST
-                        /* recursive */
-                case 'r': recursive=1;  /* without break */
+                    /* recursive */
+                case 'r': recursive=1;
+                    /* fallthrough */
 #endif
                     /* Treat non-option args as input files.  See https://code.google.com/p/lizard/issues/detail?id=151 */
+                    /* fallthrough */
                 case 'm': multiple_inputs=1;
                     break;
 
