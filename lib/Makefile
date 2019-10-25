@@ -143,6 +143,7 @@ endif
 	@ln -sf liblizard.$(SHARED_EXT_VER) $(DESTDIR)$(LIBDIR)/liblizard.$(SHARED_EXT)
 	@echo Installing includes
 	@$(INSTALL_DATA) lizard_compress.h $(DESTDIR)$(INCLUDEDIR)/lizard_compress.h
+	@$(INSTALL_DATA) lizard_decompress.h $(DESTDIR)$(INCLUDEDIR)/lizard_decompress.h
 	@$(INSTALL_DATA) lizard_common.h $(DESTDIR)$(INCLUDEDIR)/lizard_common.h
 	@$(INSTALL_DATA) lizard_frame.h $(DESTDIR)$(INCLUDEDIR)/lizard_frame.h
 	@echo lizard static and shared libraries installed
@@ -154,6 +155,7 @@ uninstall:
 	@$(RM) $(DESTDIR)$(LIBDIR)/liblizard.$(SHARED_EXT_VER)
 	@$(RM) $(DESTDIR)$(LIBDIR)/liblizard.a
 	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lizard_compress.h
+	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lizard_decompress.h
 	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lizard_common.h
 	@$(RM) $(DESTDIR)$(INCLUDEDIR)/lizard_frame.h
 	@echo lizard libraries successfully uninstalled

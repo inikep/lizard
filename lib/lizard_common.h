@@ -192,6 +192,13 @@ struct Lizard_stream_s
     const BYTE* destBase;
 };
 
+struct Lizard_streamDecode_s {
+    const BYTE* externalDict;
+    size_t extDictSize;
+    const BYTE* prefixEnd;
+    size_t prefixSize;
+};
+
 struct Lizard_dstream_s
 {
     const BYTE*  offset16Ptr;
