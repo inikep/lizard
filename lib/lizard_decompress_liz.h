@@ -94,7 +94,7 @@ FORCE_INLINE int Lizard_decompress_LIZv1(
     #endif
 
             /* get offset */
-            if (unlikely(ctx->offset16Ptr > ctx->offset16End)) { LIZARD_LOG_DECOMPRESS_LIZv1("(ctx->offset16Ptr > ctx->offset16End\n"); goto _output_error; } 
+            if (unlikely(ctx->offset16Ptr > ctx->offset16End - 2)) { LIZARD_LOG_DECOMPRESS_LIZv1("(ctx->offset16Ptr > ctx->offset16End\n"); goto _output_error; }
 #if 1
             { /* branchless */
                 intptr_t new_off = MEM_readLE16(ctx->offset16Ptr);
