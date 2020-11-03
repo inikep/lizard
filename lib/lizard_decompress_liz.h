@@ -103,7 +103,7 @@ FORCE_INLINE int Lizard_decompress_LIZv1(
                 ctx->offset16Ptr = (BYTE*)((uintptr_t)ctx->offset16Ptr + (not_repCode & 2));
             }
 #else
-            if ((token >> ML_RUN_BITS_LIZv1) == 0)
+            if ((token >> ML_RUN_BITS) == 0)
             {
                 last_off = -(intptr_t)MEM_readLE16(ctx->offset16Ptr); 
                 ctx->offset16Ptr += 2;
