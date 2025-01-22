@@ -35,3 +35,6 @@ _codelite_lz4/
 
 *.txt
 *.bat
+
+# backups, old versions
+*~
