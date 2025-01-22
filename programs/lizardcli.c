@@ -48,6 +48,9 @@
 /*****************************
 *  Constants
 ******************************/
+
+#define PROGRAM_NAME "lizard"
+#define PROGRAM_VERSION LIZARD_VERSION_STRING
 #define COMPRESSOR_NAME "Lizard command line interface"
 #define AUTHOR "Y.Collet & P.Skibinski"
 #define WELCOME_MESSAGE "%s %i-bit %s by %s (%s)\n", COMPRESSOR_NAME, (int)(sizeof(void*)*8), LIZARD_VERSION_STRING, AUTHOR, __DATE__
@@ -198,6 +201,18 @@ static int usage_longhelp(const char* exeName)
     return 0;
 }
 
+static int version_info()
+{
+    fprintf(stdout,
+           PROGRAM_NAME " " PROGRAM_VERSION "\n"
+           "Copyright (C) 2011-2017 " AUTHOR "\n"
+           "Program license: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>\n"
+           "Library license: 2-Clause BSD <http://opensource.org/license/BSD-2-Clause>\n"
+           "This is free software: you are free to change and redistribute it.\n"
+           "There is NO WARRANTY, to the extent permitted by law.\n" );
+    return 0;
+}
+
 static int badusage(const char* exeName)
 {
     DISPLAYLEVEL(1, "Incorrect parameters\n");
@@ -333,9 +348,10 @@ int main(int argc, const char** argv)
                 switch(argument[0])
                 {
                     /* Display help */
-                case 'V': DISPLAY(WELCOME_MESSAGE); goto _cleanup;   /* Version */
                 case 'h': usage_advanced(exeName); goto _cleanup;
                 case 'H': usage_longhelp(exeName); goto _cleanup;
+                    /* Display version info */
+                case 'V': version_info(); goto _cleanup;
 
                 case 'e':
                     argument++;
