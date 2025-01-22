@@ -65,7 +65,8 @@
 /*-************************************
 *  Macros
 ***************************************/
-#define DISPLAY(...)           fprintf(stderr, __VA_ARGS__)
+#define DISPLAY1(...)           fprintf(stdout, __VA_ARGS__)
+#define DISPLAY2(...)           fprintf(stderr, __VA_ARGS__)
 #define DISPLAYLEVEL(l, ...)   if (displayLevel>=l) { DISPLAY(__VA_ARGS__); }
 static unsigned displayLevel = 2;   /* 0 : no display ; 1: errors only ; 2 : downgradable normal ; 3 : non-downgradable normal; 4 : + information */
 
@@ -99,6 +100,7 @@ int LizardIO_compressFilename_Legacy(const char* input_filename, const char* out
 /*-***************************
 *  Functions
 *****************************/
+#define DISPLAY DISPLAY1
 static int usage(const char* exeName)
 {
     DISPLAY( "Usage :\n");
@@ -197,6 +199,8 @@ static int usage_longhelp(const char* exeName)
     DISPLAY( "          generator | %s | consumer \n", exeName);
     return 0;
 }
+#undef DISPLAY
+#define DISPLAY DISPLAY2
 
 static int badusage(const char* exeName)
 {
